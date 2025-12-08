@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -37,10 +38,16 @@ import {
   TrendingUp,
   Target,
   CreditCard,
-  Shield
+  Shield,
+  Save,
+  Globe,
+  Lock,
+  Bell,
+  Briefcase,
+  FileCheck
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
-import { User, Group, AdminProfile, Transaction, DashboardView, Message } from '../../types';
+import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission } from '../../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -51,7 +58,13 @@ const Dashboard: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   
+  // Agent / Partners State
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
+  const [agentSubmissions, setAgentSubmissions] = useState<FieldSubmission[]>([]);
+
   // Group View State
   const [viewingGroup, setViewingGroup] = useState<Group | null>(null);
   const [viewingGroupMembers, setViewingGroupMembers] = useState<User[]>([]);
@@ -90,6 +103,8 @@ const Dashboard: React.FC = () => {
     setGroups(MockService.getGroups());
     setTransactions(MockService.getTransactions());
     setAdminProfile(MockService.getAdminProfile());
+    setSettings(MockService.getSystemSettings());
+    setAgents(MockService.getAgents());
     setProfileForm({
       fullName: MockService.getAdminProfile().fullName,
       email: MockService.getAdminProfile().email
@@ -141,11 +156,21 @@ const Dashboard: React.FC = () => {
     alert('Profil mis à jour!');
   };
 
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (settings) {
+      const updated = MockService.updateSystemSettings(settings);
+      setSettings(updated);
+      alert('Paramètres du système mis à jour avec succès !');
+    }
+  };
+
   const handleNavClick = (view: DashboardView) => {
     setCurrentView(view);
     setIsMobileMenuOpen(false);
     // Reset specific view states
     setViewingGroup(null);
+    setViewingAgent(null);
   };
 
   const openDepositModal = (user: User) => {
@@ -216,6 +241,17 @@ const Dashboard: React.FC = () => {
     setViewingGroup(null);
     setViewingGroupMembers([]);
     setGroupMessages([]);
+  };
+
+  // Handle viewing agent details
+  const handleViewAgent = (agent: Agent) => {
+    setViewingAgent(agent);
+    setAgentSubmissions(MockService.getAgentSubmissions(agent.id));
+  };
+
+  const handleBackToAgents = () => {
+    setViewingAgent(null);
+    setAgentSubmissions([]);
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -310,6 +346,161 @@ const Dashboard: React.FC = () => {
                  </table>
                </div>
             </div>
+          </div>
+        );
+
+      case 'agents':
+         if (viewingAgent) {
+           return (
+             <div className="space-y-8 animate-in slide-in-from-right duration-300">
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={handleBackToAgents}
+                    className="p-2 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
+                  >
+                    <ArrowLeft className="h-6 w-6" />
+                  </button>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">{viewingAgent.fullName}</h2>
+                    <p className="text-gray-500 text-sm">Zone: {viewingAgent.zone} • ID: {viewingAgent.id}</p>
+                  </div>
+                </div>
+
+                {/* Submissions Table */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                   <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                         <FileCheck className="h-5 w-5 text-emerald-600" />
+                         Rapports de Terrain envoyés par {viewingAgent.fullName}
+                      </h3>
+                      <span className="text-sm text-gray-500">{agentSubmissions.length} formulaires</span>
+                   </div>
+                   <div className="overflow-x-auto">
+                      {agentSubmissions.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type Formulaire</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client Rencontré</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Détails Collecte</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Lieu</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {agentSubmissions.map((sub) => (
+                              <tr key={sub.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                                     sub.type === 'new_registration' ? 'bg-blue-100 text-blue-800' : 
+                                     sub.type === 'daily_collection' ? 'bg-green-100 text-green-800' :
+                                     'bg-purple-100 text-purple-800'
+                                   }`}>
+                                      {sub.type.replace('_', ' ')}
+                                   </span>
+                                   {sub.notes && (
+                                     <p className="text-xs text-gray-500 mt-1 truncate max-w-xs">{sub.notes}</p>
+                                   )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                   <div className="text-sm font-medium text-gray-900">{sub.clientName}</div>
+                                   <div className="text-xs text-gray-500">{sub.clientPhone}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                   {sub.amount ? (
+                                     <span className="text-sm font-bold text-gray-800">{sub.amount.toLocaleString()} FCFA</span>
+                                   ) : (
+                                     <span className="text-sm text-gray-400">-</span>
+                                   )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                   <div className="flex items-center text-sm text-gray-500 gap-1">
+                                      <Calendar className="h-3 w-3" /> {sub.submissionDate.split(' ')[0]}
+                                   </div>
+                                   <div className="flex items-center text-xs text-gray-400 gap-1 mt-0.5">
+                                      <MapPin className="h-3 w-3" /> {sub.location}
+                                   </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                   {sub.status === 'approved' ? (
+                                     <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                                       <CheckCircle className="h-4 w-4" /> Approuvé
+                                     </span>
+                                   ) : sub.status === 'pending' ? (
+                                     <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-600">
+                                       <AlertCircle className="h-4 w-4" /> En attente
+                                     </span>
+                                   ) : (
+                                     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
+                                       <XCircle className="h-4 w-4" /> Rejeté
+                                     </span>
+                                   )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          Cet agent n'a encore envoyé aucun formulaire.
+                        </div>
+                      )}
+                   </div>
+                </div>
+             </div>
+           );
+         }
+        return (
+          <div className="space-y-8">
+             <div className="flex justify-between items-center">
+               <h2 className="text-2xl font-bold text-gray-800">Nos Partenaires / Agents</h2>
+               <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 flex items-center gap-2">
+                 <Plus className="h-4 w-4" /> Nouvel Agent
+               </button>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {agents.map((agent) => (
+                  <div key={agent.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
+                     <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                           <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
+                              <Briefcase className="h-6 w-6" />
+                           </div>
+                           <div>
+                              <h3 className="font-bold text-gray-900">{agent.fullName}</h3>
+                              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${agent.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                {agent.status}
+                              </span>
+                           </div>
+                        </div>
+                     </div>
+                     
+                     <div className="space-y-3 mb-6 flex-1">
+                        <div className="flex items-center text-sm text-gray-600 gap-2">
+                           <MapPin className="h-4 w-4 text-emerald-500" />
+                           <span>Zone: <strong>{agent.zone}</strong></span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600 gap-2">
+                           <Phone className="h-4 w-4 text-gray-400" />
+                           <span>{agent.phone}</span>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-lg mt-2">
+                           <p className="text-xs text-gray-500">Activité Totale</p>
+                           <p className="text-lg font-bold text-gray-800">{agent.totalFormsSubmitted} Formulaires</p>
+                        </div>
+                     </div>
+
+                     <button 
+                       onClick={() => handleViewAgent(agent)}
+                       className="w-full bg-emerald-50 text-emerald-700 py-2 rounded-lg font-medium hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2"
+                     >
+                        <FileText className="h-4 w-4" />
+                        Voir activité terrain
+                     </button>
+                  </div>
+                ))}
+             </div>
           </div>
         );
 
@@ -488,6 +679,180 @@ const Dashboard: React.FC = () => {
                 </div>
              </div>
           </div>
+        );
+
+      case 'settings':
+        return (
+           <div className="space-y-8 max-w-5xl">
+            <div className="flex justify-between items-center">
+               <h2 className="text-2xl font-bold text-gray-800">Paramètres Système</h2>
+               <button 
+                onClick={handleSaveSettings}
+                className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm"
+               >
+                 <Save className="h-4 w-4" />
+                 Enregistrer les modifications
+               </button>
+            </div>
+            
+            {settings && (
+              <form onSubmit={handleSaveSettings} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 {/* General Settings */}
+                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
+                       <Globe className="h-5 w-5 text-emerald-600" />
+                       Général & Contact
+                    </h3>
+                    <div className="space-y-4">
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la Plateforme</label>
+                         <input 
+                           type="text" 
+                           value={settings.siteName}
+                           onChange={(e) => setSettings({...settings, siteName: e.target.value})}
+                           className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                         />
+                       </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Email Support</label>
+                           <input 
+                             type="email" 
+                             value={settings.supportEmail}
+                             onChange={(e) => setSettings({...settings, supportEmail: e.target.value})}
+                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone Support</label>
+                           <input 
+                             type="text" 
+                             value={settings.supportPhone}
+                             onChange={(e) => setSettings({...settings, supportPhone: e.target.value})}
+                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                           />
+                         </div>
+                       </div>
+                       <div className="pt-2">
+                          <label className="flex items-center cursor-pointer">
+                             <input 
+                               type="checkbox" 
+                               checked={settings.maintenanceMode}
+                               onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
+                               className="sr-only peer"
+                             />
+                             <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                             <span className="ms-3 text-sm font-medium text-gray-700">Mode Maintenance</span>
+                          </label>
+                          <p className="text-xs text-gray-500 mt-1 ml-14">Si activé, seuls les administrateurs pourront accéder au site.</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Financial Settings */}
+                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
+                       <DollarSign className="h-5 w-5 text-amber-600" />
+                       Configuration Financière
+                    </h3>
+                    <div className="space-y-4">
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Devise par défaut</label>
+                         <select 
+                           value={settings.defaultCurrency}
+                           onChange={(e) => setSettings({...settings, defaultCurrency: e.target.value})}
+                           className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                         >
+                           <option value="FCFA">FCFA (XOF)</option>
+                           <option value="EUR">Euro (€)</option>
+                           <option value="USD">Dollar ($)</option>
+                         </select>
+                       </div>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Taux d'intérêt Prêt (%)</label>
+                           <div className="relative">
+                             <input 
+                               type="number" 
+                               step="0.1"
+                               value={settings.loanInterestRate}
+                               onChange={(e) => setSettings({...settings, loanInterestRate: parseFloat(e.target.value)})}
+                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                             />
+                             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                           </div>
+                         </div>
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Commission Tontine (%)</label>
+                           <div className="relative">
+                             <input 
+                               type="number" 
+                               step="0.1"
+                               value={settings.tontineCommission}
+                               onChange={(e) => setSettings({...settings, tontineCommission: parseFloat(e.target.value)})}
+                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                             />
+                             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Security & System */}
+                 <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
+                       <Shield className="h-5 w-5 text-indigo-600" />
+                       Sécurité & Notifications
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       <div className="space-y-4">
+                          <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Lock className="h-4 w-4 text-gray-400" /> Politique de mot de passe</h4>
+                          <div>
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Longueur minimum du mot de passe</label>
+                             <input 
+                               type="number" 
+                               value={settings.minPasswordLength}
+                               onChange={(e) => setSettings({...settings, minPasswordLength: parseInt(e.target.value)})}
+                               className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                             />
+                          </div>
+                          <div>
+                            <label className="flex items-center cursor-pointer">
+                               <input 
+                                 type="checkbox" 
+                                 checked={settings.enableTwoFactor}
+                                 onChange={(e) => setSettings({...settings, enableTwoFactor: e.target.checked})}
+                                 className="sr-only peer"
+                               />
+                               <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                               <span className="ms-3 text-sm font-medium text-gray-700">Authentification à deux facteurs (2FA)</span>
+                            </label>
+                            <p className="text-xs text-gray-500 mt-1 ml-14">Obligatoire pour tous les comptes administrateurs.</p>
+                          </div>
+                       </div>
+
+                       <div className="space-y-4">
+                          <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Bell className="h-4 w-4 text-gray-400" /> Notifications</h4>
+                          <div>
+                            <label className="flex items-center cursor-pointer">
+                               <input 
+                                 type="checkbox" 
+                                 checked={settings.emailNotifications}
+                                 onChange={(e) => setSettings({...settings, emailNotifications: e.target.checked})}
+                                 className="sr-only peer"
+                               />
+                               <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                               <span className="ms-3 text-sm font-medium text-gray-700">Notifications Email</span>
+                            </label>
+                            <p className="text-xs text-gray-500 mt-1 ml-14">Recevoir des alertes lors de nouvelles inscriptions ou transactions suspectes.</p>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </form>
+            )}
+           </div>
         );
 
       case 'users':
@@ -1337,6 +1702,13 @@ const Dashboard: React.FC = () => {
           </button>
 
           <button 
+            onClick={() => handleNavClick('agents')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <Briefcase className="h-5 w-5" /> Partenaires
+          </button>
+
+          <button 
             onClick={() => handleNavClick('transactions')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'transactions' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
           >
@@ -1348,6 +1720,13 @@ const Dashboard: React.FC = () => {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'statistics' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
           >
             <BarChart3 className="h-5 w-5" /> Statistiques
+          </button>
+          
+          <button 
+            onClick={() => handleNavClick('settings')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'settings' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <Settings className="h-5 w-5" /> Paramètres
           </button>
 
           <button 

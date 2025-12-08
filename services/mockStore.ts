@@ -1,5 +1,6 @@
 
-import { User, Group, AdminProfile, Transaction, Message } from '../types';
+
+import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission } from '../types';
 
 // Initial Mock Data
 let users: User[] = [
@@ -68,6 +69,68 @@ let adminProfile: AdminProfile = {
   fullName: 'Administrateur Principal',
   role: 'admin'
 };
+
+let systemSettings: SystemSettings = {
+  siteName: 'Mosolocoop',
+  supportEmail: 'support@mosolocoop.com',
+  supportPhone: '+225 01 02 03 04',
+  maintenanceMode: false,
+  defaultCurrency: 'FCFA',
+  loanInterestRate: 5.5,
+  tontineCommission: 1.0,
+  minPasswordLength: 8,
+  enableTwoFactor: false,
+  emailNotifications: true
+};
+
+// Données Mock Agents
+let agents: Agent[] = [
+  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10' },
+  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05' },
+];
+
+// Données Mock Soumissions Terrain
+let fieldSubmissions: FieldSubmission[] = [
+  { 
+    id: 'SUB-101', 
+    agentId: 'AGT-01', 
+    agentName: 'Michel Yapo', 
+    clientName: 'Mme. Awa Bakayoko', 
+    clientPhone: '01 02 03 04', 
+    type: 'new_registration', 
+    amount: 5000, 
+    location: 'Abobo Gare', 
+    submissionDate: '2024-03-20 10:15', 
+    status: 'pending', 
+    notes: 'Cliente intéressée par la tontine journalière.' 
+  },
+  { 
+    id: 'SUB-102', 
+    agentId: 'AGT-01', 
+    agentName: 'Michel Yapo', 
+    clientName: 'M. Kofi N\'Guessan', 
+    clientPhone: '05 06 07 08', 
+    type: 'daily_collection', 
+    amount: 15000, 
+    location: 'Abobo Marché', 
+    submissionDate: '2024-03-20 11:30', 
+    status: 'approved', 
+    notes: 'Versement complet semaine 3.' 
+  },
+  { 
+    id: 'SUB-103', 
+    agentId: 'AGT-02', 
+    agentName: 'Sarah Touré', 
+    clientName: 'Boutique Zongo', 
+    clientPhone: '07 08 09 10', 
+    type: 'loan_request', 
+    amount: 500000, 
+    location: 'Riviera 2', 
+    submissionDate: '2024-03-19 16:45', 
+    status: 'pending', 
+    notes: 'Besoin pour stock Ramadan. Documents photo joints.' 
+  }
+];
 
 export const MockService = {
   // User Logic
@@ -250,5 +313,18 @@ export const MockService = {
   updateAdminProfile: (updates: Partial<AdminProfile>) => {
     adminProfile = { ...adminProfile, ...updates };
     return adminProfile;
+  },
+
+  // System Settings Logic
+  getSystemSettings: () => ({ ...systemSettings }),
+  updateSystemSettings: (newSettings: SystemSettings) => {
+    systemSettings = { ...newSettings };
+    return systemSettings;
+  },
+
+  // Agent / Partner Logic
+  getAgents: () => [...agents],
+  getAgentSubmissions: (agentId: string) => {
+    return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
   }
 };

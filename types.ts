@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   username: string;
@@ -54,4 +55,43 @@ export interface Message {
   isAdmin: boolean;
 }
 
-export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics';
+export interface SystemSettings {
+  siteName: string;
+  supportEmail: string;
+  supportPhone: string;
+  maintenanceMode: boolean;
+  defaultCurrency: string;
+  loanInterestRate: number; // Pourcentage
+  tontineCommission: number; // Pourcentage
+  minPasswordLength: number;
+  enableTwoFactor: boolean;
+  emailNotifications: boolean;
+}
+
+// Nouveaux types pour les Agents/Partenaires
+export interface Agent {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  zone: string; // Zone géographique (ex: Marché Adjamé)
+  status: 'active' | 'inactive';
+  totalFormsSubmitted: number;
+  joinedDate: string;
+}
+
+export interface FieldSubmission {
+  id: string;
+  agentId: string;
+  agentName: string; // Nom de l'agent qui a envoyé le formulaire
+  clientName: string; // Nom du client rencontré
+  clientPhone: string;
+  type: 'new_registration' | 'daily_collection' | 'loan_request';
+  amount?: number; // Montant collecté si applicable
+  location: string; // Lieu de la rencontre (GPS ou nom)
+  submissionDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+  notes?: string;
+}
+
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents';
