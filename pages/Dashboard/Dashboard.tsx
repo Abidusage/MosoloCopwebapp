@@ -1,0 +1,1404 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Layers, 
+  UserCircle, 
+  LogOut, 
+  Plus, 
+  DollarSign, 
+  Search,
+  Wallet,
+  Settings,
+  Menu,
+  X,
+  History,
+  ArrowUpRight,
+  ArrowDownLeft,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  PlusCircle,
+  FileText,
+  UserPlus,
+  Eye,
+  ArrowLeft,
+  Calendar,
+  MessageSquare,
+  Send,
+  Mail,
+  Phone,
+  MapPin,
+  Activity,
+  BarChart3,
+  PieChart,
+  TrendingUp,
+  Target,
+  CreditCard,
+  Shield
+} from 'lucide-react';
+import { MockService } from '../../services/mockStore';
+import { User, Group, AdminProfile, Transaction, DashboardView, Message } from '../../types';
+
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const [currentView, setCurrentView] = useState<DashboardView>('overview');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const [users, setUsers] = useState<User[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  
+  // Group View State
+  const [viewingGroup, setViewingGroup] = useState<Group | null>(null);
+  const [viewingGroupMembers, setViewingGroupMembers] = useState<User[]>([]);
+  const [groupMessages, setGroupMessages] = useState<Message[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Form States
+  const [newUser, setNewUser] = useState({ username: '', password: '', fullName: '', depositAmount: 0 });
+  const [newGroup, setNewGroup] = useState({ name: '', description: '', targetAmount: 0 });
+  const [isEditProfile, setIsEditProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ fullName: '', email: '' });
+
+  // Deposit Modal State
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [selectedUserForDeposit, setSelectedUserForDeposit] = useState<User | null>(null);
+  const [depositAmount, setDepositAmount] = useState<string>('');
+  const [depositNote, setDepositNote] = useState<string>('');
+
+  // Add Member to Group Modal State
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [selectedGroupForMember, setSelectedGroupForMember] = useState<Group | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+
+  // User Details Modal State
+  const [isUserDetailModalOpen, setIsUserDetailModalOpen] = useState(false);
+  const [selectedUserForDetail, setSelectedUserForDetail] = useState<User | null>(null);
+  const [selectedUserTransactions, setSelectedUserTransactions] = useState<Transaction[]>([]);
+
+  // Statistics State
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    // Load initial data
+    setUsers(MockService.getUsers());
+    setGroups(MockService.getGroups());
+    setTransactions(MockService.getTransactions());
+    setAdminProfile(MockService.getAdminProfile());
+    setProfileForm({
+      fullName: MockService.getAdminProfile().fullName,
+      email: MockService.getAdminProfile().email
+    });
+    setStats(MockService.getGlobalStats());
+  }, []);
+
+  useEffect(() => {
+    // Refresh stats when transactions or users change
+    if(currentView === 'statistics') {
+      setStats(MockService.getGlobalStats());
+    }
+  }, [currentView, transactions, users]);
+
+  // Scroll to bottom of chat when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [groupMessages, currentView]);
+
+  const handleLogout = () => {
+    navigate('/login');
+  };
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(newUser.username && newUser.fullName) {
+      const created = MockService.addUser(newUser);
+      setUsers([...users, created]);
+      setNewUser({ username: '', password: '', fullName: '', depositAmount: 0 });
+      alert('Utilisateur créé avec succès!');
+    }
+  };
+
+  const handleCreateGroup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(newGroup.name) {
+      const created = MockService.addGroup(newGroup);
+      setGroups([...groups, created]);
+      setNewGroup({ name: '', description: '', targetAmount: 0 });
+      alert('Groupe créé avec succès!');
+    }
+  };
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated = MockService.updateAdminProfile(profileForm);
+    setAdminProfile(updated);
+    setIsEditProfile(false);
+    alert('Profil mis à jour!');
+  };
+
+  const handleNavClick = (view: DashboardView) => {
+    setCurrentView(view);
+    setIsMobileMenuOpen(false);
+    // Reset specific view states
+    setViewingGroup(null);
+  };
+
+  const openDepositModal = (user: User) => {
+    setSelectedUserForDeposit(user);
+    setDepositAmount('');
+    setDepositNote('');
+    setIsDepositModalOpen(true);
+  };
+
+  const handleSubmitDeposit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = Number(depositAmount);
+    if (selectedUserForDeposit && amount > 0) {
+      const success = MockService.makeDeposit(selectedUserForDeposit.id, amount, depositNote);
+      if (success) {
+        // Refresh Data
+        setUsers(MockService.getUsers());
+        setTransactions(MockService.getTransactions()); // Refresh transaction history
+        setIsDepositModalOpen(false);
+        setSelectedUserForDeposit(null);
+        setDepositAmount('');
+        setDepositNote('');
+        alert(`Dépôt de ${amount.toLocaleString()} FCFA effectué pour ${selectedUserForDeposit.fullName}`);
+      }
+    } else {
+      alert("Veuillez entrer un montant valide.");
+    }
+  };
+
+  const openAddMemberModal = (group: Group) => {
+    setSelectedGroupForMember(group);
+    setSelectedMemberId('');
+    setIsAddMemberModalOpen(true);
+  }
+
+  const handleAddMemberToGroup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedGroupForMember && selectedMemberId) {
+      const success = MockService.addMemberToGroup(selectedGroupForMember.id, selectedMemberId);
+      if (success) {
+        setGroups(MockService.getGroups()); // Refresh groups to see updated count
+        
+        // If we are currently viewing this group, refresh the members list too
+        if (viewingGroup && viewingGroup.id === selectedGroupForMember.id) {
+           setViewingGroupMembers(MockService.getGroupMembers(selectedGroupForMember.id));
+        }
+
+        setIsAddMemberModalOpen(false);
+        setSelectedGroupForMember(null);
+        setSelectedMemberId('');
+        alert('Membre ajouté au groupe avec succès !');
+      } else {
+        alert("Cet utilisateur est déjà membre de ce groupe ou une erreur est survenue.");
+      }
+    } else {
+      alert("Veuillez sélectionner un utilisateur.");
+    }
+  }
+
+  // Handle viewing group details
+  const handleViewGroup = (group: Group) => {
+    setViewingGroup(group);
+    setViewingGroupMembers(MockService.getGroupMembers(group.id));
+    setGroupMessages(MockService.getGroupMessages(group.id));
+  };
+
+  const handleBackToGroups = () => {
+    setViewingGroup(null);
+    setViewingGroupMembers([]);
+    setGroupMessages([]);
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (viewingGroup && chatInput.trim()) {
+      MockService.addMessage(
+        viewingGroup.id,
+        adminProfile?.fullName || 'Admin',
+        chatInput,
+        true // isAdmin
+      );
+      setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
+      setChatInput('');
+    }
+  };
+
+  const openUserDetailModal = (user: User) => {
+    setSelectedUserForDetail(user);
+    setSelectedUserTransactions(MockService.getUserTransactions(user.id));
+    setIsUserDetailModalOpen(true);
+  };
+
+  const toggleUserLoanEligibility = (user: User) => {
+    if(window.confirm(`Voulez-vous ${user.loanEligible ? 'retirer' : 'accorder'} l'éligibilité au prêt pour ${user.fullName} ?`)) {
+      MockService.toggleLoanEligibility(user.id);
+      setUsers(MockService.getUsers());
+      setTransactions(MockService.getTransactions());
+      // Refresh stats if we are on stats page (though we are likely on users page)
+      if (currentView === 'statistics') setStats(MockService.getGlobalStats());
+    }
+  };
+
+  const renderContent = () => {
+    switch(currentView) {
+      case 'overview':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800">Vue d'ensemble</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div className="p-3 sm:p-4 bg-emerald-100 rounded-lg">
+                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Total Dépôts</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} FCFA</p>
+                </div>
+              </div>
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div className="p-3 sm:p-4 bg-blue-100 rounded-lg">
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Utilisateurs Actifs</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{users.length}</p>
+                </div>
+              </div>
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div className="p-3 sm:p-4 bg-purple-100 rounded-lg">
+                  <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Groupes Tontine</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{groups.length}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity Table (Mock) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+               <div className="px-6 py-4 border-b border-gray-100">
+                 <h3 className="text-lg font-semibold text-gray-800">Derniers inscrits</h3>
+               </div>
+               <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-gray-200">
+                   <thead className="bg-gray-50">
+                     <tr>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde initial</th>
+                     </tr>
+                   </thead>
+                   <tbody className="bg-white divide-y divide-gray-200">
+                     {users.slice(-5).reverse().map((user) => (
+                       <tr key={user.id}>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.fullName}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-semibold">{user.depositAmount.toLocaleString()} FCFA</td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          </div>
+        );
+
+      case 'statistics':
+        return (
+          <div className="space-y-6">
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+               <h2 className="text-2xl font-bold text-gray-800">Analyses Statistiques</h2>
+               <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-500 flex items-center gap-2 shadow-sm">
+                 <Calendar className="h-4 w-4" />
+                 Mise à jour: {new Date().toLocaleDateString()}
+               </div>
+             </div>
+
+             {/* KPIs Top Row */}
+             {stats && (
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-6 rounded-xl shadow-lg text-white">
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <p className="text-emerald-100 text-sm font-medium">Solde Total Géré</p>
+                       <h3 className="text-2xl font-bold mt-1">{MockService.getTotalDeposits().toLocaleString()}</h3>
+                     </div>
+                     <div className="bg-emerald-400/30 p-2 rounded-lg">
+                       <Wallet className="h-6 w-6 text-white" />
+                     </div>
+                   </div>
+                   <div className="flex items-center text-xs text-emerald-100 bg-emerald-800/20 w-fit px-2 py-1 rounded">
+                     <TrendingUp className="h-3 w-3 mr-1" /> +12% ce mois
+                   </div>
+                 </div>
+
+                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <p className="text-gray-500 text-sm font-medium">Éligibles Crédit</p>
+                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.eligibleUsersCount}</h3>
+                     </div>
+                     <div className="bg-indigo-100 p-2 rounded-lg">
+                       <CreditCard className="h-6 w-6 text-indigo-600" />
+                     </div>
+                   </div>
+                   <p className="text-xs text-indigo-600 font-medium">Potentiels Emprunteurs</p>
+                 </div>
+
+                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <p className="text-gray-500 text-sm font-medium">Taux de Succès</p>
+                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.successRate}%</h3>
+                     </div>
+                     <div className="bg-purple-100 p-2 rounded-lg">
+                       <Target className="h-6 w-6 text-purple-600" />
+                     </div>
+                   </div>
+                   <p className="text-xs text-gray-400">Sur {stats.totalTransactions} transactions</p>
+                 </div>
+
+                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <p className="text-gray-500 text-sm font-medium">Groupes Tontine</p>
+                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalGroups}</h3>
+                     </div>
+                     <div className="bg-amber-100 p-2 rounded-lg">
+                       <Layers className="h-6 w-6 text-amber-600" />
+                     </div>
+                   </div>
+                   <p className="text-xs text-gray-400">Actifs en cours</p>
+                 </div>
+               </div>
+             )}
+
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Financial Breakdown - Left */}
+                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="flex items-center justify-between mb-6">
+                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                       <BarChart3 className="h-5 w-5 text-gray-500" />
+                       Flux Financiers
+                     </h3>
+                  </div>
+                  
+                  {stats && (
+                    <div className="space-y-6">
+                       {/* Deposit Bar */}
+                       <div>
+                         <div className="flex justify-between text-sm mb-1">
+                           <span className="font-medium text-gray-700">Volume Dépôts</span>
+                           <span className="font-bold text-emerald-600">{stats.totalDepositsValue.toLocaleString()} FCFA</span>
+                         </div>
+                         <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                           <div className="bg-emerald-500 h-4 rounded-full" style={{ width: '85%' }}></div>
+                         </div>
+                       </div>
+
+                       {/* Withdrawal Bar */}
+                       <div>
+                         <div className="flex justify-between text-sm mb-1">
+                           <span className="font-medium text-gray-700">Volume Retraits</span>
+                           <span className="font-bold text-orange-600">{stats.totalWithdrawalsValue.toLocaleString()} FCFA</span>
+                         </div>
+                         <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                           <div className="bg-orange-500 h-4 rounded-full" style={{ width: '35%' }}></div>
+                         </div>
+                       </div>
+
+                       {/* Growth Chart (Custom CSS) */}
+                       <div className="pt-6 border-t border-gray-100 mt-6">
+                          <h4 className="text-sm font-semibold text-gray-600 mb-4">Évolution des Inscriptions (6 derniers mois)</h4>
+                          <div className="flex items-end justify-between h-40 gap-2">
+                             {stats.growthData.map((data: any, i: number) => (
+                               <div key={i} className="flex flex-col items-center w-full">
+                                  <div 
+                                    className="w-full max-w-[40px] bg-indigo-500 rounded-t-md hover:bg-indigo-600 transition-colors relative group"
+                                    style={{ height: `${data.users * 10}%` }}
+                                  >
+                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                      {data.users}
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-gray-500 mt-2">{data.month}</span>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Top Users & Distribution - Right */}
+                <div className="space-y-6">
+                   {/* Top Depositors */}
+                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <ArrowUpRight className="h-5 w-5 text-emerald-600" />
+                        Top Épargnants
+                      </h3>
+                      <div className="space-y-4">
+                        {stats && stats.topDepositors.map((user: User, index: number) => (
+                          <div key={user.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                             <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${
+                               index === 0 ? 'bg-yellow-100 text-yellow-700' : 
+                               index === 1 ? 'bg-gray-200 text-gray-700' :
+                               'bg-orange-100 text-orange-800'
+                             }`}>
+                               {index + 1}
+                             </div>
+                             <div className="flex-1 min-w-0">
+                               <p className="text-sm font-medium text-gray-900 truncate">{user.fullName}</p>
+                               <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+                             </div>
+                             <div className="text-right">
+                               <p className="text-sm font-bold text-emerald-600">{user.depositAmount.toLocaleString()}</p>
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+
+                   {/* Status Distribution */}
+                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                         <PieChart className="h-5 w-5 text-blue-600" />
+                         Répartition
+                      </h3>
+                      <div className="flex items-center justify-center py-4">
+                         <div className="relative w-32 h-32 rounded-full border-[8px] border-emerald-500 flex items-center justify-center shadow-inner">
+                            <span className="text-2xl font-bold text-gray-800">100%</span>
+                         </div>
+                      </div>
+                      <div className="text-center text-sm text-gray-500">
+                        Tous les utilisateurs sont <span className="text-emerald-600 font-bold">Actifs</span>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+        );
+
+      case 'users':
+        return (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Gestion des Utilisateurs</h2>
+            
+            {/* Create User Form */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Plus className="h-5 w-5" /> Inscrire un nouvel utilisateur
+              </h3>
+              <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input 
+                  type="text" 
+                  placeholder="Nom complet" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  value={newUser.fullName}
+                  onChange={e => setNewUser({...newUser, fullName: e.target.value})}
+                  required
+                />
+                <input 
+                  type="text" 
+                  placeholder="Nom d'utilisateur" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  value={newUser.username}
+                  onChange={e => setNewUser({...newUser, username: e.target.value})}
+                  required
+                />
+                <input 
+                  type="password" 
+                  placeholder="Mot de passe" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  value={newUser.password}
+                  onChange={e => setNewUser({...newUser, password: e.target.value})}
+                  required
+                />
+                <input 
+                  type="number" 
+                  placeholder="Dépôt initial (FCFA)" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  value={newUser.depositAmount || ''}
+                  onChange={e => setNewUser({...newUser, depositAmount: Number(e.target.value)})}
+                />
+                <button type="submit" className="md:col-span-2 bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors w-full">
+                  Enregistrer l'utilisateur
+                </button>
+              </form>
+            </div>
+
+            {/* Users List */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+               <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                 <h3 className="text-lg font-semibold text-gray-800">Liste des membres</h3>
+                 <div className="relative w-full sm:w-auto">
+                   <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                   <input type="text" placeholder="Rechercher..." className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-emerald-500" />
+                 </div>
+               </div>
+               <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-gray-200">
+                   <thead className="bg-gray-50">
+                     <tr>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom Complet</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FCFA)</th>
+                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="bg-white divide-y divide-gray-200">
+                     {users.map((user) => (
+                       <tr key={user.id} className="hover:bg-gray-50">
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{user.id}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.fullName}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-bold">{user.depositAmount.toLocaleString()}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                           <button 
+                            onClick={() => toggleUserLoanEligibility(user)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
+                              user.loanEligible 
+                                ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' 
+                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-200'
+                            }`}
+                            title={user.loanEligible ? "Désactiver le prêt" : "Rendre éligible au prêt"}
+                           >
+                             <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" /> 
+                             {user.loanEligible ? 'Eligible' : 'Crédit'}
+                           </button>
+
+                           <button 
+                            onClick={() => openDepositModal(user)}
+                            className="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 transition-colors shadow-sm text-xs sm:text-sm font-medium"
+                            title="Faire un dépôt"
+                           >
+                             <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Dépôt
+                           </button>
+                           <button 
+                            onClick={() => openUserDetailModal(user)}
+                            className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
+                            title="Voir les détails"
+                           >
+                             <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir
+                           </button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          </div>
+        );
+
+      case 'groups':
+        // Detail View
+        if (viewingGroup) {
+          return (
+            <div className="space-y-8 animate-in slide-in-from-right duration-300">
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={handleBackToGroups}
+                  className="p-2 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
+                >
+                  <ArrowLeft className="h-6 w-6" />
+                </button>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">{viewingGroup.name}</h2>
+                  <p className="text-gray-500 text-sm">Détails et membres du groupe</p>
+                </div>
+              </div>
+
+              {/* Group Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Calendar className="h-5 w-5 text-emerald-600" />
+                    <span className="text-gray-500 text-sm font-medium">Date de création</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">{viewingGroup.createdAt}</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    <span className="text-gray-500 text-sm font-medium">Membres</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">{viewingGroup.memberCount} Participants</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                  <div className="flex items-center gap-3 mb-2">
+                    <DollarSign className="h-5 w-5 text-amber-600" />
+                    <span className="text-gray-500 text-sm font-medium">Objectif Cible</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">{viewingGroup.targetAmount.toLocaleString()} FCFA</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Description</h3>
+                <p className="text-gray-600 leading-relaxed">{viewingGroup.description}</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 {/* Members Table */}
+                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                      <h3 className="text-lg font-semibold text-gray-800">Membres du groupe</h3>
+                      <button 
+                          onClick={() => openAddMemberModal(viewingGroup)}
+                          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Ajouter
+                        </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {viewingGroupMembers.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adhésion</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {viewingGroupMembers.map((user) => (
+                              <tr key={user.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold mr-3">
+                                        {user.fullName.charAt(0)}
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                                      </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-semibold">{user.depositAmount.toLocaleString()} FCFA</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          Aucun membre dans ce groupe pour le moment.
+                        </div>
+                      )}
+                    </div>
+                 </div>
+
+                 {/* Group Chat Section */}
+                 <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[500px]">
+                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-2 rounded-t-xl">
+                      <MessageSquare className="h-5 w-5 text-emerald-600" />
+                      <h3 className="font-semibold text-gray-800">Discussion de Groupe</h3>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+                      {groupMessages.length > 0 ? (
+                        groupMessages.map((msg) => (
+                          <div key={msg.id} className={`flex flex-col ${msg.isAdmin ? 'items-end' : 'items-start'}`}>
+                            <div className={`max-w-[85%] rounded-2xl p-3 shadow-sm ${
+                              msg.isAdmin 
+                                ? 'bg-emerald-600 text-white rounded-tr-none' 
+                                : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
+                            }`}>
+                              <p className="text-sm">{msg.content}</p>
+                            </div>
+                            <div className="mt-1 flex items-center gap-1">
+                              <span className="text-xs font-semibold text-gray-600">{msg.senderName}</span>
+                              <span className="text-[10px] text-gray-400">• {msg.timestamp.split(' ')[1]}</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400 text-sm">
+                          <MessageSquare className="h-8 w-8 mb-2 opacity-50" />
+                          <p>Aucun message pour le moment</p>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
+                      <form onSubmit={handleSendMessage} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          placeholder="Écrire un message..."
+                          className="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                        />
+                        <button 
+                          type="submit"
+                          disabled={!chatInput.trim()}
+                          className="bg-emerald-600 text-white p-2 rounded-full hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      </form>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          );
+        }
+
+        // List View (Default)
+        return (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Gestion des Groupes</h2>
+            
+            {/* Create Group Form */}
+             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Plus className="h-5 w-5" /> Créer un nouveau groupe
+              </h3>
+              <form onSubmit={handleCreateGroup} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input 
+                    type="text" 
+                    placeholder="Nom du groupe" 
+                    className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                    value={newGroup.name}
+                    onChange={e => setNewGroup({...newGroup, name: e.target.value})}
+                    required
+                  />
+                  <input 
+                    type="number" 
+                    placeholder="Objectif (Montant Cible)" 
+                    className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                    value={newGroup.targetAmount || ''}
+                    onChange={e => setNewGroup({...newGroup, targetAmount: Number(e.target.value)})}
+                    required
+                  />
+                </div>
+                <textarea 
+                  placeholder="Description du groupe..." 
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                  rows={3}
+                  value={newGroup.description}
+                  onChange={e => setNewGroup({...newGroup, description: e.target.value})}
+                ></textarea>
+                <button type="submit" className="w-full md:w-auto px-8 bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors">
+                  Créer le groupe
+                </button>
+              </form>
+            </div>
+
+            {/* Groups Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {groups.map(group => (
+                <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="bg-emerald-100 p-2 rounded-lg">
+                        <Layers className="h-6 w-6 text-emerald-600" />
+                      </div>
+                      <span className="bg-gray-100 text-gray-600 py-1 px-3 rounded-full text-xs font-medium">
+                        {group.createdAt}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{group.name}</h3>
+                    <p className="text-gray-500 text-sm mb-4 h-12 overflow-hidden line-clamp-2">{group.description}</p>
+                    <div className="border-t border-gray-100 pt-4 flex justify-between items-center text-sm mb-4">
+                      <span className="text-gray-600">
+                        <strong>{group.memberCount}</strong> Membres
+                      </span>
+                      <span className="text-emerald-600 font-semibold">
+                        Obj: {group.targetAmount.toLocaleString()} FCFA
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleViewGroup(group)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Voir détails
+                    </button>
+                    <button 
+                      onClick={() => openAddMemberModal(group)}
+                      className="px-3 border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors"
+                      title="Ajouter un membre rapide"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'transactions':
+        return (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+               {/* Filters/Header */}
+               <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                 <h3 className="text-lg font-semibold text-gray-800">Mouvements financiers</h3>
+                 <div className="relative w-full sm:w-auto">
+                   <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                   <input type="text" placeholder="Rechercher..." className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-emerald-500" />
+                 </div>
+               </div>
+
+               <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-gray-200">
+                   <thead className="bg-gray-50">
+                     <tr>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Détails/Raison</th>
+                     </tr>
+                   </thead>
+                   <tbody className="bg-white divide-y divide-gray-200">
+                     {transactions.map((tx) => (
+                       <tr key={tx.id} className="hover:bg-gray-50">
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm">
+                           {tx.type === 'deposit' && (
+                             <div className="flex items-center gap-2 text-emerald-600">
+                               <ArrowUpRight className="h-4 w-4" />
+                               <span>Dépôt</span>
+                             </div>
+                           )}
+                           {tx.type === 'withdrawal' && (
+                             <div className="flex items-center gap-2 text-orange-600">
+                               <ArrowDownLeft className="h-4 w-4" />
+                               <span>Retrait</span>
+                             </div>
+                           )}
+                           {tx.type === 'loan_eligibility' && (
+                             <div className="flex items-center gap-2 text-indigo-600">
+                               <Shield className="h-4 w-4" />
+                               <span>Éligibilité</span>
+                             </div>
+                           )}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                           {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm">
+                           {tx.status === 'success' ? (
+                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                               <CheckCircle className="h-3 w-3" /> Succès
+                             </span>
+                           ) : (
+                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                               <XCircle className="h-3 w-3" /> Échec
+                             </span>
+                           )}
+                         </td>
+                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                           {tx.reason ? (
+                             <span className={`flex items-center gap-1 ${tx.status === 'failed' ? 'text-red-500' : 'text-gray-500'}`}>
+                               {tx.status === 'failed' ? <AlertCircle className="h-3 w-3 flex-shrink-0" /> : <FileText className="h-3 w-3 flex-shrink-0" />} 
+                               {tx.reason}
+                             </span>
+                           ) : '-'}
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          </div>
+        );
+
+      case 'profile':
+        return (
+          <div className="max-w-2xl mx-auto space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Mon Profil Admin</h2>
+            
+            <div className="bg-white rounded-xl shadow-lg border border-emerald-100 overflow-hidden">
+              <div className="bg-emerald-600 h-24 sm:h-32 relative">
+                <div className="absolute -bottom-10 sm:-bottom-12 left-6 sm:left-8">
+                  <div className="h-20 w-20 sm:h-24 sm:w-24 bg-white rounded-full p-1 shadow-md">
+                     <div className="h-full w-full bg-gray-200 rounded-full flex items-center justify-center">
+                        <UserCircle className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
+                     </div>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-14 sm:pt-16 px-6 sm:px-8 pb-8">
+                {isEditProfile ? (
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Nom Complet</label>
+                       <input 
+                        type="text" 
+                        value={profileForm.fullName}
+                        onChange={e => setProfileForm({...profileForm, fullName: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-emerald-500"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Email</label>
+                       <input 
+                        type="email" 
+                        value={profileForm.email}
+                        onChange={e => setProfileForm({...profileForm, email: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-emerald-500"
+                       />
+                     </div>
+                     <div className="flex gap-4 pt-4">
+                       <button type="submit" className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 text-sm font-medium">Enregistrer</button>
+                       <button type="button" onClick={() => setIsEditProfile(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm font-medium">Annuler</button>
+                     </div>
+                  </form>
+                ) : (
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{adminProfile?.fullName}</h1>
+                    <p className="text-emerald-600 font-medium text-sm">{adminProfile?.role.toUpperCase()}</p>
+                    <div className="mt-6 space-y-4">
+                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
+                        <UserCircle className="h-5 w-5 mr-3" />
+                        <span>@{adminProfile?.username}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
+                        <Settings className="h-5 w-5 mr-3" />
+                        <span>{adminProfile?.email}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setIsEditProfile(true)}
+                      className="mt-8 w-full border border-emerald-600 text-emerald-600 rounded-lg py-2 hover:bg-emerald-50 transition-colors text-sm font-medium"
+                    >
+                      Modifier le profil
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return <div>Vue non trouvée</div>;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
+
+      {/* Deposit Modal */}
+      {isDepositModalOpen && selectedUserForDeposit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Wallet className="h-6 w-6 text-emerald-600" />
+                Faire un dépôt
+              </h3>
+              <button onClick={() => setIsDepositModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitDeposit} className="space-y-4">
+              <div className="bg-emerald-50 p-4 rounded-lg mb-4">
+                <p className="text-sm text-gray-500 mb-1">Bénéficiaire</p>
+                <p className="text-lg font-bold text-gray-800">{selectedUserForDeposit.fullName}</p>
+                <p className="text-xs text-gray-500">ID: {selectedUserForDeposit.username}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-lg"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={depositNote}
+                    onChange={(e) => setDepositNote(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Ex: Dépôt espèce guichet"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsDepositModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
+                >
+                  Confirmer le dépôt
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {isUserDetailModalOpen && selectedUserForDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+             {/* Header */}
+             <div className="bg-emerald-600 px-6 py-6 flex justify-between items-start">
+               <div className="flex items-center gap-4">
+                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold shadow-md">
+                   {selectedUserForDetail.fullName.charAt(0)}
+                 </div>
+                 <div className="text-white">
+                   <h3 className="text-2xl font-bold">{selectedUserForDetail.fullName}</h3>
+                   <p className="text-emerald-100 text-sm">@{selectedUserForDetail.username}</p>
+                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500 text-white border border-emerald-400">
+                     {selectedUserForDetail.status ? selectedUserForDetail.status.toUpperCase() : 'ACTIF'}
+                   </span>
+                 </div>
+               </div>
+               <button 
+                onClick={() => setIsUserDetailModalOpen(false)} 
+                className="text-emerald-100 hover:text-white bg-emerald-700 p-2 rounded-full hover:bg-emerald-800 transition-colors"
+               >
+                <X className="h-5 w-5" />
+               </button>
+             </div>
+
+             {/* Content */}
+             <div className="p-6 bg-gray-50">
+               
+               {/* Info Grid */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                 {/* Contact Card */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <UserCircle className="h-4 w-4 text-emerald-600" /> Informations Personnelles
+                   </h4>
+                   <div className="space-y-3 text-sm">
+                     <div className="flex items-start gap-3">
+                       <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Email</span>
+                         <span className="text-gray-700">{selectedUserForDetail.email || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <Phone className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Téléphone</span>
+                         <span className="text-gray-700">{selectedUserForDetail.phoneNumber || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Adresse</span>
+                         <span className="text-gray-700">{selectedUserForDetail.address || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
+                        <CreditCard className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <span className="block text-gray-500 text-xs">Statut Crédit</span>
+                          {selectedUserForDetail.loanEligible ? (
+                            <span className="text-green-600 font-medium">Éligible au prêt</span>
+                          ) : (
+                            <span className="text-gray-500">Non éligible</span>
+                          )}
+                        </div>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* Balance Card */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <Wallet className="h-4 w-4 text-emerald-600" /> Solde du Compte
+                   </h4>
+                   <div className="flex flex-col h-full justify-center pb-4">
+                     <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
+                     <span className="text-3xl font-bold text-emerald-600 tracking-tight">
+                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-emerald-400">FCFA</span>
+                     </span>
+                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
+                       <span className="text-gray-500">Membre depuis</span>
+                       <span className="font-medium text-gray-700">{selectedUserForDetail.joinedDate}</span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Recent Transactions Snippet */}
+               <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                 <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h4 className="text-gray-800 font-semibold flex items-center gap-2 text-sm">
+                      <Activity className="h-4 w-4 text-emerald-600" /> Dernières Transactions
+                    </h4>
+                    <span className="text-xs text-gray-500">5 dernières</span>
+                 </div>
+                 <div className="divide-y divide-gray-100">
+                   {selectedUserTransactions.length > 0 ? (
+                     selectedUserTransactions.slice(0, 5).map(tx => (
+                       <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
+                         <div className="flex items-center gap-3">
+                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-emerald-100 text-emerald-600' : tx.type === 'loan_eligibility' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
+                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                           </div>
+                           <div>
+                             <p className="text-sm font-medium text-gray-900 capitalize">
+                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : 'Retrait'}
+                             </p>
+                             <p className="text-xs text-gray-500">{tx.date}</p>
+                           </div>
+                         </div>
+                         <div className="text-right">
+                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-emerald-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
+                             {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
+                           </p>
+                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                             {tx.status === 'success' ? 'Succès' : 'Échec'}
+                           </span>
+                         </div>
+                       </div>
+                     ))
+                   ) : (
+                     <div className="p-4 text-center text-gray-500 text-sm">Aucune transaction enregistrée.</div>
+                   )}
+                 </div>
+               </div>
+
+             </div>
+             <div className="bg-gray-100 px-6 py-4 flex justify-end">
+               <button 
+                onClick={() => setIsUserDetailModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+               >
+                 Fermer
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {isAddMemberModalOpen && selectedGroupForMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+             <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Users className="h-6 w-6 text-emerald-600" />
+                Ajouter un membre
+              </h3>
+              <button onClick={() => setIsAddMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddMemberToGroup} className="space-y-4">
+              <div className="bg-emerald-50 p-4 rounded-lg mb-4">
+                 <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
+                 <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
+                 <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un utilisateur</label>
+                <div className="relative">
+                   <select 
+                     value={selectedMemberId} 
+                     onChange={(e) => setSelectedMemberId(e.target.value)}
+                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-base"
+                     required
+                   >
+                     <option value="" disabled>-- Choisir un membre --</option>
+                     {users.map(user => (
+                       <option key={user.id} value={user.id}>
+                         {user.fullName} ({user.username})
+                       </option>
+                     ))}
+                   </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddMemberModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
+                >
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar - Responsive */}
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-40 md:z-auto
+        w-64 bg-emerald-900 text-white flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <div className="p-6 flex items-center justify-between border-b border-emerald-800">
+          <div className="flex items-center gap-2 justify-center w-full">
+            <img 
+              src="/logo.png" 
+              alt="Mosolocoop" 
+              className="h-10 w-auto object-contain rounded-md"
+              onError={(e) => {
+                e.currentTarget.onerror = null; 
+                e.currentTarget.src = "https://placehold.co/150x50/white/black?text=MosoloCoop";
+              }}
+            />
+          </div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-emerald-200 hover:text-white absolute right-4">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+        
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          <button 
+            onClick={() => handleNavClick('overview')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'overview' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <LayoutDashboard className="h-5 w-5" /> Vue d'ensemble
+          </button>
+          
+          <button 
+            onClick={() => handleNavClick('users')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'users' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <Users className="h-5 w-5" /> Utilisateurs
+          </button>
+
+          <button 
+            onClick={() => handleNavClick('groups')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'groups' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <Layers className="h-5 w-5" /> Groupes
+          </button>
+
+          <button 
+            onClick={() => handleNavClick('transactions')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'transactions' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <History className="h-5 w-5" /> Historique
+          </button>
+          
+          <button 
+            onClick={() => handleNavClick('statistics')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'statistics' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <BarChart3 className="h-5 w-5" /> Statistiques
+          </button>
+
+          <button 
+            onClick={() => handleNavClick('profile')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'profile' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+          >
+            <UserCircle className="h-5 w-5" /> Mon Profil
+          </button>
+        </nav>
+
+        <div className="p-4 border-t border-emerald-800">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-200 hover:bg-red-900/50 hover:text-red-100 transition-colors"
+          >
+            <LogOut className="h-5 w-5" /> Déconnexion
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
+        {/* Mobile Header */}
+        <div className="md:hidden flex-none bg-emerald-900 text-white p-4 flex justify-between items-center shadow-md z-30">
+           <div className="flex items-center gap-2">
+             <img 
+               src="/logo.png" 
+               alt="Mosolocoop" 
+               className="h-8 w-auto object-contain rounded-md bg-white p-0.5" 
+               onError={(e) => {
+                 e.currentTarget.onerror = null; 
+                 e.currentTarget.src = "https://placehold.co/100x40/white/black?text=MosoloCoop";
+               }}
+             />
+           </div>
+           <button 
+             className="p-2 hover:bg-emerald-800 rounded-md transition-colors" 
+             onClick={() => setIsMobileMenuOpen(true)}
+           >
+             <Menu className="h-6 w-6" />
+           </button>
+        </div>
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-gray-100">
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
