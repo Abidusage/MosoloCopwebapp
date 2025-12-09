@@ -48,10 +48,11 @@ import {
   Zap,
   Banknote,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Fingerprint // New icon for KYC
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
-import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission } from '../../types';
+import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KycStatusType } from '../../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -111,6 +112,10 @@ const Dashboard: React.FC = () => {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+
+  // KYC View State
+  const [kycFilterStatus, setKycFilterStatus] = useState<KycStatusType | 'all'>('all');
+  const [kycSearchTerm, setKycSearchTerm] = useState('');
 
   useEffect(() => {
     // Load initial data
@@ -191,6 +196,8 @@ const Dashboard: React.FC = () => {
     // Reset pagination when switching views
     setCurrentPage(1);
     setUserSearchTerm('');
+    setKycSearchTerm(''); // Reset KYC search
+    setKycFilterStatus('all'); // Reset KYC filter
   };
 
   const openDepositModal = (user: User) => {
@@ -304,6 +311,15 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Handle KYC status update
+  const handleUpdateKycStatus = (userId: string, newStatus: KycStatusType) => {
+    if (window.confirm(`Voulez-vous changer le statut KYC de cet utilisateur à "${newStatus.replace('_', ' ').toUpperCase()}" ?`)) {
+      MockService.updateUserKycStatus(userId, newStatus);
+      setUsers(MockService.getUsers()); // Refresh users to reflect changes
+      alert('Statut KYC mis à jour avec succès !');
+    }
+  };
+
   // Filter Logic for Transactions
   const getFilteredTransactions = () => {
     return transactions.filter(tx => {
@@ -335,6 +351,32 @@ const Dashboard: React.FC = () => {
   };
 
   const { filtered: filteredUsers, currentItems: currentUsers, totalPages: totalUserPages } = getPaginatedUsers();
+
+  // Logic for KYC Users
+  const getFilteredKycUsers = () => {
+    return users.filter(user => {
+      const matchStatus = kycFilterStatus === 'all' || user.kycStatus === kycFilterStatus;
+      const matchSearch = kycSearchTerm === '' ||
+        user.fullName.toLowerCase().includes(kycSearchTerm.toLowerCase()) ||
+        user.username.toLowerCase().includes(kycSearchTerm.toLowerCase()) ||
+        user.id.toLowerCase().includes(kycSearchTerm.toLowerCase());
+      return matchStatus && matchSearch;
+    });
+  };
+
+  const renderKycStatusBadge = (status: KycStatusType | undefined) => {
+    switch (status) {
+      case 'verified':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><CheckCircle className="h-3 w-3" /> Vérifié</span>;
+      case 'pending':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><AlertCircle className="h-3 w-3" /> En attente</span>;
+      case 'rejected':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><XCircle className="h-3 w-3" /> Rejeté</span>;
+      case 'not_submitted':
+      default:
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><FileText className="h-3 w-3" /> Non soumis</span>;
+    }
+  };
 
   const handlePageChange = (pageNumber: number) => {
     if (pageNumber >= 1 && pageNumber <= totalUserPages) {
@@ -1662,6 +1704,119 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         );
+
+      case 'kyc':
+        const filteredKycUsers = getFilteredKycUsers();
+        return (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Gestion KYC (Vérification d'identité)</h2>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+               <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
+                 <div className="flex justify-between items-center">
+                   <h3 className="text-lg font-semibold text-gray-800">Statut de vérification des clients</h3>
+                   <span className="text-sm text-gray-500">{filteredKycUsers.length} résultats</span>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                   <div className="relative md:col-span-2">
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Rechercher un client (Nom, ID)..." 
+                        value={kycSearchTerm}
+                        onChange={(e) => setKycSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
+                      />
+                   </div>
+                   
+                   <div className="relative md:col-span-2">
+                      <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <select 
+                        value={kycFilterStatus}
+                        onChange={(e) => setKycFilterStatus(e.target.value as KycStatusType | 'all')}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
+                      >
+                        <option value="all">Tous les statuts KYC</option>
+                        <option value="pending">En attente</option>
+                        <option value="verified">Vérifié</option>
+                        <option value="rejected">Rejeté</option>
+                        <option value="not_submitted">Non soumis</option>
+                      </select>
+                   </div>
+                 </div>
+               </div>
+
+               <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-gray-200">
+                   <thead className="bg-gray-50">
+                     <tr>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifiant (ID)</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut KYC</th>
+                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="bg-white divide-y divide-gray-200">
+                     {filteredKycUsers.length > 0 ? (
+                       filteredKycUsers.map((user) => (
+                         <tr key={user.id} className="hover:bg-gray-50">
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{user.id}</span>
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.fullName}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm">
+                             {renderKycStatusBadge(user.kycStatus)}
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                             {user.kycStatus !== 'verified' && (
+                               <button 
+                                onClick={() => handleUpdateKycStatus(user.id, 'verified')}
+                                className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-md hover:bg-green-200 transition-colors shadow-sm text-xs sm:text-sm font-medium"
+                               >
+                                 <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Vérifier
+                               </button>
+                             )}
+                             {user.kycStatus !== 'pending' && (
+                               <button 
+                                onClick={() => handleUpdateKycStatus(user.id, 'pending')}
+                                className="inline-flex items-center gap-1.5 bg-yellow-100 text-yellow-700 px-3 py-1.5 rounded-md hover:bg-yellow-200 transition-colors shadow-sm text-xs sm:text-sm font-medium"
+                               >
+                                 <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" /> En attente
+                               </button>
+                             )}
+                             {user.kycStatus !== 'rejected' && (
+                               <button 
+                                onClick={() => handleUpdateKycStatus(user.id, 'rejected')}
+                                className="inline-flex items-center gap-1.5 bg-red-100 text-red-700 px-3 py-1.5 rounded-md hover:bg-red-200 transition-colors shadow-sm text-xs sm:text-sm font-medium"
+                               >
+                                 <XCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Rejeter
+                               </button>
+                             )}
+                             {user.kycStatus !== 'not_submitted' && (
+                               <button 
+                                onClick={() => handleUpdateKycStatus(user.id, 'not_submitted')}
+                                className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium"
+                               >
+                                 <FileText className="h-3 w-3 sm:h-4 sm:w-4" /> Non soumis
+                               </button>
+                             )}
+                           </td>
+                         </tr>
+                       ))
+                     ) : (
+                       <tr>
+                         <td colSpan={4} className="px-6 py-10 text-center text-gray-500">
+                           Aucun client trouvé pour cette recherche ou ce filtre.
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
+                 </table>
+               </div>
+            </div>
+          </div>
+        );
       default:
         return <div>Vue non trouvée</div>;
     }
@@ -1819,6 +1974,13 @@ const Dashboard: React.FC = () => {
                           ) : (
                             <span className="text-gray-500">Non éligible</span>
                           )}
+                        </div>
+                     </div>
+                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
+                        <Fingerprint className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <span className="block text-gray-500 text-xs">Statut KYC</span>
+                          {renderKycStatusBadge(selectedUserForDetail.kycStatus)}
                         </div>
                      </div>
                    </div>
@@ -2005,6 +2167,13 @@ const Dashboard: React.FC = () => {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Briefcase className="h-5 w-5" /> Partenaires
+          </button>
+
+          <button 
+            onClick={() => handleNavClick('kyc')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'kyc' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
+          >
+            <Fingerprint className="h-5 w-5" /> Vérification KYC
           </button>
 
           <button 
