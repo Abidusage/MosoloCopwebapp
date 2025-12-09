@@ -1,5 +1,3 @@
-
-
 export interface User {
   id: string;
   username: string;
@@ -12,6 +10,9 @@ export interface User {
   address?: string;
   status?: 'active' | 'inactive' | 'suspended';
   loanEligible?: boolean; // Indicateur d'éligibilité au prêt
+  kycStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected'; // Statut KYC
+  kycSubmissionDate?: string; // Date de soumission KYC
+  kycVerifiedDate?: string; // Date de vérification KYC
 }
 
 export interface Group {
@@ -95,4 +96,17 @@ export interface FieldSubmission {
   notes?: string;
 }
 
-export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents';
+// Nouveau type pour les documents KYC
+export interface KYCDocument {
+  id: string;
+  userId: string;
+  type: 'id_card' | 'passport' | 'driver_license' | 'proof_of_address';
+  documentUrl: string; // URL vers le document (mocké)
+  status: 'pending' | 'approved' | 'rejected';
+  submissionDate: string;
+  reviewDate?: string;
+  reviewerId?: string; // ID de l'admin qui a revu
+  rejectionReason?: string;
+}
+
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc';

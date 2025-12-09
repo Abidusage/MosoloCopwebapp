@@ -1,6 +1,4 @@
-
-
-import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission } from '../types';
+import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission, KYCDocument } from '../types';
 
 // Initial Mock Data - IDs updated to 8 characters
 let users: User[] = [
@@ -14,7 +12,10 @@ let users: User[] = [
     phoneNumber: '+225 07 01 02 03',
     address: 'Abidjan, Cocody',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycStatus: 'verified',
+    kycSubmissionDate: '2023-10-05',
+    kycVerifiedDate: '2023-10-06'
   },
   { 
     id: 'US9382Y2', 
@@ -26,7 +27,9 @@ let users: User[] = [
     phoneNumber: '+225 05 04 05 06',
     address: 'Bouaké, Centre',
     status: 'active',
-    loanEligible: false
+    loanEligible: false,
+    kycStatus: 'pending',
+    kycSubmissionDate: '2024-03-25'
   },
   { 
     id: 'US1129Z3', 
@@ -38,7 +41,8 @@ let users: User[] = [
     phoneNumber: '+237 6 99 99 99',
     address: 'Yaoundé, Bastos',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycStatus: 'not_submitted'
   },
   // Données supplémentaires pour la pagination
   { 
@@ -51,7 +55,10 @@ let users: User[] = [
     phoneNumber: '+225 01 02 03 04',
     address: 'Abidjan, Yopougon',
     status: 'active',
-    loanEligible: false
+    loanEligible: false,
+    kycStatus: 'rejected',
+    kycSubmissionDate: '2024-03-20',
+    kycVerifiedDate: '2024-03-21'
   },
   { 
     id: 'US5566B5', 
@@ -63,7 +70,8 @@ let users: User[] = [
     phoneNumber: '+225 07 08 09 10',
     address: 'Korhogo',
     status: 'active',
-    loanEligible: false
+    loanEligible: false,
+    kycStatus: 'not_submitted'
   },
   { 
     id: 'US6677C6', 
@@ -75,7 +83,10 @@ let users: User[] = [
     phoneNumber: '+221 77 11 22 33',
     address: 'Dakar, Plateau',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycStatus: 'verified',
+    kycSubmissionDate: '2024-03-02',
+    kycVerifiedDate: '2024-03-03'
   },
   { 
     id: 'US7788D7', 
@@ -87,7 +98,9 @@ let users: User[] = [
     phoneNumber: '+233 24 55 66 77',
     address: 'Accra, Osu',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycStatus: 'pending',
+    kycSubmissionDate: '2024-03-28'
   },
 ];
 
@@ -183,13 +196,55 @@ let fieldSubmissions: FieldSubmission[] = [
   }
 ];
 
+// Données Mock KYC
+let kycDocuments: KYCDocument[] = [
+  {
+    id: 'KYC-001',
+    userId: 'US8492X1',
+    type: 'id_card',
+    documentUrl: 'https://placehold.co/600x400/gray/white?text=ID_Jean_Dupont',
+    status: 'approved',
+    submissionDate: '2023-10-05 10:00',
+    reviewDate: '2023-10-06 11:00',
+    reviewerId: 'admin'
+  },
+  {
+    id: 'KYC-002',
+    userId: 'US9382Y2',
+    type: 'passport',
+    documentUrl: 'https://placehold.co/600x400/gray/white?text=Passport_Marie_Kone',
+    status: 'pending',
+    submissionDate: '2024-03-25 14:00'
+  },
+  {
+    id: 'KYC-003',
+    userId: 'US4455A4',
+    type: 'proof_of_address',
+    documentUrl: 'https://placehold.co/600x400/gray/white?text=Proof_Awa_Sanogo',
+    status: 'rejected',
+    submissionDate: '2024-03-20 09:00',
+    reviewDate: '2024-03-21 10:00',
+    reviewerId: 'admin',
+    rejectionReason: 'Document illisible'
+  },
+  {
+    id: 'KYC-004',
+    userId: 'US7788D7',
+    type: 'driver_license',
+    documentUrl: 'https://placehold.co/600x400/gray/white?text=Driver_Kofi_Annan',
+    status: 'pending',
+    submissionDate: '2024-03-28 16:00'
+  }
+];
+
+
 export const MockService = {
   // User Logic
   getUsers: () => [...users],
   getUserTransactions: (userId: string) => {
     return transactions.filter(t => t.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
   },
-  addUser: (user: Omit<User, 'id' | 'joinedDate'>) => {
+  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus'>) => {
     // Generate 8 character ID uppercase
     const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
     
@@ -201,7 +256,8 @@ export const MockService = {
       email: `${user.username}@mosolocoop.com`, // Fake default email
       address: 'Non renseigné',
       phoneNumber: 'Non renseigné',
-      loanEligible: false
+      loanEligible: false,
+      kycStatus: 'not_submitted' // Default KYC status for new users
     };
     users = [...users, newUser];
     return newUser;
@@ -327,6 +383,7 @@ export const MockService = {
     const totalUsers = users.length;
     const totalGroups = groups.length;
     const eligibleUsersCount = users.filter(u => u.loanEligible).length;
+    const pendingKYCCount = users.filter(u => u.kycStatus === 'pending').length;
     
     // Financials
     const totalDepositsValue = transactions
@@ -368,7 +425,8 @@ export const MockService = {
       topDepositors,
       growthData,
       eligibleUsersCount,
-      totalCollectedByAgents
+      totalCollectedByAgents,
+      pendingKYCCount
     };
   },
 
@@ -390,5 +448,39 @@ export const MockService = {
   getAgents: () => [...agents],
   getAgentSubmissions: (agentId: string) => {
     return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
+  },
+
+  // KYC Logic
+  getKYCSubmissions: () => {
+    // Return users who have submitted KYC (status is not 'not_submitted')
+    return users.filter(u => u.kycStatus !== 'not_submitted');
+  },
+
+  getKYCDocumentsForUser: (userId: string) => {
+    return kycDocuments.filter(doc => doc.userId === userId);
+  },
+
+  updateKYCStatus: (userId: string, newStatus: 'pending' | 'verified' | 'rejected', rejectionReason?: string) => {
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      users[userIndex].kycStatus = newStatus;
+      users[userIndex].kycVerifiedDate = newStatus === 'verified' ? new Date().toISOString().split('T')[0] : undefined;
+      
+      // Update associated KYC documents if any
+      kycDocuments = kycDocuments.map(doc => {
+        if (doc.userId === userId && doc.status === 'pending') { // Only update pending documents
+          return {
+            ...doc,
+            status: newStatus === 'verified' ? 'approved' : 'rejected',
+            reviewDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            reviewerId: adminProfile.username,
+            rejectionReason: newStatus === 'rejected' ? rejectionReason : undefined
+          };
+        }
+        return doc;
+      });
+      return true;
+    }
+    return false;
   }
 };
