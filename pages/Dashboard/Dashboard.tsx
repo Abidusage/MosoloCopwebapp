@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -300,7 +298,7 @@ const Dashboard: React.FC = () => {
     if(window.confirm(`Voulez-vous ${user.loanEligible ? 'retirer' : 'accorder'} l'éligibilité au prêt pour ${user.fullName} ?`)) {
       MockService.toggleLoanEligibility(user.id);
       setUsers(MockService.getUsers());
-      setTransactions(MockService.getTransactions());
+      setTransactions(MockService.getTransactions()); // Refresh transaction history
       // Refresh stats if we are on stats page (though we are likely on users page)
       if (currentView === 'statistics') setStats(MockService.getGlobalStats());
     }
@@ -364,7 +362,7 @@ const Dashboard: React.FC = () => {
                   </button>
                   <button 
                     onClick={() => setCurrentView('users')}
-                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm"
+                    className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
                   >
                     <Wallet className="h-4 w-4" /> Dépôt Rapide
                   </button>
@@ -374,8 +372,8 @@ const Dashboard: React.FC = () => {
             {/* KPIs Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                <div className="p-3 sm:p-4 bg-emerald-100 rounded-lg">
-                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-600" />
+                <div className="p-3 sm:p-4 bg-gray-200 rounded-lg">
+                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Solde Total</p>
@@ -384,8 +382,8 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                <div className="p-3 sm:p-4 bg-blue-100 rounded-lg">
-                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                <div className="p-3 sm:p-4 bg-gray-200 rounded-lg">
+                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Clients Actifs</p>
@@ -394,8 +392,8 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                <div className="p-3 sm:p-4 bg-purple-100 rounded-lg">
-                  <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+                <div className="p-3 sm:p-4 bg-gray-200 rounded-lg">
+                  <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Groupes Tontine</p>
@@ -405,8 +403,8 @@ const Dashboard: React.FC = () => {
 
               {/* Alert / Pending Card */}
               <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setCurrentView('agents')}>
-                <div className="p-3 sm:p-4 bg-amber-100 rounded-lg relative">
-                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-amber-600" />
+                <div className="p-3 sm:p-4 bg-yellow-100 rounded-lg relative">
+                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-700" />
                   {pendingSubmissionsCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white"></span>
                   )}
@@ -415,7 +413,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-sm text-gray-500 font-medium">En Attente</p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
                     {pendingSubmissionsCount} 
-                    <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Actions requises</span>
+                    <span className="text-xs font-normal text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded-full">Actions requises</span>
                   </p>
                 </div>
               </div>
@@ -429,13 +427,13 @@ const Dashboard: React.FC = () => {
                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                      <Activity className="h-5 w-5 text-gray-500" /> Dernières Transactions
                    </h3>
-                   <button onClick={() => setCurrentView('transactions')} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Voir tout</button>
+                   <button onClick={() => setCurrentView('transactions')} className="text-sm text-gray-700 hover:text-gray-800 font-medium">Voir tout</button>
                  </div>
                  <div className="divide-y divide-gray-100">
                    {transactions.slice(0, 5).map((tx) => (
                      <div key={tx.id} className="px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
                        <div className="flex items-center gap-3">
-                         <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-emerald-100 text-emerald-600' : tx.type === 'loan_eligibility' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
+                         <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
                            {tx.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> : tx.type === 'loan_eligibility' ? <Shield className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
                          </div>
                          <div>
@@ -444,7 +442,7 @@ const Dashboard: React.FC = () => {
                          </div>
                        </div>
                        <div className="text-right">
-                         <p className={`text-sm font-bold ${tx.status === 'failed' ? 'text-gray-400 line-through' : (tx.type === 'deposit' ? 'text-emerald-600' : 'text-gray-900')}`}>
+                         <p className={`text-sm font-bold ${tx.status === 'failed' ? 'text-gray-400 line-through' : (tx.type === 'deposit' ? 'text-green-600' : 'text-gray-900')}`}>
                            {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
                          </p>
                          <span className={`text-[10px] ${tx.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
@@ -477,13 +475,13 @@ const Dashboard: React.FC = () => {
                        </div>
                        <div className="text-right">
                          <p className="text-sm font-bold text-gray-900">{user.depositAmount.toLocaleString()} FCFA</p>
-                         <p className="text-xs text-emerald-600">Solde initial</p>
+                         <p className="text-xs text-green-600">Solde initial</p>
                        </div>
                      </div>
                    ))}
                  </div>
                  <div className="bg-gray-50 px-6 py-3 text-center border-t border-gray-100">
-                    <button onClick={() => setCurrentView('users')} className="text-sm text-gray-500 hover:text-emerald-600 font-medium">Gérer tous les clients</button>
+                    <button onClick={() => setCurrentView('users')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Gérer tous les clients</button>
                  </div>
                </div>
             </div>
@@ -511,7 +509,7 @@ const Dashboard: React.FC = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                         <FileCheck className="h-5 w-5 text-emerald-600" />
+                         <FileCheck className="h-5 w-5 text-gray-700" />
                          Rapports de Terrain envoyés par {viewingAgent.fullName}
                       </h3>
                       <span className="text-sm text-gray-500">{agentSubmissions.length} formulaires</span>
@@ -564,7 +562,7 @@ const Dashboard: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                    {sub.status === 'approved' ? (
-                                     <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
+                                     <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
                                        <CheckCircle className="h-4 w-4" /> Approuvé
                                      </span>
                                    ) : sub.status === 'pending' ? (
@@ -595,7 +593,7 @@ const Dashboard: React.FC = () => {
           <div className="space-y-8">
              <div className="flex justify-between items-center">
                <h2 className="text-2xl font-bold text-gray-800">Nos Partenaires / Agents</h2>
-               <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 flex items-center gap-2">
+               <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2">
                  <Plus className="h-4 w-4" /> Nouvel Agent
                </button>
              </div>
@@ -619,7 +617,7 @@ const Dashboard: React.FC = () => {
                      
                      <div className="space-y-3 mb-6 flex-1">
                         <div className="flex items-center text-sm text-gray-600 gap-2">
-                           <MapPin className="h-4 w-4 text-emerald-500" />
+                           <MapPin className="h-4 w-4 text-gray-700" />
                            <span>Zone: <strong>{agent.zone}</strong></span>
                         </div>
                         <div className="flex items-center text-sm text-gray-600 gap-2">
@@ -634,7 +632,7 @@ const Dashboard: React.FC = () => {
 
                      <button 
                        onClick={() => handleViewAgent(agent)}
-                       className="w-full bg-emerald-50 text-emerald-700 py-2 rounded-lg font-medium hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2"
+                       className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
                      >
                         <FileText className="h-4 w-4" />
                         Voir activité terrain
@@ -659,17 +657,17 @@ const Dashboard: React.FC = () => {
              {/* KPIs Top Row */}
              {stats && (
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                 <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 p-6 rounded-xl shadow-lg text-white">
+                 <div className="bg-gradient-to-br from-gray-700 to-gray-900 p-6 rounded-xl shadow-lg text-white">
                    <div className="flex justify-between items-start mb-4">
                      <div>
-                       <p className="text-emerald-100 text-sm font-medium">Solde Total Géré</p>
+                       <p className="text-gray-300 text-sm font-medium">Solde Total Géré</p>
                        <h3 className="text-2xl font-bold mt-1">{MockService.getTotalDeposits().toLocaleString()}</h3>
                      </div>
-                     <div className="bg-emerald-400/30 p-2 rounded-lg">
+                     <div className="bg-gray-600/30 p-2 rounded-lg">
                        <Wallet className="h-6 w-6 text-white" />
                      </div>
                    </div>
-                   <div className="flex items-center text-xs text-emerald-100 bg-emerald-800/20 w-fit px-2 py-1 rounded">
+                   <div className="flex items-center text-xs text-gray-300 bg-gray-800/20 w-fit px-2 py-1 rounded">
                      <TrendingUp className="h-3 w-3 mr-1" /> +12% ce mois
                    </div>
                  </div>
@@ -680,11 +678,11 @@ const Dashboard: React.FC = () => {
                        <p className="text-gray-500 text-sm font-medium">Éligibles Crédit</p>
                        <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.eligibleUsersCount}</h3>
                      </div>
-                     <div className="bg-indigo-100 p-2 rounded-lg">
-                       <CreditCard className="h-6 w-6 text-indigo-600" />
+                     <div className="bg-blue-100 p-2 rounded-lg">
+                       <CreditCard className="h-6 w-6 text-blue-600" />
                      </div>
                    </div>
-                   <p className="text-xs text-indigo-600 font-medium">Potentiels Emprunteurs</p>
+                   <p className="text-xs text-blue-600 font-medium">Potentiels Emprunteurs</p>
                  </div>
 
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -693,8 +691,8 @@ const Dashboard: React.FC = () => {
                        <p className="text-gray-500 text-sm font-medium">Taux de Succès</p>
                        <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.successRate}%</h3>
                      </div>
-                     <div className="bg-purple-100 p-2 rounded-lg">
-                       <Target className="h-6 w-6 text-purple-600" />
+                     <div className="bg-gray-200 p-2 rounded-lg">
+                       <Target className="h-6 w-6 text-gray-700" />
                      </div>
                    </div>
                    <p className="text-xs text-gray-400">Sur {stats.totalTransactions} transactions</p>
@@ -706,8 +704,8 @@ const Dashboard: React.FC = () => {
                        <p className="text-gray-500 text-sm font-medium">Groupes Tontine</p>
                        <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalGroups}</h3>
                      </div>
-                     <div className="bg-amber-100 p-2 rounded-lg">
-                       <Layers className="h-6 w-6 text-amber-600" />
+                     <div className="bg-gray-200 p-2 rounded-lg">
+                       <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
                      </div>
                    </div>
                    <p className="text-xs text-gray-400">Actifs en cours</p>
@@ -743,10 +741,10 @@ const Dashboard: React.FC = () => {
                        <div>
                          <div className="flex justify-between text-sm mb-1">
                            <span className="font-medium text-gray-700">Volume Global Dépôts</span>
-                           <span className="font-bold text-emerald-600">{stats.totalDepositsValue.toLocaleString()} FCFA</span>
+                           <span className="font-bold text-green-600">{stats.totalDepositsValue.toLocaleString()} FCFA</span>
                          </div>
                          <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
-                           <div className="bg-emerald-500 h-4 rounded-full" style={{ width: '85%' }}></div>
+                           <div className="bg-green-500 h-4 rounded-full" style={{ width: '85%' }}></div>
                          </div>
                        </div>
 
@@ -768,7 +766,7 @@ const Dashboard: React.FC = () => {
                              {stats.growthData.map((data: any, i: number) => (
                                <div key={i} className="flex flex-col items-center w-full">
                                   <div 
-                                    className="w-full max-w-[40px] bg-indigo-500 rounded-t-md hover:bg-indigo-600 transition-colors relative group"
+                                    className="w-full max-w-[40px] bg-blue-500 rounded-t-md hover:bg-blue-600 transition-colors relative group"
                                     style={{ height: `${data.users * 10}%` }}
                                   >
                                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
@@ -789,7 +787,7 @@ const Dashboard: React.FC = () => {
                    {/* Top Depositors */}
                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                       <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <ArrowUpRight className="h-5 w-5 text-emerald-600" />
+                        <ArrowUpRight className="h-5 w-5 text-gray-700" />
                         Top Épargnants
                       </h3>
                       <div className="space-y-4">
@@ -807,7 +805,7 @@ const Dashboard: React.FC = () => {
                                <p className="text-xs text-gray-500 truncate">@{user.username}</p>
                              </div>
                              <div className="text-right">
-                               <p className="text-sm font-bold text-emerald-600">{user.depositAmount.toLocaleString()}</p>
+                               <p className="text-sm font-bold text-green-600">{user.depositAmount.toLocaleString()}</p>
                              </div>
                           </div>
                         ))}
@@ -817,16 +815,16 @@ const Dashboard: React.FC = () => {
                    {/* Status Distribution */}
                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                       <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                         <PieChart className="h-5 w-5 text-blue-600" />
+                         <PieChart className="h-5 w-5 text-gray-700" />
                          Répartition
                       </h3>
                       <div className="flex items-center justify-center py-4">
-                         <div className="relative w-32 h-32 rounded-full border-[8px] border-emerald-500 flex items-center justify-center shadow-inner">
+                         <div className="relative w-32 h-32 rounded-full border-[8px] border-gray-700 flex items-center justify-center shadow-inner">
                             <span className="text-2xl font-bold text-gray-800">100%</span>
                          </div>
                       </div>
                       <div className="text-center text-sm text-gray-500">
-                        Tous les clients sont <span className="text-emerald-600 font-bold">Actifs</span>
+                        Tous les clients sont <span className="text-gray-800 font-bold">Actifs</span>
                       </div>
                    </div>
                 </div>
@@ -841,7 +839,7 @@ const Dashboard: React.FC = () => {
                <h2 className="text-2xl font-bold text-gray-800">Paramètres Système</h2>
                <button 
                 onClick={handleSaveSettings}
-                className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-gray-800 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-sm"
                >
                  <Save className="h-4 w-4" />
                  Enregistrer
@@ -853,7 +851,7 @@ const Dashboard: React.FC = () => {
                  {/* General Settings */}
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
-                       <Globe className="h-5 w-5 text-emerald-600" />
+                       <Globe className="h-5 w-5 text-gray-700" />
                        Général & Contact
                     </h3>
                     <div className="space-y-4">
@@ -863,7 +861,7 @@ const Dashboard: React.FC = () => {
                            type="text" 
                            value={settings.siteName}
                            onChange={(e) => setSettings({...settings, siteName: e.target.value})}
-                           className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                           className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                          />
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -873,7 +871,7 @@ const Dashboard: React.FC = () => {
                              type="email" 
                              value={settings.supportEmail}
                              onChange={(e) => setSettings({...settings, supportEmail: e.target.value})}
-                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                            />
                          </div>
                          <div>
@@ -882,7 +880,7 @@ const Dashboard: React.FC = () => {
                              type="text" 
                              value={settings.supportPhone}
                              onChange={(e) => setSettings({...settings, supportPhone: e.target.value})}
-                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                             className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                            />
                          </div>
                        </div>
@@ -894,7 +892,7 @@ const Dashboard: React.FC = () => {
                                onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
                                className="sr-only peer"
                              />
-                             <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                             <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-800"></div>
                              <span className="ms-3 text-sm font-medium text-gray-700">Mode Maintenance</span>
                           </label>
                           <p className="text-xs text-gray-500 mt-1 ml-14">Si activé, seuls les administrateurs pourront accéder au site.</p>
@@ -905,7 +903,7 @@ const Dashboard: React.FC = () => {
                  {/* Financial Settings */}
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
-                       <DollarSign className="h-5 w-5 text-amber-600" />
+                       <DollarSign className="h-5 w-5 text-gray-700" />
                        Configuration Financière
                     </h3>
                     <div className="space-y-4">
@@ -914,7 +912,7 @@ const Dashboard: React.FC = () => {
                          <select 
                            value={settings.defaultCurrency}
                            onChange={(e) => setSettings({...settings, defaultCurrency: e.target.value})}
-                           className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                           className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                          >
                            <option value="FCFA">FCFA (XOF)</option>
                            <option value="EUR">Euro (€)</option>
@@ -930,7 +928,7 @@ const Dashboard: React.FC = () => {
                                step="0.1"
                                value={settings.loanInterestRate}
                                onChange={(e) => setSettings({...settings, loanInterestRate: parseFloat(e.target.value)})}
-                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                              />
                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
                            </div>
@@ -943,7 +941,7 @@ const Dashboard: React.FC = () => {
                                step="0.1"
                                value={settings.tontineCommission}
                                onChange={(e) => setSettings({...settings, tontineCommission: parseFloat(e.target.value)})}
-                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                              />
                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
                            </div>
@@ -956,7 +954,7 @@ const Dashboard: React.FC = () => {
                                step="0.1"
                                value={settings.agentCommission}
                                onChange={(e) => setSettings({...settings, agentCommission: parseFloat(e.target.value)})}
-                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                              />
                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
                            </div>
@@ -968,7 +966,7 @@ const Dashboard: React.FC = () => {
                  {/* Security & System */}
                  <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-800 mb-6 flex items-center gap-2 pb-2 border-b border-gray-100">
-                       <Shield className="h-5 w-5 text-indigo-600" />
+                       <Shield className="h-5 w-5 text-gray-700" />
                        Sécurité & Notifications
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -980,7 +978,7 @@ const Dashboard: React.FC = () => {
                                type="number" 
                                value={settings.minPasswordLength}
                                onChange={(e) => setSettings({...settings, minPasswordLength: parseInt(e.target.value)})}
-                               className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                               className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                              />
                           </div>
                           <div>
@@ -991,7 +989,7 @@ const Dashboard: React.FC = () => {
                                  onChange={(e) => setSettings({...settings, enableTwoFactor: e.target.checked})}
                                  className="sr-only peer"
                                />
-                               <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                               <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-800"></div>
                                <span className="ms-3 text-sm font-medium text-gray-700">Authentification à deux facteurs (2FA)</span>
                             </label>
                             <p className="text-xs text-gray-500 mt-1 ml-14">Obligatoire pour tous les comptes administrateurs.</p>
@@ -1008,7 +1006,7 @@ const Dashboard: React.FC = () => {
                                  onChange={(e) => setSettings({...settings, emailNotifications: e.target.checked})}
                                  className="sr-only peer"
                                />
-                               <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                               <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-800"></div>
                                <span className="ms-3 text-sm font-medium text-gray-700">Notifications Email</span>
                             </label>
                             <p className="text-xs text-gray-500 mt-1 ml-14">Recevoir des alertes lors de nouvelles inscriptions ou transactions suspectes.</p>
@@ -1035,7 +1033,7 @@ const Dashboard: React.FC = () => {
                 <input 
                   type="text" 
                   placeholder="Nom complet" 
-                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                   value={newUser.fullName}
                   onChange={e => setNewUser({...newUser, fullName: e.target.value})}
                   required
@@ -1043,7 +1041,7 @@ const Dashboard: React.FC = () => {
                 <input 
                   type="text" 
                   placeholder="Nom d'utilisateur (Pseudo)" 
-                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                   value={newUser.username}
                   onChange={e => setNewUser({...newUser, username: e.target.value})}
                   required
@@ -1051,7 +1049,7 @@ const Dashboard: React.FC = () => {
                 <input 
                   type="password" 
                   placeholder="Mot de passe" 
-                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                   value={newUser.password}
                   onChange={e => setNewUser({...newUser, password: e.target.value})}
                   required
@@ -1059,11 +1057,11 @@ const Dashboard: React.FC = () => {
                 <input 
                   type="number" 
                   placeholder="Dépôt initial (FCFA)" 
-                  className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                   value={newUser.depositAmount || ''}
                   onChange={e => setNewUser({...newUser, depositAmount: Number(e.target.value)})}
                 />
-                <button type="submit" className="md:col-span-2 bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors w-full">
+                <button type="submit" className="md:col-span-2 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors w-full">
                   Enregistrer le client
                 </button>
               </form>
@@ -1083,7 +1081,7 @@ const Dashboard: React.FC = () => {
                         setUserSearchTerm(e.target.value);
                         setCurrentPage(1); // Reset to page 1 on search
                       }}
-                      className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-emerald-500" 
+                      className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-gray-500" 
                    />
                  </div>
                </div>
@@ -1114,13 +1112,13 @@ const Dashboard: React.FC = () => {
                                  {user.joinedDate}
                               </div>
                            </td>
-                           <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-bold">{user.depositAmount.toLocaleString()}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-bold">{user.depositAmount.toLocaleString()}</td>
                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
                              <button 
                               onClick={() => toggleUserLoanEligibility(user)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
                                 user.loanEligible 
-                                  ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' 
+                                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200' 
                                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-200'
                               }`}
                               title={user.loanEligible ? "Désactiver le prêt" : "Rendre éligible au prêt"}
@@ -1131,7 +1129,7 @@ const Dashboard: React.FC = () => {
 
                              <button 
                               onClick={() => openDepositModal(user)}
-                              className="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 transition-colors shadow-sm text-xs sm:text-sm font-medium"
+                              className="inline-flex items-center gap-1.5 bg-gray-800 text-white px-3 py-1.5 rounded-md hover:bg-gray-900 transition-colors shadow-sm text-xs sm:text-sm font-medium"
                               title="Faire un dépôt"
                              >
                                <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Dépôt
@@ -1184,7 +1182,7 @@ const Dashboard: React.FC = () => {
                                   onClick={() => handlePageChange(number)}
                                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                                     currentPage === number
-                                      ? 'z-10 bg-emerald-50 border-emerald-500 text-emerald-600'
+                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
                                       : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                                   }`}
                                >
@@ -1251,21 +1249,21 @@ const Dashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
-                    <Calendar className="h-5 w-5 text-emerald-600" />
+                    <Calendar className="h-5 w-5 text-gray-700" />
                     <span className="text-gray-500 text-sm font-medium">Date de création</span>
                   </div>
                   <p className="text-xl font-bold text-gray-900">{viewingGroup.createdAt}</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
-                    <Users className="h-5 w-5 text-blue-600" />
+                    <Users className="h-5 w-5 text-gray-700" />
                     <span className="text-gray-500 text-sm font-medium">Membres</span>
                   </div>
                   <p className="text-xl font-bold text-gray-900">{viewingGroup.memberCount} Participants</p>
                 </div>
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
-                    <DollarSign className="h-5 w-5 text-amber-600" />
+                    <DollarSign className="h-5 w-5 text-gray-700" />
                     <span className="text-gray-500 text-sm font-medium">Objectif Cible</span>
                   </div>
                   <p className="text-xl font-bold text-gray-900">{viewingGroup.targetAmount.toLocaleString()} FCFA</p>
@@ -1285,7 +1283,7 @@ const Dashboard: React.FC = () => {
                       <h3 className="text-lg font-semibold text-gray-800">Membres du groupe</h3>
                       <button 
                           onClick={() => openAddMemberModal(viewingGroup)}
-                          className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                          className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
                         >
                           <UserPlus className="h-4 w-4" />
                           Ajouter
@@ -1306,7 +1304,7 @@ const Dashboard: React.FC = () => {
                               <tr key={user.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                      <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold mr-3">
+                                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-3">
                                         {user.fullName.charAt(0)}
                                       </div>
                                       <div>
@@ -1315,7 +1313,7 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-semibold">{user.depositAmount.toLocaleString()} FCFA</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold">{user.depositAmount.toLocaleString()} FCFA</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1331,7 +1329,7 @@ const Dashboard: React.FC = () => {
                  {/* Group Chat Section */}
                  <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[500px]">
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-2 rounded-t-xl">
-                      <MessageSquare className="h-5 w-5 text-emerald-600" />
+                      <MessageSquare className="h-5 w-5 text-gray-700" />
                       <h3 className="font-semibold text-gray-800">Discussion de Groupe</h3>
                     </div>
                     
@@ -1341,7 +1339,7 @@ const Dashboard: React.FC = () => {
                           <div key={msg.id} className={`flex flex-col ${msg.isAdmin ? 'items-end' : 'items-start'}`}>
                             <div className={`max-w-[85%] rounded-2xl p-3 shadow-sm ${
                               msg.isAdmin 
-                                ? 'bg-emerald-600 text-white rounded-tr-none' 
+                                ? 'bg-gray-800 text-white rounded-tr-none' 
                                 : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
                             }`}>
                               <p className="text-sm">{msg.content}</p>
@@ -1368,12 +1366,12 @@ const Dashboard: React.FC = () => {
                           value={chatInput}
                           onChange={(e) => setChatInput(e.target.value)}
                           placeholder="Écrire un message..."
-                          className="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                          className="flex-1 bg-gray-100 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-gray-500 outline-none"
                         />
                         <button 
                           type="submit"
                           disabled={!chatInput.trim()}
-                          className="bg-emerald-600 text-white p-2 rounded-full hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="bg-gray-800 text-white p-2 rounded-full hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           <Send className="h-4 w-4" />
                         </button>
@@ -1400,7 +1398,7 @@ const Dashboard: React.FC = () => {
                   <input 
                     type="text" 
                     placeholder="Nom du groupe" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                     value={newGroup.name}
                     onChange={e => setNewGroup({...newGroup, name: e.target.value})}
                     required
@@ -1408,7 +1406,7 @@ const Dashboard: React.FC = () => {
                   <input 
                     type="number" 
                     placeholder="Objectif (Montant Cible)" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
+                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                     value={newGroup.targetAmount || ''}
                     onChange={e => setNewGroup({...newGroup, targetAmount: Number(e.target.value)})}
                     required
@@ -1416,12 +1414,12 @@ const Dashboard: React.FC = () => {
                 </div>
                 <textarea 
                   placeholder="Description du groupe..." 
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none"
                   rows={3}
                   value={newGroup.description}
                   onChange={e => setNewGroup({...newGroup, description: e.target.value})}
                 ></textarea>
-                <button type="submit" className="w-full md:w-auto px-8 bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors">
+                <button type="submit" className="w-full md:w-auto px-8 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors">
                   Créer le groupe
                 </button>
               </form>
@@ -1433,8 +1431,8 @@ const Dashboard: React.FC = () => {
                 <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-start mb-4">
-                      <div className="bg-emerald-100 p-2 rounded-lg">
-                        <Layers className="h-6 w-6 text-emerald-600" />
+                      <div className="bg-gray-200 p-2 rounded-lg">
+                        <Layers className="h-6 w-6 text-gray-700" />
                       </div>
                       <span className="bg-gray-100 text-gray-600 py-1 px-3 rounded-full text-xs font-medium">
                         {group.createdAt}
@@ -1446,7 +1444,7 @@ const Dashboard: React.FC = () => {
                       <span className="text-gray-600">
                         <strong>{group.memberCount}</strong> Membres
                       </span>
-                      <span className="text-emerald-600 font-semibold">
+                      <span className="text-gray-800 font-semibold">
                         Obj: {group.targetAmount.toLocaleString()} FCFA
                       </span>
                     </div>
@@ -1455,14 +1453,14 @@ const Dashboard: React.FC = () => {
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handleViewGroup(group)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
                     >
                       <Eye className="h-4 w-4" />
                       Voir détails
                     </button>
                     <button 
                       onClick={() => openAddMemberModal(group)}
-                      className="px-3 border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors"
+                      className="px-3 border border-gray-800 text-gray-800 rounded-lg hover:bg-gray-100 transition-colors"
                       title="Ajouter un membre rapide"
                     >
                       <UserPlus className="h-4 w-4" />
@@ -1496,7 +1494,7 @@ const Dashboard: React.FC = () => {
                         placeholder="Rechercher (Nom, ID)..." 
                         value={transactionSearch}
                         onChange={(e) => setTransactionSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" 
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
                       />
                    </div>
                    
@@ -1505,7 +1503,7 @@ const Dashboard: React.FC = () => {
                       <select 
                         value={transactionFilterType}
                         onChange={(e) => setTransactionFilterType(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none bg-white"
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les types</option>
                         <option value="deposit">Dépôts</option>
@@ -1519,7 +1517,7 @@ const Dashboard: React.FC = () => {
                       <select 
                         value={transactionFilterStatus}
                         onChange={(e) => setTransactionFilterStatus(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none bg-white"
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les statuts</option>
                         <option value="success">Succès</option>
@@ -1548,7 +1546,7 @@ const Dashboard: React.FC = () => {
                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm">
                            {tx.type === 'deposit' && (
-                             <div className="flex items-center gap-2 text-emerald-600">
+                             <div className="flex items-center gap-2 text-green-600">
                                <ArrowUpRight className="h-4 w-4" />
                                <span>Dépôt</span>
                              </div>
@@ -1560,7 +1558,7 @@ const Dashboard: React.FC = () => {
                              </div>
                            )}
                            {tx.type === 'loan_eligibility' && (
-                             <div className="flex items-center gap-2 text-indigo-600">
+                             <div className="flex items-center gap-2 text-blue-600">
                                <Shield className="h-4 w-4" />
                                <span>Éligibilité</span>
                              </div>
@@ -1602,8 +1600,8 @@ const Dashboard: React.FC = () => {
           <div className="max-w-2xl mx-auto space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Mon Profil Admin</h2>
             
-            <div className="bg-white rounded-xl shadow-lg border border-emerald-100 overflow-hidden">
-              <div className="bg-emerald-600 h-24 sm:h-32 relative">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+              <div className="bg-gray-800 h-24 sm:h-32 relative">
                 <div className="absolute -bottom-10 sm:-bottom-12 left-6 sm:left-8">
                   <div className="h-20 w-20 sm:h-24 sm:w-24 bg-white rounded-full p-1 shadow-md">
                      <div className="h-full w-full bg-gray-200 rounded-full flex items-center justify-center">
@@ -1621,7 +1619,7 @@ const Dashboard: React.FC = () => {
                         type="text" 
                         value={profileForm.fullName}
                         onChange={e => setProfileForm({...profileForm, fullName: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-emerald-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
                        />
                      </div>
                      <div>
@@ -1630,18 +1628,18 @@ const Dashboard: React.FC = () => {
                         type="email" 
                         value={profileForm.email}
                         onChange={e => setProfileForm({...profileForm, email: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-emerald-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
                        />
                      </div>
                      <div className="flex gap-4 pt-4">
-                       <button type="submit" className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 text-sm font-medium">Enregistrer</button>
+                       <button type="submit" className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-900 text-sm font-medium">Enregistrer</button>
                        <button type="button" onClick={() => setIsEditProfile(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm font-medium">Annuler</button>
                      </div>
                   </form>
                 ) : (
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{adminProfile?.fullName}</h1>
-                    <p className="text-emerald-600 font-medium text-sm">{adminProfile?.role.toUpperCase()}</p>
+                    <p className="text-gray-700 font-medium text-sm">{adminProfile?.role.toUpperCase()}</p>
                     <div className="mt-6 space-y-4">
                       <div className="flex items-center text-gray-600 text-sm sm:text-base">
                         <UserCircle className="h-5 w-5 mr-3" />
@@ -1654,7 +1652,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <button 
                       onClick={() => setIsEditProfile(true)}
-                      className="mt-8 w-full border border-emerald-600 text-emerald-600 rounded-lg py-2 hover:bg-emerald-50 transition-colors text-sm font-medium"
+                      className="mt-8 w-full border border-gray-800 text-gray-800 rounded-lg py-2 hover:bg-gray-100 transition-colors text-sm font-medium"
                     >
                       Modifier le profil
                     </button>
@@ -1685,7 +1683,7 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Wallet className="h-6 w-6 text-emerald-600" />
+                <Wallet className="h-6 w-6 text-gray-700" />
                 Faire un dépôt
               </h3>
               <button onClick={() => setIsDepositModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -1694,7 +1692,7 @@ const Dashboard: React.FC = () => {
             </div>
             
             <form onSubmit={handleSubmitDeposit} className="space-y-4">
-              <div className="bg-emerald-50 p-4 rounded-lg mb-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
                 <p className="text-sm text-gray-500 mb-1">Bénéficiaire</p>
                 <p className="text-lg font-bold text-gray-800">{selectedUserForDeposit.fullName}</p>
                 <p className="text-xs text-gray-500">ID: {selectedUserForDeposit.username}</p>
@@ -1712,7 +1710,7 @@ const Dashboard: React.FC = () => {
                     required
                     value={depositAmount}
                     onChange={(e) => setDepositAmount(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-lg"
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
                     placeholder="0"
                   />
                 </div>
@@ -1728,7 +1726,7 @@ const Dashboard: React.FC = () => {
                     type="text"
                     value={depositNote}
                     onChange={(e) => setDepositNote(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                     placeholder="Ex: Dépôt espèce guichet"
                   />
                 </div>
@@ -1744,7 +1742,7 @@ const Dashboard: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
                 >
                   Confirmer le dépôt
                 </button>
@@ -1759,22 +1757,22 @@ const Dashboard: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
              {/* Header */}
-             <div className="bg-emerald-600 px-6 py-6 flex justify-between items-start">
+             <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
                <div className="flex items-center gap-4">
-                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-emerald-600 text-2xl font-bold shadow-md">
+                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
                    {selectedUserForDetail.fullName.charAt(0)}
                  </div>
                  <div className="text-white">
                    <h3 className="text-2xl font-bold">{selectedUserForDetail.fullName}</h3>
-                   <p className="text-emerald-100 text-sm">@{selectedUserForDetail.username}</p>
-                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500 text-white border border-emerald-400">
+                   <p className="text-gray-300 text-sm">@{selectedUserForDetail.username}</p>
+                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-white border border-gray-600">
                      {selectedUserForDetail.status ? selectedUserForDetail.status.toUpperCase() : 'ACTIF'}
                    </span>
                  </div>
                </div>
                <button 
                 onClick={() => setIsUserDetailModalOpen(false)} 
-                className="text-emerald-100 hover:text-white bg-emerald-700 p-2 rounded-full hover:bg-emerald-800 transition-colors"
+                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
                >
                 <X className="h-5 w-5" />
                </button>
@@ -1788,7 +1786,7 @@ const Dashboard: React.FC = () => {
                  {/* Contact Card */}
                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                    <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <UserCircle className="h-4 w-4 text-emerald-600" /> Informations Personnelles
+                     <UserCircle className="h-4 w-4 text-gray-700" /> Informations Personnelles
                    </h4>
                    <div className="space-y-3 text-sm">
                      <div className="flex items-start gap-3">
@@ -1829,12 +1827,12 @@ const Dashboard: React.FC = () => {
                  {/* Balance Card */}
                  <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
                    <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <Wallet className="h-4 w-4 text-emerald-600" /> Solde du Compte
+                     <Wallet className="h-4 w-4 text-gray-700" /> Solde du Compte
                    </h4>
                    <div className="flex flex-col h-full justify-center pb-4">
                      <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
-                     <span className="text-3xl font-bold text-emerald-600 tracking-tight">
-                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-emerald-400">FCFA</span>
+                     <span className="text-3xl font-bold text-gray-800 tracking-tight">
+                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FCFA</span>
                      </span>
                      <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
                        <span className="text-gray-500">Membre depuis</span>
@@ -1848,7 +1846,7 @@ const Dashboard: React.FC = () => {
                <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                  <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                     <h4 className="text-gray-800 font-semibold flex items-center gap-2 text-sm">
-                      <Activity className="h-4 w-4 text-emerald-600" /> Dernières Transactions
+                      <Activity className="h-4 w-4 text-gray-700" /> Dernières Transactions
                     </h4>
                     <span className="text-xs text-gray-500">5 dernières</span>
                  </div>
@@ -1857,7 +1855,7 @@ const Dashboard: React.FC = () => {
                      selectedUserTransactions.slice(0, 5).map(tx => (
                        <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
                          <div className="flex items-center gap-3">
-                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-emerald-100 text-emerald-600' : tx.type === 'loan_eligibility' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
+                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
                              {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
                            </div>
                            <div>
@@ -1868,7 +1866,7 @@ const Dashboard: React.FC = () => {
                            </div>
                          </div>
                          <div className="text-right">
-                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-emerald-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
+                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
                              {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
                            </p>
                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -1902,7 +1900,7 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
              <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Users className="h-6 w-6 text-emerald-600" />
+                <Users className="h-6 w-6 text-gray-700" />
                 Ajouter un membre
               </h3>
               <button onClick={() => setIsAddMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -1911,7 +1909,7 @@ const Dashboard: React.FC = () => {
             </div>
             
             <form onSubmit={handleAddMemberToGroup} className="space-y-4">
-              <div className="bg-emerald-50 p-4 rounded-lg mb-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
                  <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
                  <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
                  <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
@@ -1923,7 +1921,7 @@ const Dashboard: React.FC = () => {
                    <select 
                      value={selectedMemberId} 
                      onChange={(e) => setSelectedMemberId(e.target.value)}
-                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 text-base"
+                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
                      required
                    >
                      <option value="" disabled>-- Choisir un membre --</option>
@@ -1946,7 +1944,7 @@ const Dashboard: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
                 >
                   Ajouter
                 </button>
@@ -1959,11 +1957,11 @@ const Dashboard: React.FC = () => {
       {/* Sidebar - Responsive */}
       <aside className={`
         fixed md:relative inset-y-0 left-0 z-40 md:z-auto
-        w-64 bg-emerald-900 text-white flex flex-col
+        w-64 bg-gray-900 text-white flex flex-col
         transform transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <div className="p-6 flex items-center justify-between border-b border-emerald-800">
+        <div className="p-6 flex items-center justify-between border-b border-gray-800">
           <div className="flex items-center gap-2 justify-center w-full">
             <img 
               src="/logo.png" 
@@ -1975,7 +1973,7 @@ const Dashboard: React.FC = () => {
               }}
             />
           </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-emerald-200 hover:text-white absolute right-4">
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-gray-200 hover:text-white absolute right-4">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -1983,62 +1981,62 @@ const Dashboard: React.FC = () => {
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           <button 
             onClick={() => handleNavClick('overview')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'overview' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'overview' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <LayoutDashboard className="h-5 w-5" /> Vue d'ensemble
           </button>
           
           <button 
             onClick={() => handleNavClick('users')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'users' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'users' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Users className="h-5 w-5" /> Clients
           </button>
 
           <button 
             onClick={() => handleNavClick('groups')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'groups' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'groups' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Layers className="h-5 w-5" /> Groupes
           </button>
 
           <button 
             onClick={() => handleNavClick('agents')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Briefcase className="h-5 w-5" /> Partenaires
           </button>
 
           <button 
             onClick={() => handleNavClick('transactions')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'transactions' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'transactions' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <History className="h-5 w-5" /> Historique
           </button>
           
           <button 
             onClick={() => handleNavClick('statistics')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'statistics' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'statistics' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <BarChart3 className="h-5 w-5" /> Statistiques
           </button>
           
           <button 
             onClick={() => handleNavClick('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'settings' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'settings' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Settings className="h-5 w-5" /> Paramètres
           </button>
 
           <button 
             onClick={() => handleNavClick('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'profile' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'profile' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <UserCircle className="h-5 w-5" /> Mon Profil
           </button>
         </nav>
 
-        <div className="p-4 border-t border-emerald-800">
+        <div className="p-4 border-t border-gray-800">
           <button 
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-200 hover:bg-red-900/50 hover:text-red-100 transition-colors"
@@ -2051,7 +2049,7 @@ const Dashboard: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
         {/* Mobile Header */}
-        <div className="md:hidden flex-none bg-emerald-900 text-white p-4 flex justify-between items-center shadow-md z-30">
+        <div className="md:hidden flex-none bg-gray-900 text-white p-4 flex justify-between items-center shadow-md z-30">
            <div className="flex items-center gap-2">
              <img 
                src="/logo.png" 
@@ -2064,7 +2062,7 @@ const Dashboard: React.FC = () => {
              />
            </div>
            <button 
-             className="p-2 hover:bg-emerald-800 rounded-md transition-colors" 
+             className="p-2 hover:bg-gray-800 rounded-md transition-colors" 
              onClick={() => setIsMobileMenuOpen(true)}
            >
              <Menu className="h-6 w-6" />
