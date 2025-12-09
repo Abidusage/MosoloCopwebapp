@@ -48,7 +48,11 @@ import {
   Zap,
   Banknote,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Fingerprint, // New icon for KYC
+  Clock,
+  BadgeCheck,
+  BadgeX
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission } from '../../types';
@@ -98,6 +102,14 @@ const Dashboard: React.FC = () => {
   const [selectedUserForDetail, setSelectedUserForDetail] = useState<User | null>(null);
   const [selectedUserTransactions, setSelectedUserTransactions] = useState<Transaction[]>([]);
 
+  // KYC State
+  const [kycUsers, setKycUsers] = useState<User[]>([]);
+  const [isKycDetailModalOpen, setIsKycDetailModalOpen] = useState(false);
+  const [selectedUserForKyc, setSelectedUserForKyc] = useState<User | null>(null);
+  const [kycReviewNotes, setKycReviewNotes] = useState('');
+  const [kycFilterStatus, setKycFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+
+
   // Statistics State
   const [stats, setStats] = useState<any>(null);
   const [pendingSubmissionsCount, setPendingSubmissionsCount] = useState(0);
@@ -126,6 +138,7 @@ const Dashboard: React.FC = () => {
     });
     setStats(MockService.getGlobalStats());
     setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
+    setKycUsers(MockService.getKycUsers()); // Load KYC users
   }, []);
 
   useEffect(() => {
@@ -134,7 +147,10 @@ const Dashboard: React.FC = () => {
       setStats(MockService.getGlobalStats());
       setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
     }
-  }, [currentView, transactions, users]);
+    if (currentView === 'kyc') {
+      setKycUsers(MockService.getKycUsers(kycFilterStatus === 'all' ? undefined : kycFilterStatus));
+    }
+  }, [currentView, transactions, users, kycFilterStatus]);
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -188,6 +204,7 @@ const Dashboard: React.FC = () => {
     // Reset specific view states
     setViewingGroup(null);
     setViewingAgent(null);
+    setSelectedUserForKyc(null); // Reset selected KYC user
     // Reset pagination when switching views
     setCurrentPage(1);
     setUserSearchTerm('');
@@ -301,6 +318,30 @@ const Dashboard: React.FC = () => {
       setTransactions(MockService.getTransactions()); // Refresh transaction history
       // Refresh stats if we are on stats page (though we are likely on users page)
       if (currentView === 'statistics') setStats(MockService.getGlobalStats());
+    }
+  };
+
+  // KYC Functions
+  const openKycDetailModal = (user: User) => {
+    setSelectedUserForKyc(user);
+    setKycReviewNotes(user.kycDetails?.reviewNotes || '');
+    setIsKycDetailModalOpen(true);
+  };
+
+  const handleUpdateKycStatus = (status: 'approved' | 'rejected') => {
+    if (selectedUserForKyc) {
+      const success = MockService.updateKycStatus(selectedUserForKyc.id, status, kycReviewNotes);
+      if (success) {
+        setUsers(MockService.getUsers()); // Refresh all users
+        setKycUsers(MockService.getKycUsers(kycFilterStatus === 'all' ? undefined : kycFilterStatus)); // Refresh KYC list
+        setTransactions(MockService.getTransactions()); // Refresh transactions
+        setIsKycDetailModalOpen(false);
+        setSelectedUserForKyc(null);
+        setKycReviewNotes('');
+        alert(`Statut KYC de ${selectedUserForKyc.fullName} mis à jour à "${status}"`);
+      } else {
+        alert("Erreur lors de la mise à jour du statut KYC.");
+      }
     }
   };
 
@@ -1509,6 +1550,7 @@ const Dashboard: React.FC = () => {
                         <option value="deposit">Dépôts</option>
                         <option value="withdrawal">Retraits</option>
                         <option value="loan_eligibility">Crédit / Éligibilité</option>
+                        <option value="kyc_review">Vérification KYC</option>
                       </select>
                    </div>
 
@@ -1563,9 +1605,15 @@ const Dashboard: React.FC = () => {
                                <span>Éligibilité</span>
                              </div>
                            )}
+                           {tx.type === 'kyc_review' && (
+                             <div className="flex items-center gap-2 text-purple-600">
+                               <Fingerprint className="h-4 w-4" />
+                               <span>KYC</span>
+                             </div>
+                           )}
                          </td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                           {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                           {tx.type === 'loan_eligibility' || tx.type === 'kyc_review' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
                          </td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm">
                            {tx.status === 'success' ? (
@@ -1591,6 +1639,99 @@ const Dashboard: React.FC = () => {
                    </tbody>
                  </table>
                </div>
+            </div>
+          </div>
+        );
+
+      case 'kyc':
+        return (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Vérification KYC</h2>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h3 className="text-lg font-semibold text-gray-800">Statut de vérification des clients</h3>
+                <div className="relative w-full sm:w-auto">
+                  <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <select
+                    value={kycFilterStatus}
+                    onChange={(e) => setKycFilterStatus(e.target.value as 'all' | 'pending' | 'approved' | 'rejected')}
+                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
+                  >
+                    <option value="all">Tous les statuts</option>
+                    <option value="pending">En attente</option>
+                    <option value="approved">Approuvé</option>
+                    <option value="rejected">Rejeté</option>
+                  </select>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type Document</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numéro Document</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Soumission</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut KYC</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {kycUsers.length > 0 ? (
+                      kycUsers.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                            <div className="text-xs text-gray-500">@{user.username}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {user.kycDetails?.idDocumentType || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {user.kycDetails?.idDocumentNumber || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {user.kycDetails?.submissionDate || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {user.kycStatus === 'approved' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <BadgeCheck className="h-3 w-3" /> Approuvé
+                              </span>
+                            )}
+                            {user.kycStatus === 'pending' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <Clock className="h-3 w-3" /> En attente
+                              </span>
+                            )}
+                            {user.kycStatus === 'rejected' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <BadgeX className="h-3 w-3" /> Rejeté
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => openKycDetailModal(user)}
+                              className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
+                              title="Voir les détails KYC"
+                            >
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                          Aucun client trouvé avec ce statut KYC.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         );
@@ -1911,7 +2052,7 @@ const Dashboard: React.FC = () => {
             <form onSubmit={handleAddMemberToGroup} className="space-y-4">
               <div className="bg-gray-50 p-4 rounded-lg mb-4">
                  <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
-                 <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
+                 <p className className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
                  <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
               </div>
 
@@ -1950,6 +2091,150 @@ const Dashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Detail Modal */}
+      {isKycDetailModalOpen && selectedUserForKyc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+             {/* Header */}
+             <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
+               <div className="flex items-center gap-4">
+                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
+                   {selectedUserForKyc.fullName.charAt(0)}
+                 </div>
+                 <div className="text-white">
+                   <h3 className="text-2xl font-bold">{selectedUserForKyc.fullName}</h3>
+                   <p className="text-gray-300 text-sm">@{selectedUserForKyc.username}</p>
+                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-white border border-gray-600">
+                     KYC: {selectedUserForKyc.kycStatus ? selectedUserForKyc.kycStatus.toUpperCase() : 'N/A'}
+                   </span>
+                 </div>
+               </div>
+               <button 
+                onClick={() => setIsKycDetailModalOpen(false)} 
+                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
+               >
+                <X className="h-5 w-5" />
+               </button>
+             </div>
+
+             {/* Content */}
+             <div className="p-6 bg-gray-50">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                 {/* Document Info */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <FileText className="h-4 w-4 text-gray-700" /> Informations Document
+                   </h4>
+                   <div className="space-y-3 text-sm">
+                     <div className="flex items-start gap-3">
+                       <BadgeCheck className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Type de Document</span>
+                         <span className="text-gray-700">{selectedUserForKyc.kycDetails?.idDocumentType || 'Non soumis'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <Fingerprint className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Numéro de Document</span>
+                         <span className="text-gray-700">{selectedUserForKyc.kycDetails?.idDocumentNumber || 'Non soumis'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Date de Soumission</span>
+                         <span className="text-gray-700">{selectedUserForKyc.kycDetails?.submissionDate || 'N/A'}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* Review Status */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <Shield className="h-4 w-4 text-gray-700" /> Statut de Vérification
+                   </h4>
+                   <div className="space-y-3 text-sm">
+                     <div className="flex items-start gap-3">
+                       {selectedUserForKyc.kycStatus === 'approved' && <BadgeCheck className="h-4 w-4 text-green-600 mt-0.5" />}
+                       {selectedUserForKyc.kycStatus === 'pending' && <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />}
+                       {selectedUserForKyc.kycStatus === 'rejected' && <BadgeX className="h-4 w-4 text-red-600 mt-0.5" />}
+                       <div>
+                         <span className="block text-gray-500 text-xs">Statut Actuel</span>
+                         <span className={`font-medium ${
+                           selectedUserForKyc.kycStatus === 'approved' ? 'text-green-600' :
+                           selectedUserForKyc.kycStatus === 'pending' ? 'text-yellow-600' :
+                           'text-red-600'
+                         }`}>
+                           {selectedUserForKyc.kycStatus === 'approved' ? 'Approuvé' :
+                            selectedUserForKyc.kycStatus === 'pending' ? 'En attente' :
+                            'Rejeté'}
+                         </span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <UserCircle className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Vérifié par</span>
+                         <span className="text-gray-700">{selectedUserForKyc.kycDetails?.reviewedBy || 'N/A'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Date de Vérification</span>
+                         <span className="text-gray-700">{selectedUserForKyc.kycDetails?.reviewDate || 'N/A'}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Review Notes */}
+               <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 mb-6">
+                 <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                   <MessageSquare className="h-4 w-4 text-gray-700" /> Notes de Vérification
+                 </h4>
+                 <textarea
+                   className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                   rows={3}
+                   placeholder="Ajouter des notes de vérification..."
+                   value={kycReviewNotes}
+                   onChange={(e) => setKycReviewNotes(e.target.value)}
+                 ></textarea>
+               </div>
+
+               {/* Action Buttons */}
+               <div className="flex gap-3 justify-end">
+                 <button
+                   onClick={() => handleUpdateKycStatus('rejected')}
+                   className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors shadow-sm"
+                   disabled={selectedUserForKyc.kycStatus === 'rejected'}
+                 >
+                   <BadgeX className="h-4 w-4" /> Rejeter
+                 </button>
+                 <button
+                   onClick={() => handleUpdateKycStatus('approved')}
+                   className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors shadow-sm"
+                   disabled={selectedUserForKyc.kycStatus === 'approved'}
+                 >
+                   <BadgeCheck className="h-4 w-4" /> Approuver
+                 </button>
+               </div>
+             </div>
+             <div className="bg-gray-100 px-6 py-4 flex justify-end">
+               <button 
+                onClick={() => setIsKycDetailModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+               >
+                 Fermer
+               </button>
+             </div>
           </div>
         </div>
       )}
@@ -2005,6 +2290,13 @@ const Dashboard: React.FC = () => {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Briefcase className="h-5 w-5" /> Partenaires
+          </button>
+
+          <button 
+            onClick={() => handleNavClick('kyc')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'kyc' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
+          >
+            <Fingerprint className="h-5 w-5" /> Vérification KYC
           </button>
 
           <button 
