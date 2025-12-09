@@ -63,6 +63,7 @@ export interface SystemSettings {
   defaultCurrency: string;
   loanInterestRate: number; // Pourcentage
   tontineCommission: number; // Pourcentage
+  agentCommission: number; // Pourcentage commission agents
   minPasswordLength: number;
   enableTwoFactor: boolean;
   emailNotifications: boolean;

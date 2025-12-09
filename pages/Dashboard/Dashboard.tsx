@@ -44,7 +44,13 @@ import {
   Lock,
   Bell,
   Briefcase,
-  FileCheck
+  FileCheck,
+  Filter,
+  RefreshCcw,
+  Zap,
+  Banknote,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission } from '../../types';
@@ -96,6 +102,17 @@ const Dashboard: React.FC = () => {
 
   // Statistics State
   const [stats, setStats] = useState<any>(null);
+  const [pendingSubmissionsCount, setPendingSubmissionsCount] = useState(0);
+
+  // Filter States
+  const [transactionFilterType, setTransactionFilterType] = useState<string>('all');
+  const [transactionFilterStatus, setTransactionFilterStatus] = useState<string>('all');
+  const [transactionSearch, setTransactionSearch] = useState('');
+  
+  // Clients Pagination & Search State
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
 
   useEffect(() => {
     // Load initial data
@@ -110,12 +127,14 @@ const Dashboard: React.FC = () => {
       email: MockService.getAdminProfile().email
     });
     setStats(MockService.getGlobalStats());
+    setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
   }, []);
 
   useEffect(() => {
     // Refresh stats when transactions or users change
-    if(currentView === 'statistics') {
+    if(currentView === 'statistics' || currentView === 'overview') {
       setStats(MockService.getGlobalStats());
+      setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
     }
   }, [currentView, transactions, users]);
 
@@ -134,7 +153,7 @@ const Dashboard: React.FC = () => {
       const created = MockService.addUser(newUser);
       setUsers([...users, created]);
       setNewUser({ username: '', password: '', fullName: '', depositAmount: 0 });
-      alert('Utilisateur créé avec succès!');
+      alert('Client créé avec succès!');
     }
   };
 
@@ -171,6 +190,9 @@ const Dashboard: React.FC = () => {
     // Reset specific view states
     setViewingGroup(null);
     setViewingAgent(null);
+    // Reset pagination when switching views
+    setCurrentPage(1);
+    setUserSearchTerm('');
   };
 
   const openDepositModal = (user: User) => {
@@ -223,10 +245,10 @@ const Dashboard: React.FC = () => {
         setSelectedMemberId('');
         alert('Membre ajouté au groupe avec succès !');
       } else {
-        alert("Cet utilisateur est déjà membre de ce groupe ou une erreur est survenue.");
+        alert("Ce client est déjà membre de ce groupe ou une erreur est survenue.");
       }
     } else {
-      alert("Veuillez sélectionner un utilisateur.");
+      alert("Veuillez sélectionner un client.");
     }
   }
 
@@ -284,32 +306,94 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Filter Logic for Transactions
+  const getFilteredTransactions = () => {
+    return transactions.filter(tx => {
+      const matchType = transactionFilterType === 'all' || tx.type === transactionFilterType;
+      const matchStatus = transactionFilterStatus === 'all' || tx.status === transactionFilterStatus;
+      const matchSearch = transactionSearch === '' || 
+        tx.userFullName.toLowerCase().includes(transactionSearch.toLowerCase()) ||
+        tx.id.toLowerCase().includes(transactionSearch.toLowerCase());
+      return matchType && matchStatus && matchSearch;
+    });
+  };
+
+  // Logic for Clients Pagination
+  const getPaginatedUsers = () => {
+    // 1. Filter
+    const filtered = users.filter(user => 
+      user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.id.toLowerCase().includes(userSearchTerm.toLowerCase())
+    );
+
+    // 2. Paginate
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+    return { filtered, currentItems, totalPages };
+  };
+
+  const { filtered: filteredUsers, currentItems: currentUsers, totalPages: totalUserPages } = getPaginatedUsers();
+
+  const handlePageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalUserPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
   const renderContent = () => {
     switch(currentView) {
       case 'overview':
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">Vue d'ensemble</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+          <div className="space-y-8">
+            {/* Header & Quick Actions */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+               <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Vue d'ensemble</h2>
+                  <p className="text-gray-500 text-sm">Bienvenue, {adminProfile?.fullName}</p>
+               </div>
+               <div className="flex gap-2">
+                  <button 
+                    onClick={() => setCurrentView('users')}
+                    className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                  >
+                    <Plus className="h-4 w-4" /> Nouveau Client
+                  </button>
+                  <button 
+                    onClick={() => setCurrentView('users')}
+                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm"
+                  >
+                    <Wallet className="h-4 w-4" /> Dépôt Rapide
+                  </button>
+               </div>
+            </div>
+
+            {/* KPIs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="p-3 sm:p-4 bg-emerald-100 rounded-lg">
                   <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">Total Dépôts</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} FCFA</p>
+                  <p className="text-sm text-gray-500 font-medium">Solde Total</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
                 </div>
               </div>
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="p-3 sm:p-4 bg-blue-100 rounded-lg">
                   <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">Utilisateurs Actifs</p>
+                  <p className="text-sm text-gray-500 font-medium">Clients Actifs</p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{users.length}</p>
                 </div>
               </div>
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="p-3 sm:p-4 bg-purple-100 rounded-lg">
                   <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
                 </div>
@@ -318,32 +402,89 @@ const Dashboard: React.FC = () => {
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{groups.length}</p>
                 </div>
               </div>
+
+              {/* Alert / Pending Card */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setCurrentView('agents')}>
+                <div className="p-3 sm:p-4 bg-amber-100 rounded-lg relative">
+                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-amber-600" />
+                  {pendingSubmissionsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white"></span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">En Attente</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    {pendingSubmissionsCount} 
+                    <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Actions requises</span>
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Recent Activity Table (Mock) */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-               <div className="px-6 py-4 border-b border-gray-100">
-                 <h3 className="text-lg font-semibold text-gray-800">Derniers inscrits</h3>
+            {/* Recent Activity Split */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               {/* Recent Transactions */}
+               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                   <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                     <Activity className="h-5 w-5 text-gray-500" /> Dernières Transactions
+                   </h3>
+                   <button onClick={() => setCurrentView('transactions')} className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Voir tout</button>
+                 </div>
+                 <div className="divide-y divide-gray-100">
+                   {transactions.slice(0, 5).map((tx) => (
+                     <div key={tx.id} className="px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                       <div className="flex items-center gap-3">
+                         <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-emerald-100 text-emerald-600' : tx.type === 'loan_eligibility' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-600'}`}>
+                           {tx.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> : tx.type === 'loan_eligibility' ? <Shield className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
+                         </div>
+                         <div>
+                           <p className="text-sm font-medium text-gray-900">{tx.userFullName}</p>
+                           <p className="text-xs text-gray-500">{tx.date.split(' ')[0]} • {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Crédit'}</p>
+                         </div>
+                       </div>
+                       <div className="text-right">
+                         <p className={`text-sm font-bold ${tx.status === 'failed' ? 'text-gray-400 line-through' : (tx.type === 'deposit' ? 'text-emerald-600' : 'text-gray-900')}`}>
+                           {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                         </p>
+                         <span className={`text-[10px] ${tx.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                           {tx.status === 'success' ? 'Validé' : 'Échoué'}
+                         </span>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
                </div>
-               <div className="overflow-x-auto">
-                 <table className="min-w-full divide-y divide-gray-200">
-                   <thead className="bg-gray-50">
-                     <tr>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde initial</th>
-                     </tr>
-                   </thead>
-                   <tbody className="bg-white divide-y divide-gray-200">
-                     {users.slice(-5).reverse().map((user) => (
-                       <tr key={user.id}>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.fullName}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-semibold">{user.depositAmount.toLocaleString()} FCFA</td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
+
+               {/* New Members / Quick Stats */}
+               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                   <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                     <UserPlus className="h-5 w-5 text-gray-500" /> Nouveaux Clients
+                   </h3>
+                 </div>
+                 <div className="divide-y divide-gray-100">
+                   {users.slice(-4).reverse().map((user) => (
+                     <div key={user.id} className="px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                       <div className="flex items-center gap-3">
+                         <div className="h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 font-bold">
+                           {user.fullName.charAt(0)}
+                         </div>
+                         <div>
+                           <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
+                           <p className="text-xs text-gray-500">Inscrit le {user.joinedDate}</p>
+                         </div>
+                       </div>
+                       <div className="text-right">
+                         <p className="text-sm font-bold text-gray-900">{user.depositAmount.toLocaleString()} FCFA</p>
+                         <p className="text-xs text-emerald-600">Solde initial</p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+                 <div className="bg-gray-50 px-6 py-3 text-center border-t border-gray-100">
+                    <button onClick={() => setCurrentView('users')} className="text-sm text-gray-500 hover:text-emerald-600 font-medium">Gérer tous les clients</button>
+                 </div>
                </div>
             </div>
           </div>
@@ -586,10 +727,22 @@ const Dashboard: React.FC = () => {
                   
                   {stats && (
                     <div className="space-y-6">
+                       {/* Agent vs Direct Stats */}
+                       <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                             <p className="text-sm text-blue-600 font-medium mb-1">Via Agents Terrain</p>
+                             <p className="text-xl font-bold text-blue-800">{stats.totalCollectedByAgents.toLocaleString()} FCFA</p>
+                          </div>
+                          <div className="bg-green-50 p-4 rounded-lg">
+                             <p className="text-sm text-green-600 font-medium mb-1">Dépôts Directs</p>
+                             <p className="text-xl font-bold text-green-800">{(stats.totalDepositsValue - stats.totalCollectedByAgents).toLocaleString()} FCFA</p>
+                          </div>
+                       </div>
+
                        {/* Deposit Bar */}
                        <div>
                          <div className="flex justify-between text-sm mb-1">
-                           <span className="font-medium text-gray-700">Volume Dépôts</span>
+                           <span className="font-medium text-gray-700">Volume Global Dépôts</span>
                            <span className="font-bold text-emerald-600">{stats.totalDepositsValue.toLocaleString()} FCFA</span>
                          </div>
                          <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
@@ -600,7 +753,7 @@ const Dashboard: React.FC = () => {
                        {/* Withdrawal Bar */}
                        <div>
                          <div className="flex justify-between text-sm mb-1">
-                           <span className="font-medium text-gray-700">Volume Retraits</span>
+                           <span className="font-medium text-gray-700">Volume Global Retraits</span>
                            <span className="font-bold text-orange-600">{stats.totalWithdrawalsValue.toLocaleString()} FCFA</span>
                          </div>
                          <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
@@ -673,7 +826,7 @@ const Dashboard: React.FC = () => {
                          </div>
                       </div>
                       <div className="text-center text-sm text-gray-500">
-                        Tous les utilisateurs sont <span className="text-emerald-600 font-bold">Actifs</span>
+                        Tous les clients sont <span className="text-emerald-600 font-bold">Actifs</span>
                       </div>
                    </div>
                 </div>
@@ -691,7 +844,7 @@ const Dashboard: React.FC = () => {
                 className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm"
                >
                  <Save className="h-4 w-4" />
-                 Enregistrer les modifications
+                 Enregistrer
                </button>
             </div>
             
@@ -795,6 +948,19 @@ const Dashboard: React.FC = () => {
                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
                            </div>
                          </div>
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Commission Agent (%)</label>
+                           <div className="relative">
+                             <input 
+                               type="number" 
+                               step="0.1"
+                               value={settings.agentCommission}
+                               onChange={(e) => setSettings({...settings, agentCommission: parseFloat(e.target.value)})}
+                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500"
+                             />
+                             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                           </div>
+                         </div>
                        </div>
                     </div>
                  </div>
@@ -858,12 +1024,12 @@ const Dashboard: React.FC = () => {
       case 'users':
         return (
           <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Gestion des Utilisateurs</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Gestion des Clients</h2>
             
             {/* Create User Form */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Plus className="h-5 w-5" /> Inscrire un nouvel utilisateur
+                <Plus className="h-5 w-5" /> Inscrire un nouveau client
               </h3>
               <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input 
@@ -876,7 +1042,7 @@ const Dashboard: React.FC = () => {
                 />
                 <input 
                   type="text" 
-                  placeholder="Nom d'utilisateur" 
+                  placeholder="Nom d'utilisateur (Pseudo)" 
                   className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none w-full"
                   value={newUser.username}
                   onChange={e => setNewUser({...newUser, username: e.target.value})}
@@ -898,7 +1064,7 @@ const Dashboard: React.FC = () => {
                   onChange={e => setNewUser({...newUser, depositAmount: Number(e.target.value)})}
                 />
                 <button type="submit" className="md:col-span-2 bg-emerald-600 text-white py-3 rounded-lg font-medium hover:bg-emerald-700 transition-colors w-full">
-                  Enregistrer l'utilisateur
+                  Enregistrer le client
                 </button>
               </form>
             </div>
@@ -906,64 +1072,159 @@ const Dashboard: React.FC = () => {
             {/* Users List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                 <h3 className="text-lg font-semibold text-gray-800">Liste des membres</h3>
+                 <h3 className="text-lg font-semibold text-gray-800">Liste des clients</h3>
                  <div className="relative w-full sm:w-auto">
                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                   <input type="text" placeholder="Rechercher..." className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-emerald-500" />
+                   <input 
+                      type="text" 
+                      placeholder="Rechercher un client..." 
+                      value={userSearchTerm}
+                      onChange={(e) => {
+                        setUserSearchTerm(e.target.value);
+                        setCurrentPage(1); // Reset to page 1 on search
+                      }}
+                      className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-emerald-500" 
+                   />
                  </div>
                </div>
                <div className="overflow-x-auto">
                  <table className="min-w-full divide-y divide-gray-200">
                    <thead className="bg-gray-50">
                      <tr>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifiant (ID)</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom Complet</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'inscription</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FCFA)</th>
                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                      </tr>
                    </thead>
                    <tbody className="bg-white divide-y divide-gray-200">
-                     {users.map((user) => (
-                       <tr key={user.id} className="hover:bg-gray-50">
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{user.id}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.fullName}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-bold">{user.depositAmount.toLocaleString()}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
-                           <button 
-                            onClick={() => toggleUserLoanEligibility(user)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
-                              user.loanEligible 
-                                ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' 
-                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-200'
-                            }`}
-                            title={user.loanEligible ? "Désactiver le prêt" : "Rendre éligible au prêt"}
-                           >
-                             <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" /> 
-                             {user.loanEligible ? 'Eligible' : 'Crédit'}
-                           </button>
+                     {currentUsers.length > 0 ? (
+                       currentUsers.map((user) => (
+                         <tr key={user.id} className="hover:bg-gray-50">
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{user.id}</span>
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.fullName}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <div className="flex items-center gap-1.5">
+                                 <Calendar className="h-3 w-3 text-gray-400" />
+                                 {user.joinedDate}
+                              </div>
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-bold">{user.depositAmount.toLocaleString()}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                             <button 
+                              onClick={() => toggleUserLoanEligibility(user)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
+                                user.loanEligible 
+                                  ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' 
+                                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-200'
+                              }`}
+                              title={user.loanEligible ? "Désactiver le prêt" : "Rendre éligible au prêt"}
+                             >
+                               <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" /> 
+                               {user.loanEligible ? 'Eligible' : 'Crédit'}
+                             </button>
 
-                           <button 
-                            onClick={() => openDepositModal(user)}
-                            className="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 transition-colors shadow-sm text-xs sm:text-sm font-medium"
-                            title="Faire un dépôt"
-                           >
-                             <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Dépôt
-                           </button>
-                           <button 
-                            onClick={() => openUserDetailModal(user)}
-                            className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
-                            title="Voir les détails"
-                           >
-                             <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir
-                           </button>
+                             <button 
+                              onClick={() => openDepositModal(user)}
+                              className="inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 transition-colors shadow-sm text-xs sm:text-sm font-medium"
+                              title="Faire un dépôt"
+                             >
+                               <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Dépôt
+                             </button>
+                             <button 
+                              onClick={() => openUserDetailModal(user)}
+                              className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
+                              title="Voir les détails"
+                             >
+                               <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir
+                             </button>
+                           </td>
+                         </tr>
+                       ))
+                     ) : (
+                       <tr>
+                         <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                           Aucun client trouvé pour cette recherche.
                          </td>
                        </tr>
-                     ))}
+                     )}
                    </tbody>
                  </table>
                </div>
+               
+               {/* Pagination Controls */}
+               {filteredUsers.length > 0 && (
+                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                       <div>
+                          <p className="text-sm text-gray-700">
+                             Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> sur <span className="font-medium">{filteredUsers.length}</span> résultats
+                          </p>
+                       </div>
+                       <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                             <button
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Précédent</span>
+                                <ChevronLeft className="h-5 w-5" />
+                             </button>
+                             
+                             {/* Generate Page Numbers */}
+                             {Array.from({ length: totalUserPages }, (_, i) => i + 1).map((number) => (
+                               <button
+                                  key={number}
+                                  onClick={() => handlePageChange(number)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                    currentPage === number
+                                      ? 'z-10 bg-emerald-50 border-emerald-500 text-emerald-600'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                               >
+                                  {number}
+                               </button>
+                             ))}
+
+                             <button
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalUserPages}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalUserPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Suivant</span>
+                                <ChevronRight className="h-5 w-5" />
+                             </button>
+                          </nav>
+                       </div>
+                    </div>
+                    {/* Mobile Pagination simplified */}
+                    <div className="flex items-center justify-between w-full sm:hidden">
+                       <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Précédent
+                       </button>
+                       <span className="text-sm text-gray-700">
+                          Page {currentPage} / {totalUserPages}
+                       </span>
+                       <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalUserPages}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === totalUserPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Suivant
+                       </button>
+                    </div>
+                 </div>
+               )}
             </div>
           </div>
         );
@@ -1214,17 +1475,57 @@ const Dashboard: React.FC = () => {
         );
 
       case 'transactions':
+        const filteredTransactions = getFilteredTransactions();
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
             
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                {/* Filters/Header */}
-               <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                 <h3 className="text-lg font-semibold text-gray-800">Mouvements financiers</h3>
-                 <div className="relative w-full sm:w-auto">
-                   <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                   <input type="text" placeholder="Rechercher..." className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-emerald-500" />
+               <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
+                 <div className="flex justify-between items-center">
+                   <h3 className="text-lg font-semibold text-gray-800">Mouvements financiers</h3>
+                   <span className="text-sm text-gray-500">{filteredTransactions.length} résultats</span>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                   <div className="relative">
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input 
+                        type="text" 
+                        placeholder="Rechercher (Nom, ID)..." 
+                        value={transactionSearch}
+                        onChange={(e) => setTransactionSearch(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" 
+                      />
+                   </div>
+                   
+                   <div className="relative">
+                      <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <select 
+                        value={transactionFilterType}
+                        onChange={(e) => setTransactionFilterType(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none bg-white"
+                      >
+                        <option value="all">Tous les types</option>
+                        <option value="deposit">Dépôts</option>
+                        <option value="withdrawal">Retraits</option>
+                        <option value="loan_eligibility">Crédit / Éligibilité</option>
+                      </select>
+                   </div>
+
+                   <div className="relative">
+                      <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <select 
+                        value={transactionFilterStatus}
+                        onChange={(e) => setTransactionFilterStatus(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none bg-white"
+                      >
+                        <option value="all">Tous les statuts</option>
+                        <option value="success">Succès</option>
+                        <option value="failed">Échec</option>
+                      </select>
+                   </div>
                  </div>
                </div>
 
@@ -1241,7 +1542,7 @@ const Dashboard: React.FC = () => {
                      </tr>
                    </thead>
                    <tbody className="bg-white divide-y divide-gray-200">
-                     {transactions.map((tx) => (
+                     {filteredTransactions.map((tx) => (
                        <tr key={tx.id} className="hover:bg-gray-50">
                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
@@ -1617,7 +1918,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un utilisateur</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
                 <div className="relative">
                    <select 
                      value={selectedMemberId} 
@@ -1691,7 +1992,7 @@ const Dashboard: React.FC = () => {
             onClick={() => handleNavClick('users')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'users' ? 'bg-emerald-800 text-white shadow-md' : 'text-emerald-100 hover:bg-emerald-800 hover:text-white'}`}
           >
-            <Users className="h-5 w-5" /> Utilisateurs
+            <Users className="h-5 w-5" /> Clients
           </button>
 
           <button 
