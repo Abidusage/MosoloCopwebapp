@@ -51,7 +51,8 @@ import {
   ChevronRight,
   Fingerprint,
   Image,
-  FileWarning
+  FileWarning,
+  KeyRound
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument } from '../../types';
@@ -123,6 +124,11 @@ const Dashboard: React.FC = () => {
   const [kycRejectionReason, setKycRejectionReason] = useState('');
   const [kycFilterStatus, setKycFilterStatus] = useState<string>('all');
   const [kycSearchTerm, setKycSearchTerm] = useState('');
+
+  // Password Reset State
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [selectedUserForPasswordReset, setSelectedUserForPasswordReset] = useState<User | null>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
 
 
   useEffect(() => {
@@ -391,6 +397,30 @@ const Dashboard: React.FC = () => {
       } else {
         alert("Erreur lors de la mise à jour du statut KYC.");
       }
+    }
+  };
+
+  // Password Reset Logic
+  const openResetPasswordModal = (user: User) => {
+    setSelectedUserForPasswordReset(user);
+    setNewPasswordInput('');
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const handleResetPasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedUserForPasswordReset && newPasswordInput.trim()) {
+      const success = MockService.resetUserPassword(selectedUserForPasswordReset.id, newPasswordInput);
+      if (success) {
+        setIsResetPasswordModalOpen(false);
+        setSelectedUserForPasswordReset(null);
+        setNewPasswordInput('');
+        alert(`Le mot de passe de ${selectedUserForPasswordReset.fullName} a été réinitialisé avec succès !`);
+      } else {
+        alert("Erreur lors de la réinitialisation du mot de passe.");
+      }
+    } else {
+      alert("Veuillez entrer un nouveau mot de passe.");
     }
   };
 
@@ -1186,6 +1216,13 @@ const Dashboard: React.FC = () => {
                               title="Faire un dépôt"
                              >
                                <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Dépôt
+                             </button>
+                             <button 
+                              onClick={() => openResetPasswordModal(user)}
+                              className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 px-3 py-1.5 rounded-md hover:bg-orange-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-orange-200"
+                              title="Réinitialiser le mot de passe"
+                             >
+                               <KeyRound className="h-3 w-3 sm:h-4 sm:w-4" /> Reset MDP
                              </button>
                              <button 
                               onClick={() => openUserDetailModal(user)}
@@ -2251,6 +2288,64 @@ const Dashboard: React.FC = () => {
                 Fermer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {isResetPasswordModalOpen && selectedUserForPasswordReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <KeyRound className="h-6 w-6 text-gray-700" />
+                Réinitialiser le mot de passe
+              </h3>
+              <button onClick={() => setIsResetPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <p className="text-sm text-gray-500 mb-1">Utilisateur</p>
+                <p className="text-lg font-bold text-gray-800">{selectedUserForPasswordReset.fullName}</p>
+                <p className="text-xs text-gray-500">ID: {selectedUserForPasswordReset.username}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={newPasswordInput}
+                    onChange={(e) => setNewPasswordInput(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
+                    placeholder="Entrez le nouveau mot de passe"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsResetPasswordModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

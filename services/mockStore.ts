@@ -285,6 +285,15 @@ export const MockService = {
     }
     return false;
   },
+
+  resetUserPassword: (userId: string, newPassword: string) => {
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      users[userIndex].password = newPassword; // In a real app, this would be hashed
+      return true;
+    }
+    return false;
+  },
   
   // Group Logic
   getGroups: () => [...groups],
