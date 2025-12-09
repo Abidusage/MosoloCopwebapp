@@ -1,3 +1,5 @@
+
+
 export interface User {
   id: string;
   username: string;
@@ -10,18 +12,6 @@ export interface User {
   address?: string;
   status?: 'active' | 'inactive' | 'suspended';
   loanEligible?: boolean; // Indicateur d'éligibilité au prêt
-  kycStatus?: 'pending' | 'approved' | 'rejected'; // Statut de vérification KYC
-  kycDetails?: { // Détails KYC (simplifié pour la démo)
-    idDocumentType: string;
-    idDocumentNumber: string;
-    idDocumentFrontUrl?: string;
-    idDocumentBackUrl?: string;
-    selfieUrl?: string;
-    submissionDate: string;
-    reviewedBy?: string;
-    reviewDate?: string;
-    reviewNotes?: string;
-  };
 }
 
 export interface Group {
@@ -42,7 +32,7 @@ export interface AdminProfile {
 }
 
 export type TransactionStatus = 'success' | 'failed';
-export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility' | 'kyc_review';
+export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility';
 
 export interface Transaction {
   id: string;
@@ -105,4 +95,4 @@ export interface FieldSubmission {
   notes?: string;
 }
 
-export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc';
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents';

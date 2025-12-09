@@ -1,3 +1,5 @@
+
+
 import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission } from '../types';
 
 // Initial Mock Data - IDs updated to 8 characters
@@ -12,15 +14,7 @@ let users: User[] = [
     phoneNumber: '+225 07 01 02 03',
     address: 'Abidjan, Cocody',
     status: 'active',
-    loanEligible: true,
-    kycStatus: 'approved',
-    kycDetails: {
-      idDocumentType: 'CNI',
-      idDocumentNumber: 'CI123456789',
-      submissionDate: '2023-10-05',
-      reviewedBy: 'Admin',
-      reviewDate: '2023-10-06'
-    }
+    loanEligible: true
   },
   { 
     id: 'US9382Y2', 
@@ -32,13 +26,7 @@ let users: User[] = [
     phoneNumber: '+225 05 04 05 06',
     address: 'Bouaké, Centre',
     status: 'active',
-    loanEligible: false,
-    kycStatus: 'pending',
-    kycDetails: {
-      idDocumentType: 'Passeport',
-      idDocumentNumber: 'PA987654321',
-      submissionDate: '2024-03-22'
-    }
+    loanEligible: false
   },
   { 
     id: 'US1129Z3', 
@@ -50,16 +38,7 @@ let users: User[] = [
     phoneNumber: '+237 6 99 99 99',
     address: 'Yaoundé, Bastos',
     status: 'active',
-    loanEligible: true,
-    kycStatus: 'rejected',
-    kycDetails: {
-      idDocumentType: 'CNI',
-      idDocumentNumber: 'CM112233445',
-      submissionDate: '2024-02-01',
-      reviewedBy: 'Admin',
-      reviewDate: '2024-02-02',
-      reviewNotes: 'Document illisible'
-    }
+    loanEligible: true
   },
   // Données supplémentaires pour la pagination
   { 
@@ -72,13 +51,7 @@ let users: User[] = [
     phoneNumber: '+225 01 02 03 04',
     address: 'Abidjan, Yopougon',
     status: 'active',
-    loanEligible: false,
-    kycStatus: 'pending',
-    kycDetails: {
-      idDocumentType: 'Permis de Conduire',
-      idDocumentNumber: 'PC00112233',
-      submissionDate: '2024-03-25'
-    }
+    loanEligible: false
   },
   { 
     id: 'US5566B5', 
@@ -90,15 +63,7 @@ let users: User[] = [
     phoneNumber: '+225 07 08 09 10',
     address: 'Korhogo',
     status: 'active',
-    loanEligible: false,
-    kycStatus: 'approved',
-    kycDetails: {
-      idDocumentType: 'CNI',
-      idDocumentNumber: 'CI99887766',
-      submissionDate: '2024-02-15',
-      reviewedBy: 'Admin',
-      reviewDate: '2024-02-16'
-    }
+    loanEligible: false
   },
   { 
     id: 'US6677C6', 
@@ -110,15 +75,7 @@ let users: User[] = [
     phoneNumber: '+221 77 11 22 33',
     address: 'Dakar, Plateau',
     status: 'active',
-    loanEligible: true,
-    kycStatus: 'approved',
-    kycDetails: {
-      idDocumentType: 'Passeport',
-      idDocumentNumber: 'SN12345678',
-      submissionDate: '2024-03-05',
-      reviewedBy: 'Admin',
-      reviewDate: '2024-03-06'
-    }
+    loanEligible: true
   },
   { 
     id: 'US7788D7', 
@@ -130,13 +87,7 @@ let users: User[] = [
     phoneNumber: '+233 24 55 66 77',
     address: 'Accra, Osu',
     status: 'active',
-    loanEligible: true,
-    kycStatus: 'pending',
-    kycDetails: {
-      idDocumentType: 'CNI',
-      idDocumentNumber: 'GH55443322',
-      submissionDate: '2024-03-12'
-    }
+    loanEligible: true
   },
 ];
 
@@ -154,8 +105,6 @@ let transactions: Transaction[] = [
   { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00' },
   { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin' },
   { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo' },
-  { id: 'TRX-009', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'kyc_review', amount: 0, status: 'success', date: '2024-03-22 10:00', reason: 'KYC soumis pour vérification' },
-  { id: 'TRX-010', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'kyc_review', amount: 0, status: 'failed', date: '2024-02-02 14:00', reason: 'KYC rejeté: Document illisible' },
 ];
 
 let messages: Message[] = [
@@ -252,13 +201,7 @@ export const MockService = {
       email: `${user.username}@mosolocoop.com`, // Fake default email
       address: 'Non renseigné',
       phoneNumber: 'Non renseigné',
-      loanEligible: false,
-      kycStatus: 'pending', // New users start with pending KYC
-      kycDetails: {
-        idDocumentType: 'Non soumis',
-        idDocumentNumber: 'N/A',
-        submissionDate: new Date().toISOString().split('T')[0]
-      }
+      loanEligible: false
     };
     users = [...users, newUser];
     return newUser;
@@ -280,41 +223,6 @@ export const MockService = {
         status: 'success',
         date: new Date().toISOString().replace('T', ' ').substring(0, 16),
         reason: !currentStatus ? 'Éligibilité Accordée' : 'Éligibilité Révoquée'
-      };
-      transactions = [newTransaction, ...transactions];
-      return true;
-    }
-    return false;
-  },
-
-  // KYC Logic
-  getKycUsers: (statusFilter?: 'pending' | 'approved' | 'rejected') => {
-    if (statusFilter) {
-      return users.filter(u => u.kycStatus === statusFilter);
-    }
-    return [...users];
-  },
-
-  updateKycStatus: (userId: string, status: 'pending' | 'approved' | 'rejected', reviewNotes?: string) => {
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-      users[userIndex].kycStatus = status;
-      if (users[userIndex].kycDetails) {
-        users[userIndex].kycDetails!.reviewedBy = adminProfile.fullName;
-        users[userIndex].kycDetails!.reviewDate = new Date().toISOString().split('T')[0];
-        users[userIndex].kycDetails!.reviewNotes = reviewNotes;
-      }
-
-      // Log history
-      const newTransaction: Transaction = {
-        id: `TRX-${Date.now()}`,
-        userId: users[userIndex].id,
-        userFullName: users[userIndex].fullName,
-        type: 'kyc_review',
-        amount: 0,
-        status: status === 'approved' ? 'success' : 'failed', // Simplified status for transaction
-        date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-        reason: `KYC ${status === 'approved' ? 'approuvé' : status === 'rejected' ? 'rejeté' : 'mis en attente'}${reviewNotes ? `: ${reviewNotes}` : ''}`
       };
       transactions = [newTransaction, ...transactions];
       return true;
