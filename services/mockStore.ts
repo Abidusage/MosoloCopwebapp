@@ -1,5 +1,3 @@
-
-
 import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission } from '../types';
 
 // Initial Mock Data - IDs updated to 8 characters
@@ -14,7 +12,8 @@ let users: User[] = [
     phoneNumber: '+225 07 01 02 03',
     address: 'Abidjan, Cocody',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycVerified: true // Ajout du statut KYC
   },
   { 
     id: 'US9382Y2', 
@@ -26,7 +25,8 @@ let users: User[] = [
     phoneNumber: '+225 05 04 05 06',
     address: 'Bouaké, Centre',
     status: 'active',
-    loanEligible: false
+    loanEligible: false,
+    kycVerified: false // Ajout du statut KYC
   },
   { 
     id: 'US1129Z3', 
@@ -38,7 +38,8 @@ let users: User[] = [
     phoneNumber: '+237 6 99 99 99',
     address: 'Yaoundé, Bastos',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycVerified: true // Ajout du statut KYC
   },
   // Données supplémentaires pour la pagination
   { 
@@ -51,7 +52,8 @@ let users: User[] = [
     phoneNumber: '+225 01 02 03 04',
     address: 'Abidjan, Yopougon',
     status: 'active',
-    loanEligible: false
+    loanEligible: false,
+    kycVerified: false // Ajout du statut KYC
   },
   { 
     id: 'US5566B5', 
@@ -63,7 +65,8 @@ let users: User[] = [
     phoneNumber: '+225 07 08 09 10',
     address: 'Korhogo',
     status: 'active',
-    loanEligible: false
+    loanEligible: false,
+    kycVerified: true // Ajout du statut KYC
   },
   { 
     id: 'US6677C6', 
@@ -75,7 +78,8 @@ let users: User[] = [
     phoneNumber: '+221 77 11 22 33',
     address: 'Dakar, Plateau',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycVerified: false // Ajout du statut KYC
   },
   { 
     id: 'US7788D7', 
@@ -87,7 +91,8 @@ let users: User[] = [
     phoneNumber: '+233 24 55 66 77',
     address: 'Accra, Osu',
     status: 'active',
-    loanEligible: true
+    loanEligible: true,
+    kycVerified: true // Ajout du statut KYC
   },
 ];
 
@@ -189,7 +194,7 @@ export const MockService = {
   getUserTransactions: (userId: string) => {
     return transactions.filter(t => t.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
   },
-  addUser: (user: Omit<User, 'id' | 'joinedDate'>) => {
+  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycVerified'>) => {
     // Generate 8 character ID uppercase
     const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
     
@@ -201,7 +206,8 @@ export const MockService = {
       email: `${user.username}@mosolocoop.com`, // Fake default email
       address: 'Non renseigné',
       phoneNumber: 'Non renseigné',
-      loanEligible: false
+      loanEligible: false,
+      kycVerified: false // Nouveau client non vérifié par défaut
     };
     users = [...users, newUser];
     return newUser;
@@ -225,6 +231,18 @@ export const MockService = {
         reason: !currentStatus ? 'Éligibilité Accordée' : 'Éligibilité Révoquée'
       };
       transactions = [newTransaction, ...transactions];
+      return true;
+    }
+    return false;
+  },
+
+  // New KYC Logic
+  getKycVerifiedUsers: () => users.filter(user => user.kycVerified),
+  
+  toggleKycVerification: (userId: string) => {
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      users[userIndex].kycVerified = !users[userIndex].kycVerified;
       return true;
     }
     return false;
@@ -327,6 +345,7 @@ export const MockService = {
     const totalUsers = users.length;
     const totalGroups = groups.length;
     const eligibleUsersCount = users.filter(u => u.loanEligible).length;
+    const kycVerifiedUsersCount = users.filter(u => u.kycVerified).length; // Nouveau KPI
     
     // Financials
     const totalDepositsValue = transactions
@@ -368,6 +387,7 @@ export const MockService = {
       topDepositors,
       growthData,
       eligibleUsersCount,
+      kycVerifiedUsersCount, // Ajout du KPI
       totalCollectedByAgents
     };
   },

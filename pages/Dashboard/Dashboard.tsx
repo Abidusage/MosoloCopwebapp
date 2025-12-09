@@ -48,7 +48,8 @@ import {
   Zap,
   Banknote,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Fingerprint // New icon for KYC
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission } from '../../types';
@@ -111,6 +112,9 @@ const Dashboard: React.FC = () => {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+
+  // KYC Filter State
+  const [kycFilterStatus, setKycFilterStatus] = useState<string>('all');
 
   useEffect(() => {
     // Load initial data
@@ -304,6 +308,14 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const toggleUserKycVerification = (user: User) => {
+    if(window.confirm(`Voulez-vous ${user.kycVerified ? 'dé-vérifier' : 'vérifier'} l'identité de ${user.fullName} ?`)) {
+      MockService.toggleKycVerification(user.id);
+      setUsers(MockService.getUsers()); // Refresh users to reflect KYC status change
+      if (currentView === 'statistics') setStats(MockService.getGlobalStats()); // Refresh stats if on stats page
+    }
+  };
+
   // Filter Logic for Transactions
   const getFilteredTransactions = () => {
     return transactions.filter(tx => {
@@ -317,9 +329,9 @@ const Dashboard: React.FC = () => {
   };
 
   // Logic for Clients Pagination
-  const getPaginatedUsers = () => {
-    // 1. Filter
-    const filtered = users.filter(user => 
+  const getPaginatedUsers = (usersToPaginate: User[]) => {
+    // 1. Filter (already done if usersToPaginate is pre-filtered)
+    const filtered = usersToPaginate.filter(user => 
       user.fullName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
       user.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
       user.id.toLowerCase().includes(userSearchTerm.toLowerCase())
@@ -334,13 +346,103 @@ const Dashboard: React.FC = () => {
     return { filtered, currentItems, totalPages };
   };
 
-  const { filtered: filteredUsers, currentItems: currentUsers, totalPages: totalUserPages } = getPaginatedUsers();
+  const { filtered: filteredUsers, currentItems: currentUsers, totalPages: totalUserPages } = getPaginatedUsers(users);
+
+  // KYC View specific pagination/filtering
+  const getKycUsers = () => {
+    let kycUsers = users;
+    if (kycFilterStatus === 'verified') {
+      kycUsers = users.filter(u => u.kycVerified);
+    } else if (kycFilterStatus === 'unverified') {
+      kycUsers = users.filter(u => !u.kycVerified);
+    }
+    return getPaginatedUsers(kycUsers);
+  };
+  const { filtered: filteredKycUsers, currentItems: currentKycUsers, totalPages: totalKycPages } = getKycUsers();
+
 
   const handlePageChange = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalUserPages) {
+    if (pageNumber >= 1 && pageNumber <= totalUserPages) { // Use totalUserPages for general user list
       setCurrentPage(pageNumber);
     }
   };
+
+  const handleKycPageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalKycPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  const renderPaginationControls = (totalPages: number, currentPage: number, handlePageChange: (page: number) => void, filteredItemsLength: number) => (
+    filteredItemsLength > 0 && (
+      <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+         <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+               <p className="text-sm text-gray-700">
+                  Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredItemsLength)}</span> sur <span className="font-medium">{filteredItemsLength}</span> résultats
+               </p>
+            </div>
+            <div>
+               <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                     onClick={() => handlePageChange(currentPage - 1)}
+                     disabled={currentPage === 1}
+                     className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                  >
+                     <span className="sr-only">Précédent</span>
+                     <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  
+                  {/* Generate Page Numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                    <button
+                       key={number}
+                       onClick={() => handlePageChange(number)}
+                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                         currentPage === number
+                           ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
+                           : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                       }`}
+                    >
+                       {number}
+                    </button>
+                  ))}
+
+                  <button
+                     onClick={() => handlePageChange(currentPage + 1)}
+                     disabled={currentPage === totalPages}
+                     className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                  >
+                     <span className="sr-only">Suivant</span>
+                     <ChevronRight className="h-5 w-5" />
+                  </button>
+               </nav>
+            </div>
+         </div>
+         {/* Mobile Pagination simplified */}
+         <div className="flex items-center justify-between w-full sm:hidden">
+            <button
+               onClick={() => handlePageChange(currentPage - 1)}
+               disabled={currentPage === 1}
+               className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+               Précédent
+            </button>
+            <span className="text-sm text-gray-700">
+               Page {currentPage} / {totalPages}
+            </span>
+            <button
+               onClick={() => handlePageChange(currentPage + 1)}
+               disabled={currentPage === totalPages}
+               className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+               Suivant
+            </button>
+         </div>
+      </div>
+    )
+  );
+
 
   const renderContent = () => {
     switch(currentView) {
@@ -355,13 +457,13 @@ const Dashboard: React.FC = () => {
                </div>
                <div className="flex gap-2">
                   <button 
-                    onClick={() => setCurrentView('users')}
+                    onClick={() => handleNavClick('users')}
                     className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
                   >
                     <Plus className="h-4 w-4" /> Nouveau Client
                   </button>
                   <button 
-                    onClick={() => setCurrentView('users')}
+                    onClick={() => handleNavClick('users')}
                     className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
                   >
                     <Wallet className="h-4 w-4" /> Dépôt Rapide
@@ -402,7 +504,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Alert / Pending Card */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setCurrentView('agents')}>
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleNavClick('agents')}>
                 <div className="p-3 sm:p-4 bg-yellow-100 rounded-lg relative">
                   <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-700" />
                   {pendingSubmissionsCount > 0 && (
@@ -427,7 +529,7 @@ const Dashboard: React.FC = () => {
                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                      <Activity className="h-5 w-5 text-gray-500" /> Dernières Transactions
                    </h3>
-                   <button onClick={() => setCurrentView('transactions')} className="text-sm text-gray-700 hover:text-gray-800 font-medium">Voir tout</button>
+                   <button onClick={() => handleNavClick('transactions')} className="text-sm text-gray-700 hover:text-gray-800 font-medium">Voir tout</button>
                  </div>
                  <div className="divide-y divide-gray-100">
                    {transactions.slice(0, 5).map((tx) => (
@@ -481,7 +583,7 @@ const Dashboard: React.FC = () => {
                    ))}
                  </div>
                  <div className="bg-gray-50 px-6 py-3 text-center border-t border-gray-100">
-                    <button onClick={() => setCurrentView('users')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Gérer tous les clients</button>
+                    <button onClick={() => handleNavClick('users')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Gérer tous les clients</button>
                  </div>
                </div>
             </div>
@@ -643,6 +745,113 @@ const Dashboard: React.FC = () => {
           </div>
         );
 
+      case 'kyc':
+        const { currentItems: currentKycUsersToDisplay, totalPages: totalKycUsersPages } = getKycUsers();
+        return (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Vérification KYC (Connaître Votre Client)</h2>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+               <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                 <h3 className="text-lg font-semibold text-gray-800">Statut de vérification des clients</h3>
+                 <div className="flex flex-col sm:flex-row gap-3">
+                   <div className="relative w-full sm:w-auto">
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <input 
+                         type="text" 
+                         placeholder="Rechercher un client..." 
+                         value={userSearchTerm}
+                         onChange={(e) => {
+                           setUserSearchTerm(e.target.value);
+                           setCurrentPage(1); // Reset to page 1 on search
+                         }}
+                         className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-gray-500" 
+                      />
+                   </div>
+                   <div className="relative w-full sm:w-auto">
+                      <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <select 
+                        value={kycFilterStatus}
+                        onChange={(e) => {
+                          setKycFilterStatus(e.target.value);
+                          setCurrentPage(1); // Reset to page 1 on filter change
+                        }}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
+                      >
+                        <option value="all">Tous les statuts</option>
+                        <option value="verified">Vérifié</option>
+                        <option value="unverified">Non vérifié</option>
+                      </select>
+                   </div>
+                 </div>
+               </div>
+               <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-gray-200">
+                   <thead className="bg-gray-50">
+                     <tr>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifiant (ID)</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom Complet</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut KYC</th>
+                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="bg-white divide-y divide-gray-200">
+                     {currentKycUsersToDisplay.length > 0 ? (
+                       currentKycUsersToDisplay.map((user) => (
+                         <tr key={user.id} className="hover:bg-gray-50">
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{user.id}</span>
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.fullName}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm">
+                             {user.kycVerified ? (
+                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                 <CheckCircle className="h-3 w-3" /> Vérifié
+                               </span>
+                             ) : (
+                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                 <XCircle className="h-3 w-3" /> Non vérifié
+                               </span>
+                             )}
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                             <button 
+                              onClick={() => toggleUserKycVerification(user)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
+                                user.kycVerified 
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-200' 
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                              }`}
+                              title={user.kycVerified ? "Dé-vérifier l'identité" : "Vérifier l'identité"}
+                             >
+                               <Fingerprint className="h-3 w-3 sm:h-4 sm:w-4" /> 
+                               {user.kycVerified ? 'Dé-vérifier' : 'Vérifier'}
+                             </button>
+                             <button 
+                              onClick={() => openUserDetailModal(user)}
+                              className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
+                              title="Voir les détails"
+                             >
+                               <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir
+                             </button>
+                           </td>
+                         </tr>
+                       ))
+                     ) : (
+                       <tr>
+                         <td colSpan={4} className="px-6 py-10 text-center text-gray-500">
+                           Aucun client trouvé pour cette recherche ou ce statut.
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
+                 </table>
+               </div>
+               {renderPaginationControls(totalKycUsersPages, currentPage, handleKycPageChange, filteredKycUsers.length)}
+            </div>
+          </div>
+        );
+
       case 'statistics':
         return (
           <div className="space-y-6">
@@ -688,14 +897,14 @@ const Dashboard: React.FC = () => {
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                    <div className="flex justify-between items-start mb-4">
                      <div>
-                       <p className="text-gray-500 text-sm font-medium">Taux de Succès</p>
-                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.successRate}%</h3>
+                       <p className="text-gray-500 text-sm font-medium">Vérifiés KYC</p> {/* New KPI */}
+                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.kycVerifiedUsersCount}</h3>
                      </div>
                      <div className="bg-gray-200 p-2 rounded-lg">
-                       <Target className="h-6 w-6 text-gray-700" />
+                       <Fingerprint className="h-6 w-6 text-gray-700" /> {/* New Icon */}
                      </div>
                    </div>
-                   <p className="text-xs text-gray-400">Sur {stats.totalTransactions} transactions</p>
+                   <p className="text-xs text-gray-400">Identités confirmées</p>
                  </div>
 
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -1154,75 +1363,7 @@ const Dashboard: React.FC = () => {
                    </tbody>
                  </table>
                </div>
-               
-               {/* Pagination Controls */}
-               {filteredUsers.length > 0 && (
-                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                       <div>
-                          <p className="text-sm text-gray-700">
-                             Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> sur <span className="font-medium">{filteredUsers.length}</span> résultats
-                          </p>
-                       </div>
-                       <div>
-                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                             <button
-                                onClick={() => handlePageChange(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Précédent</span>
-                                <ChevronLeft className="h-5 w-5" />
-                             </button>
-                             
-                             {/* Generate Page Numbers */}
-                             {Array.from({ length: totalUserPages }, (_, i) => i + 1).map((number) => (
-                               <button
-                                  key={number}
-                                  onClick={() => handlePageChange(number)}
-                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                    currentPage === number
-                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
-                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                  }`}
-                               >
-                                  {number}
-                               </button>
-                             ))}
-
-                             <button
-                                onClick={() => handlePageChange(currentPage + 1)}
-                                disabled={currentPage === totalUserPages}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalUserPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Suivant</span>
-                                <ChevronRight className="h-5 w-5" />
-                             </button>
-                          </nav>
-                       </div>
-                    </div>
-                    {/* Mobile Pagination simplified */}
-                    <div className="flex items-center justify-between w-full sm:hidden">
-                       <button
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Précédent
-                       </button>
-                       <span className="text-sm text-gray-700">
-                          Page {currentPage} / {totalUserPages}
-                       </span>
-                       <button
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === totalUserPages}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === totalUserPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Suivant
-                       </button>
-                    </div>
-                 </div>
-               )}
+               {renderPaginationControls(totalUserPages, currentPage, handlePageChange, filteredUsers.length)}
             </div>
           </div>
         );
@@ -1821,6 +1962,17 @@ const Dashboard: React.FC = () => {
                           )}
                         </div>
                      </div>
+                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
+                        <Fingerprint className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <span className="block text-gray-500 text-xs">Vérification KYC</span>
+                          {selectedUserForDetail.kycVerified ? (
+                            <span className="text-green-600 font-medium">Vérifié</span>
+                          ) : (
+                            <span className="text-red-600 font-medium">Non vérifié</span>
+                          )}
+                        </div>
+                     </div>
                    </div>
                  </div>
 
@@ -2005,6 +2157,13 @@ const Dashboard: React.FC = () => {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Briefcase className="h-5 w-5" /> Partenaires
+          </button>
+
+          <button 
+            onClick={() => handleNavClick('kyc')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'kyc' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
+          >
+            <Fingerprint className="h-5 w-5" /> Vérification KYC
           </button>
 
           <button 
