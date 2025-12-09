@@ -1,3 +1,5 @@
+
+
 export interface User {
   id: string;
   username: string;
@@ -10,10 +12,7 @@ export interface User {
   address?: string;
   status?: 'active' | 'inactive' | 'suspended';
   loanEligible?: boolean; // Indicateur d'éligibilité au prêt
-  kycStatus?: KycStatusType; // Nouveau champ pour le statut KYC
 }
-
-export type KycStatusType = 'not_submitted' | 'pending' | 'verified' | 'rejected';
 
 export interface Group {
   id: string;
@@ -96,4 +95,4 @@ export interface FieldSubmission {
   notes?: string;
 }
 
-export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc';
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents';
