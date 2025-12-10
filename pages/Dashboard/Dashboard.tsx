@@ -137,6 +137,10 @@ const Dashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
+  // Transactions Pagination State
+  const [transactionCurrentPage, setTransactionCurrentPage] = useState(1);
+  const [transactionsPerPage] = useState(10); // 10 transactions par page
+
   // KYC State
   const [kycSubmissions, setKycSubmissions] = useState<User[]>([]);
   const [isKYCDetailModalOpen, setIsKYCDetailModalOpen] = useState(false);
@@ -237,10 +241,14 @@ const Dashboard: React.FC = () => {
     setViewingGroup(null);
     setViewingAgent(null);
     // Reset pagination when switching views
-    setCurrentPage(1);
+    setCurrentPage(1); // For users
+    setTransactionCurrentPage(1); // For transactions
     setUserSearchTerm('');
     setKycSearchTerm('');
     setKycFilterStatus('all');
+    setTransactionSearch('');
+    setTransactionFilterType('all');
+    setTransactionFilterStatus('all');
   };
 
   const openDepositModal = (user: User) => {
@@ -356,7 +364,7 @@ const Dashboard: React.FC = () => {
 
   // Filter Logic for Transactions
   const getFilteredTransactions = () => {
-    return transactions.filter(tx => {
+    const filtered = transactions.filter(tx => {
       const matchType = transactionFilterType === 'all' || tx.type === transactionFilterType;
       const matchStatus = transactionFilterStatus === 'all' || tx.status === transactionFilterStatus;
       const matchSearch = transactionSearch === '' || 
@@ -364,6 +372,7 @@ const Dashboard: React.FC = () => {
         tx.id.toLowerCase().includes(transactionSearch.toLowerCase());
       return matchType && matchStatus && matchSearch;
     });
+    return filtered.sort((a, b) => b.date.localeCompare(a.date)); // Sort by date descending
   };
 
   // Logic for Clients Pagination
@@ -391,6 +400,25 @@ const Dashboard: React.FC = () => {
       setCurrentPage(pageNumber);
     }
   };
+
+  // Logic for Transactions Pagination
+  const getPaginatedTransactions = () => {
+    const filtered = getFilteredTransactions();
+    const indexOfLastItem = transactionCurrentPage * transactionsPerPage;
+    const indexOfFirstItem = indexOfLastItem - transactionsPerPage;
+    const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filtered.length / transactionsPerPage);
+    return { filtered, currentItems, totalPages };
+  };
+
+  const { filtered: allFilteredTransactions, currentItems: currentTransactions, totalPages: totalTransactionPages } = getPaginatedTransactions();
+
+  const handleTransactionPageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalTransactionPages) {
+      setTransactionCurrentPage(pageNumber);
+    }
+  };
+
 
   // KYC Logic
   const getFilteredKYCSubmissions = () => {
@@ -532,6 +560,40 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Calculate user status distribution for statistics
+  const getUserStatusDistribution = () => {
+    const active = users.filter(u => u.status === 'active').length;
+    const inactive = users.filter(u => u.status === 'inactive').length;
+    const suspended = users.filter(u => u.status === 'suspended').length;
+    const total = users.length;
+
+    return {
+      active: total > 0 ? (active / total) * 100 : 0,
+      inactive: total > 0 ? (inactive / total) * 100 : 0,
+      suspended: total > 0 ? (suspended / total) * 100 : 0,
+      totalUsers: total
+    };
+  };
+
+  const getKycStatusDistribution = () => {
+    const verified = users.filter(u => u.kycStatus === 'verified').length;
+    const pending = users.filter(u => u.kycStatus === 'pending').length;
+    const rejected = users.filter(u => u.kycStatus === 'rejected').length;
+    const notSubmitted = users.filter(u => u.kycStatus === 'not_submitted').length;
+    const total = users.length;
+
+    return {
+      verified: total > 0 ? (verified / total) * 100 : 0,
+      pending: total > 0 ? (pending / total) * 100 : 0,
+      rejected: total > 0 ? (rejected / total) * 100 : 0,
+      notSubmitted: total > 0 ? (notSubmitted / total) * 100 : 0,
+      totalUsers: total
+    };
+  };
+
+  const userStatusDistribution = getUserStatusDistribution();
+  const kycStatusDistribution = getKycStatusDistribution();
+
 
   const renderContent = () => {
     switch(currentView) {
@@ -546,13 +608,13 @@ const Dashboard: React.FC = () => {
                </div>
                <div className="flex gap-2">
                   <button 
-                    onClick={() => setCurrentView('users')}
+                    onClick={() => handleNavClick('users')}
                     className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
                   >
                     <Plus className="h-4 w-4" /> Nouveau Client
                   </button>
                   <button 
-                    onClick={() => setCurrentView('users')}
+                    onClick={() => handleNavClick('users')}
                     className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
                   >
                     <Wallet className="h-4 w-4" /> Dépôt Rapide
@@ -593,7 +655,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Alert / Pending Card */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setCurrentView('agents')}>
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleNavClick('agents')}>
                 <div className="p-3 sm:p-4 bg-yellow-100 rounded-lg relative">
                   <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-700" />
                   {pendingSubmissionsCount > 0 && (
@@ -618,7 +680,7 @@ const Dashboard: React.FC = () => {
                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                      <Activity className="h-5 w-5 text-gray-500" /> Dernières Transactions
                    </h3>
-                   <button onClick={() => setCurrentView('transactions')} className="text-sm text-gray-700 hover:text-gray-800 font-medium">Voir tout</button>
+                   <button onClick={() => handleNavClick('transactions')} className="text-sm text-gray-700 hover:text-gray-800 font-medium">Voir tout</button>
                  </div>
                  <div className="divide-y divide-gray-100">
                    {transactions.slice(0, 5).map((tx) => (
@@ -672,7 +734,7 @@ const Dashboard: React.FC = () => {
                    ))}
                  </div>
                  <div className="bg-gray-50 px-6 py-3 text-center border-t border-gray-100">
-                    <button onClick={() => setCurrentView('users')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Gérer tous les clients</button>
+                    <button onClick={() => handleNavClick('users')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Gérer tous les clients</button>
                  </div>
                </div>
             </div>
@@ -929,14 +991,14 @@ const Dashboard: React.FC = () => {
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                    <div className="flex justify-between items-start mb-4">
                      <div>
-                       <p className="text-gray-500 text-sm font-medium">Groupes Tontine</p>
-                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalGroups}</h3>
+                       <p className="text-gray-500 text-sm font-medium">KYC en attente</p>
+                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.pendingKYCCount}</h3>
                      </div>
-                     <div className="bg-gray-200 p-2 rounded-lg">
-                       <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
+                     <div className="bg-yellow-100 p-2 rounded-lg">
+                       <Fingerprint className="h-6 w-6 text-yellow-600" />
                      </div>
                    </div>
-                   <p className="text-xs text-gray-400">Actifs en cours</p>
+                   <p className="text-xs text-gray-400">Vérifications requises</p>
                  </div>
                </div>
              )}
@@ -1010,50 +1072,62 @@ const Dashboard: React.FC = () => {
                   )}
                 </div>
 
-                {/* Top Users & Distribution - Right */}
+                {/* User Status & KYC Distribution - Right */}
                 <div className="space-y-6">
-                   {/* Top Depositors */}
-                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <ArrowUpRight className="h-5 w-5 text-gray-700" />
-                        Top Épargnants
-                      </h3>
-                      <div className="space-y-4">
-                        {stats && stats.topDepositors.map((user: User, index: number) => (
-                          <div key={user.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
-                             <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${
-                               index === 0 ? 'bg-yellow-100 text-yellow-700' : 
-                               index === 1 ? 'bg-gray-200 text-gray-700' :
-                               'bg-orange-100 text-orange-800'
-                             }`}>
-                               {index + 1}
-                             </div>
-                             <div className="flex-1 min-w-0">
-                               <p className="text-sm font-medium text-gray-900 truncate">{user.fullName}</p>
-                               <p className="text-xs text-gray-500 truncate">@{user.username}</p>
-                             </div>
-                             <div className="text-right">
-                               <p className="text-sm font-bold text-green-600">{user.depositAmount.toLocaleString()}</p>
-                             </div>
-                          </div>
-                        ))}
-                      </div>
-                   </div>
-
-                   {/* Status Distribution */}
+                   {/* User Status Distribution */}
                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                       <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                          <PieChart className="h-5 w-5 text-gray-700" />
-                         Répartition
+                         Statut des Clients
                       </h3>
-                      <div className="flex items-center justify-center py-4">
-                         <div className="relative w-32 h-32 rounded-full border-[8px] border-gray-700 flex items-center justify-center shadow-inner">
-                            <span className="text-2xl font-bold text-gray-800">100%</span>
-                         </div>
-                      </div>
-                      <div className="text-center text-sm text-gray-500">
-                        Tous les clients sont <span className="text-gray-800 font-bold">Actifs</span>
-                      </div>
+                      {userStatusDistribution.totalUsers > 0 ? (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-green-500"></span>Actifs</span>
+                            <span className="font-medium">{userStatusDistribution.active.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-red-500"></span>Inactifs</span>
+                            <span className="font-medium">{userStatusDistribution.inactive.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-yellow-500"></span>Suspendus</span>
+                            <span className="font-medium">{userStatusDistribution.suspended.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-500 text-sm py-4">Aucun client pour la répartition.</div>
+                      )}
+                   </div>
+
+                   {/* KYC Status Distribution */}
+                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                         <Fingerprint className="h-5 w-5 text-gray-700" />
+                         Statut KYC
+                      </h3>
+                      {kycStatusDistribution.totalUsers > 0 ? (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-green-500"></span>Vérifié</span>
+                            <span className="font-medium">{kycStatusDistribution.verified.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-yellow-500"></span>En attente</span>
+                            <span className="font-medium">{kycStatusDistribution.pending.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-red-500"></span>Rejeté</span>
+                            <span className="font-medium">{kycStatusDistribution.rejected.toFixed(1)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-gray-500"></span>Non soumis</span>
+                            <span className="font-medium">{kycStatusDistribution.notSubmitted.toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center text-gray-500 text-sm py-4">Aucun client pour la répartition KYC.</div>
+                      )}
                    </div>
                 </div>
              </div>
@@ -1708,7 +1782,6 @@ const Dashboard: React.FC = () => {
         );
 
       case 'transactions':
-        const filteredTransactions = getFilteredTransactions();
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
@@ -1718,7 +1791,7 @@ const Dashboard: React.FC = () => {
                <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
                  <div className="flex justify-between items-center">
                    <h3 className="text-lg font-semibold text-gray-800">Mouvements financiers</h3>
-                   <span className="text-sm text-gray-500">{filteredTransactions.length} résultats</span>
+                   <span className="text-sm text-gray-500">{allFilteredTransactions.length} résultats</span>
                  </div>
                  
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1728,7 +1801,10 @@ const Dashboard: React.FC = () => {
                         type="text" 
                         placeholder="Rechercher (Nom, ID)..." 
                         value={transactionSearch}
-                        onChange={(e) => setTransactionSearch(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionSearch(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on search
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
                       />
                    </div>
@@ -1737,7 +1813,10 @@ const Dashboard: React.FC = () => {
                       <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
                         value={transactionFilterType}
-                        onChange={(e) => setTransactionFilterType(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionFilterType(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les types</option>
@@ -1751,7 +1830,10 @@ const Dashboard: React.FC = () => {
                       <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
                         value={transactionFilterStatus}
-                        onChange={(e) => setTransactionFilterStatus(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionFilterStatus(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les statuts</option>
@@ -1775,57 +1857,134 @@ const Dashboard: React.FC = () => {
                      </tr>
                    </thead>
                    <tbody className="bg-white divide-y divide-gray-200">
-                     {filteredTransactions.map((tx) => (
-                       <tr key={tx.id} className="hover:bg-gray-50">
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                           {tx.type === 'deposit' && (
-                             <div className="flex items-center gap-2 text-green-600">
-                               <ArrowUpRight className="h-4 w-4" />
-                               <span>Dépôt</span>
-                             </div>
-                           )}
-                           {tx.type === 'withdrawal' && (
-                             <div className="flex items-center gap-2 text-orange-600">
-                               <ArrowDownLeft className="h-4 w-4" />
-                               <span>Retrait</span>
-                             </div>
-                           )}
-                           {tx.type === 'loan_eligibility' && (
-                             <div className="flex items-center gap-2 text-blue-600">
-                               <Shield className="h-4 w-4" />
-                               <span>Éligibilité</span>
-                             </div>
-                           )}
-                         </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                           {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
-                         </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                           {tx.status === 'success' ? (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                               <CheckCircle className="h-3 w-3" /> Succès
-                             </span>
-                           ) : (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                               <XCircle className="h-3 w-3" /> Échec
-                             </span>
-                           )}
-                         </td>
-                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                           {tx.reason ? (
-                             <span className={`flex items-center gap-1 ${tx.status === 'failed' ? 'text-red-500' : 'text-gray-500'}`}>
-                               {tx.status === 'failed' ? <AlertCircle className="h-3 w-3 flex-shrink-0" /> : <FileText className="h-3 w-3 flex-shrink-0" />} 
-                               {tx.reason}
-                             </span>
-                           ) : '-'}
+                     {currentTransactions.length > 0 ? (
+                       currentTransactions.map((tx) => (
+                         <tr key={tx.id} className="hover:bg-gray-50">
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm">
+                             {tx.type === 'deposit' && (
+                               <div className="flex items-center gap-2 text-green-600">
+                                 <ArrowUpRight className="h-4 w-4" />
+                                 <span>Dépôt</span>
+                               </div>
+                             )}
+                             {tx.type === 'withdrawal' && (
+                               <div className="flex items-center gap-2 text-orange-600">
+                                 <ArrowDownLeft className="h-4 w-4" />
+                                 <span>Retrait</span>
+                               </div>
+                             )}
+                             {tx.type === 'loan_eligibility' && (
+                               <div className="flex items-center gap-2 text-blue-600">
+                                 <Shield className="h-4 w-4" />
+                                 <span>Éligibilité</span>
+                               </div>
+                             )}
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                             {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                           </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm">
+                             {tx.status === 'success' ? (
+                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                 <CheckCircle className="h-3 w-3" /> Succès
+                               </span>
+                             ) : (
+                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                 <XCircle className="h-3 w-3" /> Échec
+                               </span>
+                             )}
+                           </td>
+                           <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                             {tx.reason ? (
+                               <span className={`flex items-center gap-1 ${tx.status === 'failed' ? 'text-red-500' : 'text-gray-500'}`}>
+                                 {tx.status === 'failed' ? <AlertCircle className="h-3 w-3 flex-shrink-0" /> : <FileText className="h-3 w-3 flex-shrink-0" />} 
+                                 {tx.reason}
+                               </span>
+                             ) : '-'}
+                           </td>
+                         </tr>
+                       ))
+                     ) : (
+                       <tr>
+                         <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                           Aucune transaction trouvée pour cette recherche.
                          </td>
                        </tr>
-                     ))}
+                     )}
                    </tbody>
                  </table>
                </div>
+
+               {/* Pagination Controls for Transactions */}
+               {allFilteredTransactions.length > 0 && (
+                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                       <div>
+                          <p className="text-sm text-gray-700">
+                             Affichage de <span className="font-medium">{(transactionCurrentPage - 1) * transactionsPerPage + 1}</span> à <span className="font-medium">{Math.min(transactionCurrentPage * transactionsPerPage, allFilteredTransactions.length)}</span> sur <span className="font-medium">{allFilteredTransactions.length}</span> résultats
+                          </p>
+                       </div>
+                       <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                             <button
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                                disabled={transactionCurrentPage === 1}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Précédent</span>
+                                <ChevronLeft className="h-5 w-5" />
+                             </button>
+                             
+                             {/* Generate Page Numbers */}
+                             {Array.from({ length: totalTransactionPages }, (_, i) => i + 1).map((number) => (
+                               <button
+                                  key={number}
+                                  onClick={() => handleTransactionPageChange(number)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                    transactionCurrentPage === number
+                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                               >
+                                  {number}
+                               </button>
+                             ))}
+
+                             <button
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                                disabled={transactionCurrentPage === totalTransactionPages}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Suivant</span>
+                                <ChevronRight className="h-5 w-5" />
+                             </button>
+                          </nav>
+                       </div>
+                    </div>
+                    {/* Mobile Pagination simplified */}
+                    <div className="flex items-center justify-between w-full sm:hidden">
+                       <button
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                          disabled={transactionCurrentPage === 1}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Précédent
+                       </button>
+                       <span className="text-sm text-gray-700">
+                          Page {transactionCurrentPage} / {totalTransactionPages}
+                       </span>
+                       <button
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                          disabled={transactionCurrentPage === totalTransactionPages}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Suivant
+                       </button>
+                    </div>
+                 </div>
+               )}
             </div>
           </div>
         );
