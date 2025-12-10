@@ -152,9 +152,9 @@ let systemSettings: SystemSettings = {
 
 // Données Mock Agents
 let agents: Agent[] = [
-  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10', profilePictureUrl: 'https://randomuser.me/api/portraits/men/32.jpg' },
-  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05', profilePictureUrl: 'https://randomuser.me/api/portraits/women/44.jpg' },
-  { id: 'AGT-03', fullName: 'Kouadio Konan', email: 'kouadio.konan@mosolocoop.com', phone: '01 23 45 67', zone: 'Yopougon Ficgayo', status: 'inactive', totalFormsSubmitted: 20, joinedDate: '2024-01-15', profilePictureUrl: 'https://randomuser.me/api/portraits/men/21.jpg' },
+  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10', profilePictureUrl: 'https://randomuser.me/api/portraits/men/32.jpg', password: 'password123' },
+  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05', profilePictureUrl: 'https://randomuser.me/api/portraits/women/44.jpg', password: 'password123' },
+  { id: 'AGT-03', fullName: 'Kouadio Konan', email: 'kouadio.konan@mosolocoop.com', phone: '01 23 45 67', zone: 'Yopougon Ficgayo', status: 'inactive', totalFormsSubmitted: 20, joinedDate: '2024-01-15', profilePictureUrl: 'https://randomuser.me/api/portraits/men/21.jpg', password: 'password123' },
 ];
 
 // Données Mock Soumissions Terrain
@@ -469,7 +469,8 @@ export const MockService = {
       joinedDate: new Date().toISOString().split('T')[0],
       totalFormsSubmitted: 0,
       status: 'active', // Default status
-      profilePictureUrl: agent.profilePictureUrl || `https://placehold.co/100x100/gray/white?text=${agent.fullName.charAt(0)}`
+      profilePictureUrl: agent.profilePictureUrl || `https://placehold.co/100x100/gray/white?text=${agent.fullName.charAt(0)}`,
+      password: agent.password || 'defaultpassword' // Default password if not provided
     };
     agents = [...agents, newAgent];
     return newAgent;
@@ -486,6 +487,14 @@ export const MockService = {
     const initialLength = agents.length;
     agents = agents.filter(a => a.id !== agentId);
     return agents.length < initialLength; // True if an agent was removed
+  },
+  resetAgentPassword: (agentId: string, newPassword: string) => {
+    const agentIndex = agents.findIndex(a => a.id === agentId);
+    if (agentIndex !== -1) {
+      agents[agentIndex].password = newPassword; // In a real app, this would be hashed
+      return true;
+    }
+    return false;
   },
 
   // KYC Logic

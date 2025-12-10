@@ -84,6 +84,7 @@ export interface Agent {
   totalFormsSubmitted: number;
   joinedDate: string;
   profilePictureUrl?: string; // Nouveau champ pour la photo de profil
+  password?: string; // Nouveau champ pour le mot de passe de l'agent
 }
 
 export interface FieldSubmission {
