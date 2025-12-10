@@ -52,7 +52,11 @@ import {
   Fingerprint,
   Image,
   FileWarning,
-  KeyRound
+  KeyRound,
+  Edit,
+  Trash2,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument } from '../../types';
@@ -72,6 +76,12 @@ const Dashboard: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
   const [agentSubmissions, setAgentSubmissions] = useState<FieldSubmission[]>([]);
+  const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false);
+  const [newAgentForm, setNewAgentForm] = useState({ fullName: '', email: '', phone: '', zone: '', profilePictureUrl: '' });
+  const [isEditAgentModalOpen, setIsEditAgentModalOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [editAgentForm, setEditAgentForm] = useState<Partial<Agent>>({});
+
 
   // Group View State
   const [viewingGroup, setViewingGroup] = useState<Group | null>(null);
@@ -429,8 +439,69 @@ const Dashboard: React.FC = () => {
       } else {
         alert("Erreur lors de la réinitialisation du mot de passe.");
       }
+    }
+  };
+
+  // Agent Management Logic
+  const handleAddAgent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newAgentForm.fullName && newAgentForm.email && newAgentForm.phone && newAgentForm.zone) {
+      const createdAgent = MockService.addAgent(newAgentForm);
+      setAgents([...agents, createdAgent]);
+      setNewAgentForm({ fullName: '', email: '', phone: '', zone: '', profilePictureUrl: '' });
+      setIsAddAgentModalOpen(false);
+      alert('Agent ajouté avec succès !');
     } else {
-      alert("Veuillez entrer un nouveau mot de passe.");
+      alert('Veuillez remplir tous les champs obligatoires.');
+    }
+  };
+
+  const openEditAgentModal = (agent: Agent) => {
+    setEditingAgent(agent);
+    setEditAgentForm({ ...agent }); // Populate form with current agent data
+    setIsEditAgentModalOpen(true);
+  };
+
+  const handleUpdateAgent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingAgent && editAgentForm.fullName && editAgentForm.email && editAgentForm.phone && editAgentForm.zone) {
+      const updatedAgent = MockService.updateAgent(editingAgent.id, editAgentForm);
+      if (updatedAgent) {
+        setAgents(MockService.getAgents()); // Refresh agents list
+        setIsEditAgentModalOpen(false);
+        setEditingAgent(null);
+        setEditAgentForm({});
+        alert('Agent mis à jour avec succès !');
+      } else {
+        alert('Erreur lors de la mise à jour de l\'agent.');
+      }
+    } else {
+      alert('Veuillez remplir tous les champs obligatoires.');
+    }
+  };
+
+  const handleDeleteAgent = (agentId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet agent ? Cette action est irréversible.')) {
+      const success = MockService.deleteAgent(agentId);
+      if (success) {
+        setAgents(MockService.getAgents()); // Refresh agents list
+        alert('Agent supprimé avec succès !');
+      } else {
+        alert('Erreur lors de la suppression de l\'agent.');
+      }
+    }
+  };
+
+  const toggleAgentStatus = (agent: Agent) => {
+    const newStatus = agent.status === 'active' ? 'inactive' : 'active';
+    if (window.confirm(`Voulez-vous ${newStatus === 'active' ? 'activer' : 'désactiver'} l'agent ${agent.fullName} ?`)) {
+      const updatedAgent = MockService.updateAgent(agent.id, { status: newStatus });
+      if (updatedAgent) {
+        setAgents(MockService.getAgents());
+        alert(`Statut de l'agent ${agent.fullName} mis à jour à "${newStatus}".`);
+      } else {
+        alert('Erreur lors de la mise à jour du statut de l\'agent.');
+      }
     }
   };
 
@@ -685,8 +756,11 @@ const Dashboard: React.FC = () => {
         return (
           <div className="space-y-8">
              <div className="flex justify-between items-center">
-               <h2 className="text-2xl font-bold text-gray-800">Nos Partenaires / Agents</h2>
-               <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2">
+               <h2 className="text-2xl font-bold text-gray-800">Gestion des Agents</h2>
+               <button 
+                 onClick={() => setIsAddAgentModalOpen(true)}
+                 className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2"
+               >
                  <Plus className="h-4 w-4" /> Nouvel Agent
                </button>
              </div>
@@ -696,8 +770,12 @@ const Dashboard: React.FC = () => {
                   <div key={agent.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
                      <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
-                           <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
-                              <Briefcase className="h-6 w-6" />
+                           <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 overflow-hidden">
+                              {agent.profilePictureUrl ? (
+                                <img src={agent.profilePictureUrl} alt={agent.fullName} className="object-cover w-full h-full" />
+                              ) : (
+                                <Briefcase className="h-6 w-6" />
+                              )}
                            </div>
                            <div>
                               <h3 className="font-bold text-gray-900">{agent.fullName}</h3>
@@ -723,13 +801,36 @@ const Dashboard: React.FC = () => {
                         </div>
                      </div>
 
-                     <button 
-                       onClick={() => handleViewAgent(agent)}
-                       className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                     >
-                        <FileText className="h-4 w-4" />
-                        Voir activité terrain
-                     </button>
+                     <div className="flex gap-2 mt-auto">
+                       <button 
+                         onClick={() => handleViewAgent(agent)}
+                         className="flex-1 bg-gray-100 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-sm"
+                       >
+                          <FileText className="h-4 w-4" />
+                          Voir activité
+                       </button>
+                       <button 
+                         onClick={() => openEditAgentModal(agent)}
+                         className="p-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                         title="Modifier l'agent"
+                       >
+                         <Edit className="h-4 w-4" />
+                       </button>
+                       <button 
+                         onClick={() => toggleAgentStatus(agent)}
+                         className={`p-2 rounded-lg ${agent.status === 'active' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'} transition-colors`}
+                         title={agent.status === 'active' ? "Désactiver l'agent" : "Activer l'agent"}
+                       >
+                         {agent.status === 'active' ? <ToggleLeft className="h-4 w-4" /> : <ToggleRight className="h-4 w-4" />}
+                       </button>
+                       <button 
+                         onClick={() => handleDeleteAgent(agent.id)}
+                         className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                         title="Supprimer l'agent"
+                       >
+                         <Trash2 className="h-4 w-4" />
+                       </button>
+                     </div>
                   </div>
                 ))}
              </div>
@@ -2405,6 +2506,190 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Add Agent Modal */}
+      {isAddAgentModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <UserPlus className="h-6 w-6 text-gray-700" />
+                Ajouter un nouvel agent
+              </h3>
+              <button onClick={() => setIsAddAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddAgent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                <input 
+                  type="text" 
+                  value={newAgentForm.fullName}
+                  onChange={e => setNewAgentForm({...newAgentForm, fullName: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input 
+                  type="email" 
+                  value={newAgentForm.email}
+                  onChange={e => setNewAgentForm({...newAgentForm, email: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <input 
+                  type="text" 
+                  value={newAgentForm.phone}
+                  onChange={e => setNewAgentForm({...newAgentForm, phone: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                <input 
+                  type="text" 
+                  value={newAgentForm.zone}
+                  onChange={e => setNewAgentForm({...newAgentForm, zone: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
+                <input 
+                  type="text" 
+                  value={newAgentForm.profilePictureUrl}
+                  onChange={e => setNewAgentForm({...newAgentForm, profilePictureUrl: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Ex: https://example.com/agent.jpg"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddAgentModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Ajouter l'agent
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Agent Modal */}
+      {isEditAgentModalOpen && editingAgent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Edit className="h-6 w-6 text-gray-700" />
+                Modifier l'agent
+              </h3>
+              <button onClick={() => setIsEditAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateAgent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                <input 
+                  type="text" 
+                  value={editAgentForm.fullName}
+                  onChange={e => setEditAgentForm({...editAgentForm, fullName: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input 
+                  type="email" 
+                  value={editAgentForm.email}
+                  onChange={e => setEditAgentForm({...editAgentForm, email: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <input 
+                  type="text" 
+                  value={editAgentForm.phone}
+                  onChange={e => setEditAgentForm({...editAgentForm, phone: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                <input 
+                  type="text" 
+                  value={editAgentForm.zone}
+                  onChange={e => setEditAgentForm({...editAgentForm, zone: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                <select 
+                  value={editAgentForm.status}
+                  onChange={e => setEditAgentForm({...editAgentForm, status: e.target.value as 'active' | 'inactive'})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  required
+                >
+                  <option value="active">Actif</option>
+                  <option value="inactive">Inactif</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
+                <input 
+                  type="text" 
+                  value={editAgentForm.profilePictureUrl}
+                  onChange={e => setEditAgentForm({...editAgentForm, profilePictureUrl: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Ex: https://example.com/agent.jpg"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditAgentModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Mettre à jour
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
       {/* Sidebar - Responsive */}
       <aside className={`
@@ -2456,7 +2741,7 @@ const Dashboard: React.FC = () => {
             onClick={() => handleNavClick('agents')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
-            <Briefcase className="h-5 w-5" /> Partenaires
+            <Briefcase className="h-5 w-5" /> Agents
           </button>
 
           <button 

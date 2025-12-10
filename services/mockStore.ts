@@ -152,8 +152,9 @@ let systemSettings: SystemSettings = {
 
 // Données Mock Agents
 let agents: Agent[] = [
-  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10' },
-  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05' },
+  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10', profilePictureUrl: 'https://randomuser.me/api/portraits/men/32.jpg' },
+  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05', profilePictureUrl: 'https://randomuser.me/api/portraits/women/44.jpg' },
+  { id: 'AGT-03', fullName: 'Kouadio Konan', email: 'kouadio.konan@mosolocoop.com', phone: '01 23 45 67', zone: 'Yopougon Ficgayo', status: 'inactive', totalFormsSubmitted: 20, joinedDate: '2024-01-15', profilePictureUrl: 'https://randomuser.me/api/portraits/men/21.jpg' },
 ];
 
 // Données Mock Soumissions Terrain
@@ -460,6 +461,31 @@ export const MockService = {
   getAgents: () => [...agents],
   getAgentSubmissions: (agentId: string) => {
     return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
+  },
+  addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'totalFormsSubmitted'>) => {
+    const newAgent: Agent = {
+      ...agent,
+      id: `AGT-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      joinedDate: new Date().toISOString().split('T')[0],
+      totalFormsSubmitted: 0,
+      status: 'active', // Default status
+      profilePictureUrl: agent.profilePictureUrl || `https://placehold.co/100x100/gray/white?text=${agent.fullName.charAt(0)}`
+    };
+    agents = [...agents, newAgent];
+    return newAgent;
+  },
+  updateAgent: (agentId: string, updates: Partial<Agent>) => {
+    const agentIndex = agents.findIndex(a => a.id === agentId);
+    if (agentIndex !== -1) {
+      agents[agentIndex] = { ...agents[agentIndex], ...updates };
+      return agents[agentIndex];
+    }
+    return null;
+  },
+  deleteAgent: (agentId: string) => {
+    const initialLength = agents.length;
+    agents = agents.filter(a => a.id !== agentId);
+    return agents.length < initialLength; // True if an agent was removed
   },
 
   // KYC Logic

@@ -83,6 +83,7 @@ export interface Agent {
   status: 'active' | 'inactive';
   totalFormsSubmitted: number;
   joinedDate: string;
+  profilePictureUrl?: string; // Nouveau champ pour la photo de profil
 }
 
 export interface FieldSubmission {
