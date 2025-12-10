@@ -30,6 +30,9 @@ export interface AdminProfile {
   email: string;
   fullName: string;
   role: 'admin';
+  phoneNumber?: string; // Nouveau champ
+  address?: string;    // Nouveau champ
+  profilePictureUrl?: string; // Nouveau champ pour la photo de profil
 }
 
 export type TransactionStatus = 'success' | 'failed';

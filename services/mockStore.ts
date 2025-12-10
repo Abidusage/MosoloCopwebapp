@@ -130,7 +130,10 @@ let adminProfile: AdminProfile = {
   username: 'admin',
   email: 'admin@mosolocoop.com',
   fullName: 'Administrateur Principal',
-  role: 'admin'
+  role: 'admin',
+  phoneNumber: '+225 01 01 01 01', // Exemple de numéro de téléphone
+  address: 'Abidjan, Cocody, Rue 123', // Exemple d'adresse
+  profilePictureUrl: 'https://placehold.co/100x100/gray/white?text=Admin' // URL de photo de profil par défaut
 };
 
 let systemSettings: SystemSettings = {
