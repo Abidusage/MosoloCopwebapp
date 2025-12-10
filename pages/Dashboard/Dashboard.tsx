@@ -84,7 +84,13 @@ const Dashboard: React.FC = () => {
   const [newUser, setNewUser] = useState({ username: '', password: '', fullName: '', depositAmount: 0 });
   const [newGroup, setNewGroup] = useState({ name: '', description: '', targetAmount: 0 });
   const [isEditProfile, setIsEditProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({ fullName: '', email: '' });
+  const [profileForm, setProfileForm] = useState<Partial<AdminProfile>>({ 
+    fullName: '', 
+    email: '', 
+    phoneNumber: '', 
+    address: '', 
+    profilePictureUrl: '' 
+  });
 
   // Deposit Modal State
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
@@ -133,15 +139,19 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Load initial data
+    const currentAdminProfile = MockService.getAdminProfile();
     setUsers(MockService.getUsers());
     setGroups(MockService.getGroups());
     setTransactions(MockService.getTransactions());
-    setAdminProfile(MockService.getAdminProfile());
+    setAdminProfile(currentAdminProfile);
     setSettings(MockService.getSystemSettings());
     setAgents(MockService.getAgents());
     setProfileForm({
-      fullName: MockService.getAdminProfile().fullName,
-      email: MockService.getAdminProfile().email
+      fullName: currentAdminProfile.fullName,
+      email: currentAdminProfile.email,
+      phoneNumber: currentAdminProfile.phoneNumber,
+      address: currentAdminProfile.address,
+      profilePictureUrl: currentAdminProfile.profilePictureUrl
     });
     setStats(MockService.getGlobalStats());
     setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
@@ -1694,9 +1704,18 @@ const Dashboard: React.FC = () => {
               <div className="bg-gray-800 h-24 sm:h-32 relative">
                 <div className="absolute -bottom-10 sm:-bottom-12 left-6 sm:left-8">
                   <div className="h-20 w-20 sm:h-24 sm:w-24 bg-white rounded-full p-1 shadow-md">
-                     <div className="h-full w-full bg-gray-200 rounded-full flex items-center justify-center">
-                        <UserCircle className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
-                     </div>
+                     {adminProfile?.profilePictureUrl ? (
+                       <img 
+                         src={adminProfile.profilePictureUrl} 
+                         alt="Admin Profile" 
+                         className="h-full w-full rounded-full object-cover" 
+                         onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/gray/white?text=Admin"; }}
+                       />
+                     ) : (
+                       <div className="h-full w-full bg-gray-200 rounded-full flex items-center justify-center">
+                          <UserCircle className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
+                       </div>
+                     )}
                   </div>
                 </div>
               </div>
@@ -1721,6 +1740,34 @@ const Dashboard: React.FC = () => {
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
                        />
                      </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Téléphone</label>
+                       <input 
+                        type="text" 
+                        value={profileForm.phoneNumber}
+                        onChange={e => setProfileForm({...profileForm, phoneNumber: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Adresse</label>
+                       <input 
+                        type="text" 
+                        value={profileForm.address}
+                        onChange={e => setProfileForm({...profileForm, address: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">URL Photo de Profil</label>
+                       <input 
+                        type="text" 
+                        value={profileForm.profilePictureUrl}
+                        onChange={e => setProfileForm({...profileForm, profilePictureUrl: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
+                        placeholder="Ex: https://example.com/ma-photo.jpg"
+                       />
+                     </div>
                      <div className="flex gap-4 pt-4">
                        <button type="submit" className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-900 text-sm font-medium">Enregistrer</button>
                        <button type="button" onClick={() => setIsEditProfile(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm font-medium">Annuler</button>
@@ -1736,8 +1783,16 @@ const Dashboard: React.FC = () => {
                         <span>@{adminProfile?.username}</span>
                       </div>
                       <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                        <Settings className="h-5 w-5 mr-3" />
+                        <Mail className="h-5 w-5 mr-3" />
                         <span>{adminProfile?.email}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
+                        <Phone className="h-5 w-5 mr-3" />
+                        <span>{adminProfile?.phoneNumber || 'Non renseigné'}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
+                        <MapPin className="h-5 w-5 mr-3" />
+                        <span>{adminProfile?.address || 'Non renseigné'}</span>
                       </div>
                     </div>
                     <button 
