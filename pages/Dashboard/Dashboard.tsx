@@ -623,7 +623,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* KPIs Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"> {/* Adjusted grid columns */}
               <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="p-3 sm:p-4 bg-gray-200 rounded-lg">
                   <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
@@ -651,6 +651,17 @@ const Dashboard: React.FC = () => {
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Groupes Tontine</p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{groups.length}</p>
+                </div>
+              </div>
+
+              {/* New Agents KPI Card */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleNavClick('agents')}>
+                <div className="p-3 sm:p-4 bg-blue-100 rounded-lg">
+                  <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 text-blue-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Total Agents</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{agents.length}</p>
                 </div>
               </div>
 
@@ -1867,7 +1878,7 @@ const Dashboard: React.FC = () => {
                                <div className="flex items-center gap-2 text-green-600">
                                  <ArrowUpRight className="h-4 w-4" />
                                  <span>Dépôt</span>
-                               </div>
+                             </div>
                              )}
                              {tx.type === 'withdrawal' && (
                                <div className="flex items-center gap-2 text-orange-600">
