@@ -36,7 +36,7 @@ export interface AdminProfile {
 }
 
 export type TransactionStatus = 'success' | 'failed';
-export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility';
+export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility' | 'status_change'; // Added 'status_change'
 
 export interface Transaction {
   id: string;

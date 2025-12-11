@@ -362,6 +362,16 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const toggleUserAccountStatus = (user: User) => {
+    const newStatus = user.status === 'active' ? 'suspended' : 'active';
+    if(window.confirm(`Voulez-vous ${newStatus === 'suspended' ? 'suspendre' : 'activer'} le compte de ${user.fullName} ?`)) {
+      MockService.toggleUserStatus(user.id, newStatus);
+      setUsers(MockService.getUsers()); // Refresh users to update status
+      setTransactions(MockService.getTransactions()); // Refresh transaction history
+      alert(`Statut du compte de ${user.fullName} mis à jour à "${newStatus}".`);
+    }
+  };
+
   // Filter Logic for Transactions
   const getFilteredTransactions = () => {
     const filtered = transactions.filter(tx => {
@@ -513,17 +523,18 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleDeleteAgent = (agentId: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet agent ? Cette action est irréversible.')) {
-      const success = MockService.deleteAgent(agentId);
-      if (success) {
-        setAgents(MockService.getAgents()); // Refresh agents list
-        alert('Agent supprimé avec succès !');
-      } else {
-        alert('Erreur lors de la suppression de l\'agent.');
-      }
-    }
-  };
+  // Removed handleDeleteAgent function as requested.
+  // const handleDeleteAgent = (agentId: string) => {
+  //   if (window.confirm('Êtes-vous sûr de vouloir supprimer cet agent ? Cette action est irréversible.')) {
+  //     const success = MockService.deleteAgent(agentId);
+  //     if (success) {
+  //       setAgents(MockService.getAgents()); // Refresh agents list
+  //       alert('Agent supprimé avec succès !');
+  //     } else {
+  //       alert('Erreur lors de la suppression de l\'agent.');
+  //     }
+  //   }
+  // };
 
   const toggleAgentStatus = (agent: Agent) => {
     const newStatus = agent.status === 'active' ? 'inactive' : 'active';
@@ -628,7 +639,7 @@ const Dashboard: React.FC = () => {
                 <div className="p-3 sm:p-4 bg-gray-200 rounded-lg">
                   <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
                 </div>
-                <div>
+                <div className="flex-1 text-center"> {/* Added flex-1 and text-center */}
                   <p className="text-sm text-gray-500 font-medium">Solde Total</p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
                 </div>
@@ -697,17 +708,17 @@ const Dashboard: React.FC = () => {
                    {transactions.slice(0, 5).map((tx) => (
                      <div key={tx.id} className="px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
                        <div className="flex items-center gap-3">
-                         <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                           {tx.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> : tx.type === 'loan_eligibility' ? <Shield className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
+                         <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : tx.type === 'status_change' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
+                           {tx.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> : tx.type === 'loan_eligibility' ? <Shield className="h-4 w-4" /> : tx.type === 'status_change' ? <RefreshCcw className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
                          </div>
                          <div>
                            <p className="text-sm font-medium text-gray-900">{tx.userFullName}</p>
-                           <p className="text-xs text-gray-500">{tx.date.split(' ')[0]} • {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Crédit'}</p>
+                           <p className="text-xs text-gray-500">{tx.date.split(' ')[0]} • {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : tx.type === 'loan_eligibility' ? 'Crédit' : 'Statut'}</p>
                          </div>
                        </div>
                        <div className="text-right">
                          <p className={`text-sm font-bold ${tx.status === 'failed' ? 'text-gray-400 line-through' : (tx.type === 'deposit' ? 'text-green-600' : 'text-gray-900')}`}>
-                           {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                           {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
                          </p>
                          <span className={`text-[10px] ${tx.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                            {tx.status === 'success' ? 'Validé' : 'Échoué'}
@@ -930,13 +941,14 @@ const Dashboard: React.FC = () => {
                        >
                          <KeyRound className="h-4 w-4" />
                        </button>
-                       <button 
+                       {/* Removed Delete Agent Button */}
+                       {/* <button 
                          onClick={() => handleDeleteAgent(agent.id)}
                          className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
                          title="Supprimer l'agent"
                        >
                          <Trash2 className="h-4 w-4" />
-                       </button>
+                       </button> */}
                      </div>
                   </div>
                 ))}
@@ -1405,6 +1417,7 @@ const Dashboard: React.FC = () => {
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifiant (ID)</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom Complet</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th> {/* Added Status column */}
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'inscription</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FCFA)</th>
                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -1419,6 +1432,23 @@ const Dashboard: React.FC = () => {
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.fullName}</td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm">
+                             {user.status === 'active' && (
+                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                 <CheckCircle className="h-3 w-3" /> Actif
+                               </span>
+                             )}
+                             {user.status === 'suspended' && (
+                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                 <XCircle className="h-3 w-3" /> Suspendu
+                               </span>
+                             )}
+                             {user.status === 'inactive' && (
+                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                 <AlertCircle className="h-3 w-3" /> Inactif
+                               </span>
+                             )}
+                           </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex items-center gap-1.5">
                                  <Calendar className="h-3 w-3 text-gray-400" />
@@ -1427,6 +1457,18 @@ const Dashboard: React.FC = () => {
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-bold">{user.depositAmount.toLocaleString()}</td>
                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                             <button 
+                              onClick={() => toggleUserAccountStatus(user)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
+                                user.status === 'active' 
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-200' 
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                              }`}
+                              title={user.status === 'active' ? "Suspendre le client" : "Activer le client"}
+                             >
+                               {user.status === 'active' ? <ToggleLeft className="h-3 w-3 sm:h-4 sm:w-4" /> : <ToggleRight className="h-3 w-3 sm:h-4 sm:w-4" />} 
+                               {user.status === 'active' ? 'Suspendre' : 'Activer'}
+                             </button>
                              <button 
                               onClick={() => toggleUserLoanEligibility(user)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
@@ -1466,7 +1508,7 @@ const Dashboard: React.FC = () => {
                        ))
                      ) : (
                        <tr>
-                         <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                         <td colSpan={7} className="px-6 py-10 text-center text-gray-500"> {/* Adjusted colspan */}
                            Aucun client trouvé pour cette recherche.
                          </td>
                        </tr>
@@ -1834,6 +1876,7 @@ const Dashboard: React.FC = () => {
                         <option value="deposit">Dépôts</option>
                         <option value="withdrawal">Retraits</option>
                         <option value="loan_eligibility">Crédit / Éligibilité</option>
+                        <option value="status_change">Changement Statut</option> {/* Added status_change filter */}
                       </select>
                    </div>
 
@@ -1878,7 +1921,7 @@ const Dashboard: React.FC = () => {
                                <div className="flex items-center gap-2 text-green-600">
                                  <ArrowUpRight className="h-4 w-4" />
                                  <span>Dépôt</span>
-                             </div>
+                               </div>
                              )}
                              {tx.type === 'withdrawal' && (
                                <div className="flex items-center gap-2 text-orange-600">
@@ -1892,9 +1935,15 @@ const Dashboard: React.FC = () => {
                                  <span>Éligibilité</span>
                                </div>
                              )}
+                             {tx.type === 'status_change' && (
+                               <div className="flex items-center gap-2 text-purple-600">
+                                 <RefreshCcw className="h-4 w-4" />
+                                 <span>Statut</span>
+                               </div>
+                             )}
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                             {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                             {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                              {tx.status === 'success' ? (
@@ -2422,19 +2471,19 @@ const Dashboard: React.FC = () => {
                      selectedUserTransactions.slice(0, 5).map(tx => (
                        <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
                          <div className="flex items-center gap-3">
-                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : tx.type === 'status_change' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
+                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : tx.type === 'status_change' ? <RefreshCcw className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
                            </div>
                            <div>
                              <p className="text-sm font-medium text-gray-900 capitalize">
-                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : 'Retrait'}
+                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : tx.type === 'status_change' ? 'Statut Compte' : 'Retrait'}
                              </p>
                              <p className="text-xs text-gray-500">{tx.date}</p>
                            </div>
                          </div>
                          <div className="text-right">
-                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
-                             {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
+                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' || tx.type === 'status_change' ? 'text-gray-600' : 'text-orange-600'}`}>
+                             {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
                            </p>
                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                              {tx.status === 'success' ? 'Succès' : 'Échec'}

@@ -290,6 +290,29 @@ export const MockService = {
     return false;
   },
 
+  toggleUserStatus: (userId: string, newStatus: 'active' | 'inactive' | 'suspended') => {
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      const oldStatus = users[userIndex].status;
+      users[userIndex].status = newStatus;
+
+      // Log history
+      const newTransaction: Transaction = {
+        id: `TRX-${Date.now()}`,
+        userId: users[userIndex].id,
+        userFullName: users[userIndex].fullName,
+        type: 'status_change',
+        amount: 0,
+        status: 'success',
+        date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        reason: `Statut changé de '${oldStatus}' à '${newStatus}'`
+      };
+      transactions = [newTransaction, ...transactions];
+      return true;
+    }
+    return false;
+  },
+
   resetUserPassword: (userId: string, newPassword: string) => {
     const userIndex = users.findIndex(u => u.id === userId);
     if (userIndex !== -1) {
