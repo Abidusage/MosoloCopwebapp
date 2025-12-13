@@ -145,6 +145,7 @@ let systemSettings: SystemSettings = {
   loanInterestRate: 5.5,
   tontineCommission: 1.0,
   agentCommission: 2.5,
+  withdrawalFeeRate: 0.5, // Nouveau: 0.5% de frais de retrait
   minPasswordLength: 8,
   enableTwoFactor: false,
   emailNotifications: true
@@ -430,6 +431,16 @@ export const MockService = {
       .filter(t => t.type === 'withdrawal' && t.status === 'success')
       .reduce((sum, t) => sum + t.amount, 0);
       
+    // Calculate withdrawal fees
+    const withdrawalFees = transactions
+      .filter(t => t.type === 'withdrawal' && t.status === 'success')
+      .reduce((sum, t) => sum + (t.amount * (systemSettings.withdrawalFeeRate / 100)), 0);
+
+    // Mock interest for now, as there's no loan tracking system
+    const mockInterestRevenue = 25000; // Example mock value for interest
+
+    const totalAccumulatedFees = withdrawalFees + mockInterestRevenue;
+
     const totalTransactions = transactions.length;
     const successTransactions = transactions.filter(t => t.status === 'success').length;
     const successRate = totalTransactions > 0 ? Math.round((successTransactions / totalTransactions) * 100) : 0;
@@ -462,7 +473,8 @@ export const MockService = {
       growthData,
       eligibleUsersCount,
       totalCollectedByAgents,
-      pendingKYCCount
+      pendingKYCCount,
+      totalAccumulatedFees // Added total accumulated fees
     };
   },
 

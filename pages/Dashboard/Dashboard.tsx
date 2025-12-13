@@ -676,20 +676,14 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Alert / Pending Card */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleNavClick('agents')}>
-                <div className="p-3 sm:p-4 bg-yellow-100 rounded-lg relative">
-                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-700" />
-                  {pendingSubmissionsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white"></span>
-                  )}
+              {/* Accumulated Fees KPI Card */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 bg-purple-100 rounded-lg">
+                  <Banknote className="h-6 w-6 sm:h-8 sm:w-8 text-purple-700" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">En Attente</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    {pendingSubmissionsCount} 
-                    <span className="text-xs font-normal text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded-full">Actions requises</span>
-                  </p>
+                  <p className="text-sm text-gray-500 font-medium">Frais Accumulés</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalAccumulatedFees.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
                 </div>
               </div>
             </div>
@@ -1272,13 +1266,13 @@ const Dashboard: React.FC = () => {
                            </div>
                          </div>
                          <div>
-                           <label className="block text-sm font-medium text-gray-700 mb-1">Commission Agent (%)</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Taux de frais de retrait (%)</label>
                            <div className="relative">
                              <input 
                                type="number" 
                                step="0.1"
-                               value={settings.agentCommission}
-                               onChange={(e) => setSettings({...settings, agentCommission: parseFloat(e.target.value)})}
+                               value={settings.withdrawalFeeRate}
+                               onChange={(e) => setSettings({...settings, withdrawalFeeRate: parseFloat(e.target.value)})}
                                className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                              />
                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>

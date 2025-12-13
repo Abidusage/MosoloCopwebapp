@@ -68,6 +68,7 @@ export interface SystemSettings {
   loanInterestRate: number; // Pourcentage
   tontineCommission: number; // Pourcentage
   agentCommission: number; // Pourcentage commission agents
+  withdrawalFeeRate: number; // Nouveau champ: Taux de frais de retrait (%)
   minPasswordLength: number;
   enableTwoFactor: boolean;
   emailNotifications: boolean;
