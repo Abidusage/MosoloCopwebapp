@@ -118,6 +118,11 @@ let transactions: Transaction[] = [
   { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00' },
   { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin' },
   { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo' },
+  { id: 'TRX-009', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 10000, status: 'success', date: '2024-06-18 10:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-010', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 20000, status: 'success', date: '2024-06-17 11:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-011', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 5000, status: 'success', date: '2024-06-15 12:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-012', userId: 'US4455A4', userFullName: 'Awa Sanogo', type: 'deposit', amount: 30000, status: 'success', date: '2024-05-20 13:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-013', userId: 'US5566B5', userFullName: 'Moussa Traoré', type: 'deposit', amount: 10000, status: 'success', date: '2024-04-10 14:00', reason: 'Dépôt manuel admin' },
 ];
 
 let messages: Message[] = [
@@ -241,6 +246,27 @@ let kycDocuments: KYCDocument[] = [
     submissionDate: '2024-03-28 16:00'
   }
 ];
+
+// Helper to get date N days ago
+const getDateNDaysAgo = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().split('T')[0]; // YYYY-MM-DD format
+};
+
+// Helper to get date N months ago
+const function getDateNMonthsAgo(months: number) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d.toISOString().split('T')[0];
+}
+
+// Helper to get date N years ago
+const function getDateNYearsAgo(years: number) {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - years);
+  return d.toISOString().split('T')[0];
+}
 
 
 export const MockService = {
@@ -416,6 +442,28 @@ export const MockService = {
     return fieldSubmissions.filter(s => s.status === 'pending').length;
   },
 
+  getAdminDepositsByPeriod: (period: '7days' | 'month' | 'year') => {
+    let startDate: string;
+    const today = new Date().toISOString().split('T')[0];
+
+    if (period === '7days') {
+      startDate = getDateNDaysAgo(7);
+    } else if (period === 'month') {
+      startDate = getDateNMonthsAgo(1);
+    } else { // 'year'
+      startDate = getDateNYearsAgo(1);
+    }
+
+    return transactions
+      .filter(tx =>
+        tx.type === 'deposit' &&
+        tx.reason === 'Dépôt manuel admin' && 
+        tx.date.split(' ')[0] >= startDate &&
+        tx.date.split(' ')[0] <= today
+      )
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  },
+
   getGlobalStats: () => {
     const totalUsers = users.length;
     const totalGroups = groups.length;
@@ -474,7 +522,10 @@ export const MockService = {
       eligibleUsersCount,
       totalCollectedByAgents,
       pendingKYCCount,
-      totalAccumulatedFees // Added total accumulated fees
+      totalAccumulatedFees,
+      adminDeposits7Days: MockService.getAdminDepositsByPeriod('7days'),
+      adminDepositsMonth: MockService.getAdminDepositsByPeriod('month'),
+      adminDepositsYear: MockService.getAdminDepositsByPeriod('year'),
     };
   },
 
