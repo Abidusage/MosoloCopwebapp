@@ -118,13 +118,6 @@ let transactions: Transaction[] = [
   { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00' },
   { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin' },
   { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo' },
-  { id: 'TRX-009', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 10000, status: 'success', date: '2024-05-28 10:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-010', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 20000, status: 'success', date: '2024-05-25 11:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-011', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 5000, status: 'success', date: '2024-05-29 12:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-012', userId: 'US4455A4', userFullName: 'Awa Sanogo', type: 'deposit', amount: 15000, status: 'success', date: '2024-04-15 14:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-013', userId: 'US5566B5', userFullName: 'Moussa Traoré', type: 'deposit', amount: 8000, status: 'success', date: '2024-05-01 09:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-014', userId: 'US6677C6', userFullName: 'Fatou Diallo', type: 'deposit', amount: 30000, status: 'success', date: '2024-05-27 16:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-015', userId: 'US7788D7', userFullName: 'Kofi Annan', type: 'deposit', amount: 12000, status: 'success', date: '2024-05-26 13:00', reason: 'Dépôt manuel admin' },
 ];
 
 let messages: Message[] = [
@@ -457,36 +450,6 @@ export const MockService = {
       .filter(s => s.status === 'approved' && s.amount)
       .reduce((sum, s) => sum + (s.amount || 0), 0);
 
-    // Admin Deposits Stats
-    const adminDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'success' && t.reason === 'Dépôt manuel admin');
-
-    const today = new Date();
-    const sevenDaysAgo = new Date(today.setDate(today.getDate() - 7));
-    const oneMonthAgo = new Date(today.setMonth(today.getMonth() - 1)); // Note: this modifies 'today'
-    const oneYearAgo = new Date(today.setFullYear(today.getFullYear() - 1)); // Note: this modifies 'today'
-
-    // Reset today for correct calculations
-    const now = new Date();
-    const last7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-    const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-
-
-    const totalAdminDepositsLast7Days = adminDeposits
-      .filter(t => new Date(t.date.split(' ')[0]) >= last7Days)
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalAdminDepositsLastMonth = adminDeposits
-      .filter(t => new Date(t.date.split(' ')[0]) >= lastMonth)
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalAdminDepositsLastYear = adminDeposits
-      .filter(t => new Date(t.date.split(' ')[0]) >= lastYear)
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const totalAdminDepositsOverall = adminDeposits.reduce((sum, t) => sum + t.amount, 0);
-
-
     // Top Depositors
     const topDepositors = [...users]
       .sort((a, b) => b.depositAmount - a.depositAmount)
@@ -511,11 +474,7 @@ export const MockService = {
       eligibleUsersCount,
       totalCollectedByAgents,
       pendingKYCCount,
-      totalAccumulatedFees,
-      totalAdminDepositsLast7Days,
-      totalAdminDepositsLastMonth,
-      totalAdminDepositsLastYear,
-      totalAdminDepositsOverall
+      totalAccumulatedFees // Added total accumulated fees
     };
   },
 
@@ -536,7 +495,7 @@ export const MockService = {
   // Agent / Partner Logic
   getAgents: () => [...agents],
   getAgentSubmissions: (agentId: string) => {
-    return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(b.submissionDate));
+    return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
   },
   addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'totalFormsSubmitted'>) => {
     const newAgent: Agent = {

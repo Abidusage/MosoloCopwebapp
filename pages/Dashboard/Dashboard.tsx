@@ -1032,31 +1032,6 @@ const Dashboard: React.FC = () => {
                   
                   {stats && (
                     <div className="space-y-6">
-                       {/* Admin Deposits Stats */}
-                       <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <PlusCircle className="h-4 w-4 text-gray-600" /> Dépôts effectués par l'Admin
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600">7 derniers jours:</span>
-                              <span className="font-bold text-gray-800">{stats.totalAdminDepositsLast7Days.toLocaleString()} FCFA</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600">Ce mois-ci:</span>
-                              <span className="font-bold text-gray-800">{stats.totalAdminDepositsLastMonth.toLocaleString()} FCFA</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600">Cette année:</span>
-                              <span className="font-bold text-gray-800">{stats.totalAdminDepositsLastYear.toLocaleString()} FCFA</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-600">Total général:</span>
-                              <span className="font-bold text-gray-800">{stats.totalAdminDepositsOverall.toLocaleString()} FCFA</span>
-                            </div>
-                          </div>
-                       </div>
-
                        {/* Agent vs Direct Stats */}
                        <div className="grid grid-cols-2 gap-4 mb-6">
                           <div className="bg-blue-50 p-4 rounded-lg">
@@ -1200,9 +1175,8 @@ const Dashboard: React.FC = () => {
                     </h3>
                     <div className="space-y-4">
                        <div>
-                         <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">Nom de la Plateforme</label>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la Plateforme</label>
                          <input 
-                           id="siteName"
                            type="text" 
                            value={settings.siteName}
                            onChange={(e) => setSettings({...settings, siteName: e.target.value})}
@@ -1211,9 +1185,8 @@ const Dashboard: React.FC = () => {
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
-                           <label htmlFor="supportEmail" className="block text-sm font-medium text-gray-700 mb-1">Email Support</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Email Support</label>
                            <input 
-                             id="supportEmail"
                              type="email" 
                              value={settings.supportEmail}
                              onChange={(e) => setSettings({...settings, supportEmail: e.target.value})}
@@ -1221,9 +1194,8 @@ const Dashboard: React.FC = () => {
                            />
                          </div>
                          <div>
-                           <label htmlFor="supportPhone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone Support</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone Support</label>
                            <input 
-                             id="supportPhone"
                              type="text" 
                              value={settings.supportPhone}
                              onChange={(e) => setSettings({...settings, supportPhone: e.target.value})}
@@ -1232,9 +1204,8 @@ const Dashboard: React.FC = () => {
                          </div>
                        </div>
                        <div className="pt-2">
-                          <label htmlFor="maintenanceMode" className="flex items-center cursor-pointer">
+                          <label className="flex items-center cursor-pointer">
                              <input 
-                               id="maintenanceMode"
                                type="checkbox" 
                                checked={settings.maintenanceMode}
                                onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
@@ -1256,9 +1227,8 @@ const Dashboard: React.FC = () => {
                     </h3>
                     <div className="space-y-4">
                        <div>
-                         <label htmlFor="defaultCurrency" className="block text-sm font-medium text-gray-700 mb-1">Devise par défaut</label>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Devise par défaut</label>
                          <select 
-                           id="defaultCurrency"
                            value={settings.defaultCurrency}
                            onChange={(e) => setSettings({...settings, defaultCurrency: e.target.value})}
                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
@@ -1270,10 +1240,9 @@ const Dashboard: React.FC = () => {
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
-                           <label htmlFor="loanInterestRate" className="block text-sm font-medium text-gray-700 mb-1">Taux d'intérêt Prêt (%)</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Taux d'intérêt Prêt (%)</label>
                            <div className="relative">
                              <input 
-                               id="loanInterestRate"
                                type="number" 
                                step="0.1"
                                value={settings.loanInterestRate}
@@ -1284,10 +1253,9 @@ const Dashboard: React.FC = () => {
                            </div>
                          </div>
                          <div>
-                           <label htmlFor="tontineCommission" className="block text-sm font-medium text-gray-700 mb-1">Commission Tontine (%)</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Commission Tontine (%)</label>
                            <div className="relative">
                              <input 
-                               id="tontineCommission"
                                type="number" 
                                step="0.1"
                                value={settings.tontineCommission}
@@ -1298,10 +1266,9 @@ const Dashboard: React.FC = () => {
                            </div>
                          </div>
                          <div>
-                           <label htmlFor="withdrawalFeeRate" className="block text-sm font-medium text-gray-700 mb-1">Taux de frais de retrait (%)</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Taux de frais de retrait (%)</label>
                            <div className="relative">
                              <input 
-                               id="withdrawalFeeRate"
                                type="number" 
                                step="0.1"
                                value={settings.withdrawalFeeRate}
@@ -1325,9 +1292,8 @@ const Dashboard: React.FC = () => {
                        <div className="space-y-4">
                           <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Lock className="h-4 w-4 text-gray-400" /> Politique de mot de passe</h4>
                           <div>
-                             <label htmlFor="minPasswordLength" className="block text-sm font-medium text-gray-700 mb-1">Longueur minimum du mot de passe</label>
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Longueur minimum du mot de passe</label>
                              <input 
-                               id="minPasswordLength"
                                type="number" 
                                value={settings.minPasswordLength}
                                onChange={(e) => setSettings({...settings, minPasswordLength: parseInt(e.target.value)})}
@@ -1335,9 +1301,8 @@ const Dashboard: React.FC = () => {
                              />
                           </div>
                           <div>
-                            <label htmlFor="enableTwoFactor" className="flex items-center cursor-pointer">
+                            <label className="flex items-center cursor-pointer">
                                <input 
-                                 id="enableTwoFactor"
                                  type="checkbox" 
                                  checked={settings.enableTwoFactor}
                                  onChange={(e) => setSettings({...settings, enableTwoFactor: e.target.checked})}
@@ -1353,9 +1318,8 @@ const Dashboard: React.FC = () => {
                        <div className="space-y-4">
                           <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Bell className="h-4 w-4 text-gray-400" /> Notifications</h4>
                           <div>
-                            <label htmlFor="emailNotifications" className="flex items-center cursor-pointer">
+                            <label className="flex items-center cursor-pointer">
                                <input 
-                                 id="emailNotifications"
                                  type="checkbox" 
                                  checked={settings.emailNotifications}
                                  onChange={(e) => setSettings({...settings, emailNotifications: e.target.checked})}
@@ -1385,53 +1349,37 @@ const Dashboard: React.FC = () => {
                 <Plus className="h-5 w-5" /> Inscrire un nouveau client
               </h3>
               <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="newUserName" className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
-                  <input 
-                    id="newUserName"
-                    type="text" 
-                    placeholder="Nom complet" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.fullName}
-                    onChange={e => setNewUser({...newUser, fullName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newUsername" className="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur (Pseudo)</label>
-                  <input 
-                    id="newUsername"
-                    type="text" 
-                    placeholder="Nom d'utilisateur (Pseudo)" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.username}
-                    onChange={e => setNewUser({...newUser, username: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newUserPassword" className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-                  <input 
-                    id="newUserPassword"
-                    type="password" 
-                    placeholder="Mot de passe" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.password}
-                    onChange={e => setNewUser({...newUser, password: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newUserDepositAmount" className="block text-sm font-medium text-gray-700 mb-1">Dépôt initial (FCFA)</label>
-                  <input 
-                    id="newUserDepositAmount"
-                    type="number" 
-                    placeholder="Dépôt initial (FCFA)" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.depositAmount || ''}
-                    onChange={e => setNewUser({...newUser, depositAmount: Number(e.target.value)})}
-                  />
-                </div>
+                <input 
+                  type="text" 
+                  placeholder="Nom complet" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.fullName}
+                  onChange={e => setNewUser({...newUser, fullName: e.target.value})}
+                  required
+                />
+                <input 
+                  type="text" 
+                  placeholder="Nom d'utilisateur (Pseudo)" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.username}
+                  onChange={e => setNewUser({...newUser, username: e.target.value})}
+                  required
+                />
+                <input 
+                  type="password" 
+                  placeholder="Mot de passe" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.password}
+                  onChange={e => setNewUser({...newUser, password: e.target.value})}
+                  required
+                />
+                <input 
+                  type="number" 
+                  placeholder="Dépôt initial (FCFA)" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.depositAmount || ''}
+                  onChange={e => setNewUser({...newUser, depositAmount: Number(e.target.value)})}
+                />
                 <button type="submit" className="md:col-span-2 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors w-full">
                   Enregistrer le client
                 </button>
@@ -1443,10 +1391,8 @@ const Dashboard: React.FC = () => {
                <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  <h3 className="text-lg font-semibold text-gray-800">Liste des clients</h3>
                  <div className="relative w-full sm:w-auto">
-                   <label htmlFor="userSearch" className="sr-only">Rechercher un client</label>
                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                    <input 
-                      id="userSearch"
                       type="text" 
                       placeholder="Rechercher un client..." 
                       value={userSearchTerm}
@@ -1771,9 +1717,7 @@ const Dashboard: React.FC = () => {
 
                     <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
                       <form onSubmit={handleSendMessage} className="flex gap-2">
-                        <label htmlFor="chatInput" className="sr-only">Écrire un message</label>
                         <input
-                          id="chatInput"
                           type="text"
                           value={chatInput}
                           onChange={(e) => setChatInput(e.target.value)}
@@ -1807,42 +1751,30 @@ const Dashboard: React.FC = () => {
               </h3>
               <form onSubmit={handleCreateGroup} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
-                    <input 
-                      id="groupName"
-                      type="text" 
-                      placeholder="Nom du groupe" 
-                      className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                      value={newGroup.name}
-                      onChange={e => setNewGroup({...newGroup, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="targetAmount" className="block text-sm font-medium text-gray-700 mb-1">Objectif (Montant Cible)</label>
-                    <input 
-                      id="targetAmount"
-                      type="number" 
-                      placeholder="Objectif (Montant Cible)" 
-                      className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                      value={newGroup.targetAmount || ''}
-                      onChange={e => setNewGroup({...newGroup, targetAmount: Number(e.target.value)})}
-                      required
-                    />
-                  </div>
+                  <input 
+                    type="text" 
+                    placeholder="Nom du groupe" 
+                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                    value={newGroup.name}
+                    onChange={e => setNewGroup({...newGroup, name: e.target.value})}
+                    required
+                  />
+                  <input 
+                    type="number" 
+                    placeholder="Objectif (Montant Cible)" 
+                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                    value={newGroup.targetAmount || ''}
+                    onChange={e => setNewGroup({...newGroup, targetAmount: Number(e.target.value)})}
+                    required
+                  />
                 </div>
-                <div>
-                  <label htmlFor="groupDescription" className="block text-sm font-medium text-gray-700 mb-1">Description du groupe</label>
-                  <textarea 
-                    id="groupDescription"
-                    placeholder="Description du groupe..." 
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none"
-                    rows={3}
-                    value={newGroup.description}
-                    onChange={e => setNewGroup({...newGroup, description: e.target.value})}
-                  ></textarea>
-                </div>
+                <textarea 
+                  placeholder="Description du groupe..." 
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none"
+                  rows={3}
+                  value={newGroup.description}
+                  onChange={e => setNewGroup({...newGroup, description: e.target.value})}
+                ></textarea>
                 <button type="submit" className="w-full md:w-auto px-8 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors">
                   Créer le groupe
                 </button>
@@ -1911,10 +1843,8 @@ const Dashboard: React.FC = () => {
                  
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                    <div className="relative">
-                      <label htmlFor="transactionSearch" className="sr-only">Rechercher une transaction</label>
                       <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input 
-                        id="transactionSearch"
                         type="text" 
                         placeholder="Rechercher (Nom, ID)..." 
                         value={transactionSearch}
@@ -1927,10 +1857,8 @@ const Dashboard: React.FC = () => {
                    </div>
                    
                    <div className="relative">
-                      <label htmlFor="transactionFilterType" className="sr-only">Filtrer par type</label>
                       <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
-                        id="transactionFilterType"
                         value={transactionFilterType}
                         onChange={(e) => {
                           setTransactionFilterType(e.target.value);
@@ -1947,10 +1875,8 @@ const Dashboard: React.FC = () => {
                    </div>
 
                    <div className="relative">
-                      <label htmlFor="transactionFilterStatus" className="sr-only">Filtrer par statut</label>
                       <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
-                        id="transactionFilterStatus"
                         value={transactionFilterStatus}
                         onChange={(e) => {
                           setTransactionFilterStatus(e.target.value);
@@ -2145,9 +2071,8 @@ const Dashboard: React.FC = () => {
                 {isEditProfile ? (
                   <form onSubmit={handleUpdateProfile} className="space-y-4">
                      <div>
-                       <label htmlFor="profileFullName" className="block text-sm font-medium text-gray-700">Nom Complet</label>
+                       <label className="block text-sm font-medium text-gray-700">Nom Complet</label>
                        <input 
-                        id="profileFullName"
                         type="text" 
                         value={profileForm.fullName}
                         onChange={e => setProfileForm({...profileForm, fullName: e.target.value})}
@@ -2155,9 +2080,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profileEmail" className="block text-sm font-medium text-gray-700">Email</label>
+                       <label className="block text-sm font-medium text-gray-700">Email</label>
                        <input 
-                        id="profileEmail"
                         type="email" 
                         value={profileForm.email}
                         onChange={e => setProfileForm({...profileForm, email: e.target.value})}
@@ -2165,9 +2089,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profilePhoneNumber" className="block text-sm font-medium text-gray-700">Téléphone</label>
+                       <label className="block text-sm font-medium text-gray-700">Téléphone</label>
                        <input 
-                        id="profilePhoneNumber"
                         type="text" 
                         value={profileForm.phoneNumber}
                         onChange={e => setProfileForm({...profileForm, phoneNumber: e.target.value})}
@@ -2175,9 +2098,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profileAddress" className="block text-sm font-medium text-gray-700">Adresse</label>
+                       <label className="block text-sm font-medium text-gray-700">Adresse</label>
                        <input 
-                        id="profileAddress"
                         type="text" 
                         value={profileForm.address}
                         onChange={e => setProfileForm({...profileForm, address: e.target.value})}
@@ -2185,9 +2107,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profilePictureUrl" className="block text-sm font-medium text-gray-700">URL Photo de Profil</label>
+                       <label className="block text-sm font-medium text-gray-700">URL Photo de Profil</label>
                        <input 
-                        id="profilePictureUrl"
                         type="text" 
                         value={profileForm.profilePictureUrl}
                         onChange={e => setProfileForm({...profileForm, profilePictureUrl: e.target.value})}
@@ -2250,10 +2171,8 @@ const Dashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="relative">
-                    <label htmlFor="kycSearch" className="sr-only">Rechercher une soumission KYC</label>
                     <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
-                      id="kycSearch"
                       type="text"
                       placeholder="Rechercher (Nom, ID)..."
                       value={kycSearchTerm}
@@ -2263,10 +2182,8 @@ const Dashboard: React.FC = () => {
                   </div>
 
                   <div className="relative">
-                    <label htmlFor="kycFilterStatus" className="sr-only">Filtrer par statut KYC</label>
                     <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <select
-                      id="kycFilterStatus"
                       value={kycFilterStatus}
                       onChange={(e) => setKycFilterStatus(e.target.value)}
                       className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
@@ -2392,13 +2309,12 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="depositAmount" className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <DollarSign className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    id="depositAmount"
                     type="number"
                     min="1"
                     required
@@ -2411,13 +2327,12 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="depositNote" className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <FileText className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    id="depositNote"
                     type="text"
                     value={depositNote}
                     onChange={(e) => setDepositNote(e.target.value)}
@@ -2611,10 +2526,9 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="selectedMemberId" className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
                 <div className="relative">
                    <select 
-                     id="selectedMemberId"
                      value={selectedMemberId} 
                      onChange={(e) => setSelectedMemberId(e.target.value)}
                      className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
@@ -2803,13 +2717,12 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="newPasswordInput" className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    id="newPasswordInput"
                     type="password"
                     required
                     value={newPasswordInput}
@@ -2856,9 +2769,8 @@ const Dashboard: React.FC = () => {
             
             <form onSubmit={handleAddAgent} className="space-y-4">
               <div>
-                <label htmlFor="newAgentFullName" className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
                 <input 
-                  id="newAgentFullName"
                   type="text" 
                   value={newAgentForm.fullName}
                   onChange={e => setNewAgentForm({...newAgentForm, fullName: e.target.value})}
@@ -2867,9 +2779,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="newAgentEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input 
-                  id="newAgentEmail"
                   type="email" 
                   value={newAgentForm.email}
                   onChange={e => setNewAgentForm({...newAgentForm, email: e.target.value})}
@@ -2878,9 +2789,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="newAgentPhone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                 <input 
-                  id="newAgentPhone"
                   type="text" 
                   value={newAgentForm.phone}
                   onChange={e => setNewAgentForm({...newAgentForm, phone: e.target.value})}
@@ -2889,9 +2799,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="newAgentZone" className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
                 <input 
-                  id="newAgentZone"
                   type="text" 
                   value={newAgentForm.zone}
                   onChange={e => setNewAgentForm({...newAgentForm, zone: e.target.value})}
@@ -2900,9 +2809,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="newAgentPassword" className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
                 <input 
-                  id="newAgentPassword"
                   type="password" 
                   value={newAgentForm.password}
                   onChange={e => setNewAgentForm({...newAgentForm, password: e.target.value})}
@@ -2911,9 +2819,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="newAgentProfilePictureUrl" className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
                 <input 
-                  id="newAgentProfilePictureUrl"
                   type="text" 
                   value={newAgentForm.profilePictureUrl}
                   onChange={e => setNewAgentForm({...newAgentForm, profilePictureUrl: e.target.value})}
@@ -2958,9 +2865,8 @@ const Dashboard: React.FC = () => {
             
             <form onSubmit={handleUpdateAgent} className="space-y-4">
               <div>
-                <label htmlFor="editAgentFullName" className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
                 <input 
-                  id="editAgentFullName"
                   type="text" 
                   value={editAgentForm.fullName}
                   onChange={e => setEditAgentForm({...editAgentForm, fullName: e.target.value})}
@@ -2969,9 +2875,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="editAgentEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input 
-                  id="editAgentEmail"
                   type="email" 
                   value={editAgentForm.email}
                   onChange={e => setEditAgentForm({...editAgentForm, email: e.target.value})}
@@ -2980,9 +2885,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="editAgentPhone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
                 <input 
-                  id="editAgentPhone"
                   type="text" 
                   value={editAgentForm.phone}
                   onChange={e => setEditAgentForm({...editAgentForm, phone: e.target.value})}
@@ -2991,9 +2895,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="editAgentZone" className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
                 <input 
-                  id="editAgentZone"
                   type="text" 
                   value={editAgentForm.zone}
                   onChange={e => setEditAgentForm({...editAgentForm, zone: e.target.value})}
@@ -3002,9 +2905,8 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label htmlFor="editAgentStatus" className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
                 <select 
-                  id="editAgentStatus"
                   value={editAgentForm.status}
                   onChange={e => setEditAgentForm({...editAgentForm, status: e.target.value as 'active' | 'inactive'})}
                   className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
@@ -3015,9 +2917,8 @@ const Dashboard: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label htmlFor="editAgentProfilePictureUrl" className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
                 <input 
-                  id="editAgentProfilePictureUrl"
                   type="text" 
                   value={editAgentForm.profilePictureUrl}
                   onChange={e => setEditAgentForm({...editAgentForm, profilePictureUrl: e.target.value})}
@@ -3068,13 +2969,12 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="newAgentPasswordInput" className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    id="newAgentPasswordInput"
                     type="password"
                     required
                     value={newAgentPasswordInput}
