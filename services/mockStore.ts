@@ -255,18 +255,18 @@ const getDateNDaysAgo = (days: number) => {
 };
 
 // Helper to get date N months ago
-const function getDateNMonthsAgo(months: number) {
+const getDateNMonthsAgo = (months: number) => {
   const d = new Date();
   d.setMonth(d.getMonth() - months);
   return d.toISOString().split('T')[0];
-}
+};
 
 // Helper to get date N years ago
-const function getDateNYearsAgo(years: number) {
+const getDateNYearsAgo = (years: number) => {
   const d = new Date();
   d.setFullYear(d.getFullYear() - years);
   return d.toISOString().split('T')[0];
-}
+};
 
 
 export const MockService = {
