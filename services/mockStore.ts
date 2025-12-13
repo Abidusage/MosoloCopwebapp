@@ -118,16 +118,6 @@ let transactions: Transaction[] = [
   { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00' },
   { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin' },
   { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo' },
-  { id: 'TRX-009', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 30000, status: 'success', date: '22024-06-18 10:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-010', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 50000, status: 'success', date: '2024-06-15 11:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-011', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 20000, status: 'success', date: '2024-05-20 12:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-012', userId: 'US4455A4', userFullName: 'Awa Sanogo', type: 'deposit', amount: 10000, status: 'success', date: '2024-06-19 13:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-013', userId: 'US5566B5', userFullName: 'Moussa Traoré', type: 'deposit', amount: 5000, status: 'success', date: '2024-06-17 14:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-014', userId: 'US6677C6', userFullName: 'Fatou Diallo', type: 'deposit', amount: 75000, status: 'success', date: '2024-04-01 15:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-015', userId: 'US7788D7', userFullName: 'Kofi Annan', type: 'deposit', amount: 100000, status: 'success', date: '2024-06-16 16:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-016', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 10000, status: 'success', date: '2024-06-14 17:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-017', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 20000, status: 'success', date: '2024-06-13 18:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-018', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 5000, status: 'success', date: '2024-03-10 19:00', reason: 'Dépôt manuel admin' },
 ];
 
 let messages: Message[] = [
@@ -417,57 +407,6 @@ export const MockService = {
     return false;
   },
 
-  // Helper to filter admin deposits
-  getAdminDeposits: () => {
-    return transactions.filter(tx => tx.type === 'deposit' && tx.reason?.includes('admin'));
-  },
-
-  // New functions for admin deposit totals
-  getAdminDepositsLast7Days: () => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    return MockService.getAdminDeposits()
-      .filter(tx => new Date(tx.date.split(' ')[0]) >= sevenDaysAgo)
-      .reduce((sum, tx) => sum + tx.amount, 0);
-  },
-
-  getAdminDepositsLastMonth: () => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return MockService.getAdminDeposits()
-      .filter(tx => new Date(tx.date.split(' ')[0]) >= thirtyDaysAgo)
-      .reduce((sum, tx) => sum + tx.amount, 0);
-  },
-
-  getAdminDepositsLastYear: () => {
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    return MockService.getAdminDeposits()
-      .filter(tx => new Date(tx.date.split(' ')[0]) >= oneYearAgo)
-      .reduce((sum, tx) => sum + tx.amount, 0);
-  },
-
-  getMonthlyAdminDeposits: () => {
-    const adminDeposits = MockService.getAdminDeposits();
-    const monthlyData: { [key: string]: number } = {};
-    
-    adminDeposits.forEach(tx => {
-      const date = new Date(tx.date.split(' ')[0]);
-      const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-      if (!monthlyData[monthYear]) {
-        monthlyData[monthYear] = 0;
-      }
-      monthlyData[monthYear] += tx.amount;
-    });
-
-    // Sort by month-year and get last 6 months
-    const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
-    return sortedMonths.map(monthYear => ({
-      month: new Date(monthYear).toLocaleString('fr-FR', { month: 'short' }),
-      deposits: monthlyData[monthYear]
-    }));
-  },
-
   // Stats Logic
   getTotalDeposits: () => {
     return users.reduce((sum, user) => sum + user.depositAmount, 0);
@@ -535,11 +474,7 @@ export const MockService = {
       eligibleUsersCount,
       totalCollectedByAgents,
       pendingKYCCount,
-      totalAccumulatedFees,
-      adminDepositsLast7Days: MockService.getAdminDepositsLast7Days(),
-      adminDepositsLastMonth: MockService.getAdminDepositsLastMonth(),
-      adminDepositsLastYear: MockService.getAdminDepositsLastYear(),
-      monthlyAdminDeposits: MockService.getMonthlyAdminDeposits(),
+      totalAccumulatedFees // Added total accumulated fees
     };
   },
 
