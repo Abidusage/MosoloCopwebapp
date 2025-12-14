@@ -372,7 +372,7 @@ const Dashboard: React.FC = () => {
   const { filtered: filteredUsers, currentItems: currentUsers, totalPages: totalUserPages } = getPaginatedUsers();
 
   const handlePageChange = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalUserPages) {
+    if (pageNumber >= 1 && pageNumber >= 1 && pageNumber <= totalUserPages) {
       setCurrentPage(pageNumber);
     }
   };
@@ -429,8 +429,6 @@ const Dashboard: React.FC = () => {
       } else {
         alert("Erreur lors de la réinitialisation du mot de passe.");
       }
-    } else {
-      alert("Veuillez entrer un nouveau mot de passe.");
     }
   };
 
@@ -2293,9 +2291,8 @@ const Dashboard: React.FC = () => {
                     {selectedUserForKYC.kycStatus === 'pending' ? (
                       <div className="space-y-4">
                         <div>
-                          <label htmlFor="rejectionReason" className="block text-sm font-medium text-gray-700 mb-1">Raison du rejet (si applicable)</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Raison du rejet (si applicable)</label>
                           <textarea
-                            id="rejectionReason"
                             rows={3}
                             value={kycRejectionReason}
                             onChange={(e) => setKycRejectionReason(e.target.value)}
