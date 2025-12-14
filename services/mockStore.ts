@@ -118,11 +118,6 @@ let transactions: Transaction[] = [
   { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00' },
   { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin' },
   { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo' },
-  { id: 'TRX-009', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 10000, status: 'success', date: '2024-06-18 10:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-010', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 20000, status: 'success', date: '2024-06-17 11:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-011', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 5000, status: 'success', date: '2024-06-15 12:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-012', userId: 'US4455A4', userFullName: 'Awa Sanogo', type: 'deposit', amount: 30000, status: 'success', date: '2024-05-20 13:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-013', userId: 'US5566B5', userFullName: 'Moussa Traoré', type: 'deposit', amount: 10000, status: 'success', date: '2024-04-10 14:00', reason: 'Dépôt manuel admin' },
 ];
 
 let messages: Message[] = [
@@ -150,7 +145,6 @@ let systemSettings: SystemSettings = {
   loanInterestRate: 5.5,
   tontineCommission: 1.0,
   agentCommission: 2.5,
-  withdrawalFeeRate: 0.5, // Nouveau: 0.5% de frais de retrait
   minPasswordLength: 8,
   enableTwoFactor: false,
   emailNotifications: true
@@ -158,9 +152,8 @@ let systemSettings: SystemSettings = {
 
 // Données Mock Agents
 let agents: Agent[] = [
-  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10', profilePictureUrl: 'https://randomuser.me/api/portraits/men/32.jpg', password: 'password123' },
-  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05', profilePictureUrl: 'https://randomuser.me/api/portraits/women/44.jpg', password: 'password123' },
-  { id: 'AGT-03', fullName: 'Kouadio Konan', email: 'kouadio.konan@mosolocoop.com', phone: '01 23 45 67', zone: 'Yopougon Ficgayo', status: 'inactive', totalFormsSubmitted: 20, joinedDate: '2024-01-15', profilePictureUrl: 'https://randomuser.me/api/portraits/men/21.jpg', password: 'password123' },
+  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10' },
+  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05' },
 ];
 
 // Données Mock Soumissions Terrain
@@ -247,27 +240,6 @@ let kycDocuments: KYCDocument[] = [
   }
 ];
 
-// Helper to get date N days ago
-const getDateNDaysAgo = (days: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().split('T')[0]; // YYYY-MM-DD format
-};
-
-// Helper to get date N months ago
-const getDateNMonthsAgo = (months: number) => {
-  const d = new Date();
-  d.setMonth(d.getMonth() - months);
-  return d.toISOString().split('T')[0];
-};
-
-// Helper to get date N years ago
-const getDateNYearsAgo = (years: number) => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - years);
-  return d.toISOString().split('T')[0];
-};
-
 
 export const MockService = {
   // User Logic
@@ -310,29 +282,6 @@ export const MockService = {
         status: 'success',
         date: new Date().toISOString().replace('T', ' ').substring(0, 16),
         reason: !currentStatus ? 'Éligibilité Accordée' : 'Éligibilité Révoquée'
-      };
-      transactions = [newTransaction, ...transactions];
-      return true;
-    }
-    return false;
-  },
-
-  toggleUserStatus: (userId: string, newStatus: 'active' | 'inactive' | 'suspended') => {
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-      const oldStatus = users[userIndex].status;
-      users[userIndex].status = newStatus;
-
-      // Log history
-      const newTransaction: Transaction = {
-        id: `TRX-${Date.now()}`,
-        userId: users[userIndex].id,
-        userFullName: users[userIndex].fullName,
-        type: 'status_change',
-        amount: 0,
-        status: 'success',
-        date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-        reason: `Statut changé de '${oldStatus}' à '${newStatus}'`
       };
       transactions = [newTransaction, ...transactions];
       return true;
@@ -442,28 +391,6 @@ export const MockService = {
     return fieldSubmissions.filter(s => s.status === 'pending').length;
   },
 
-  getAdminDepositsByPeriod: (period: '7days' | 'month' | 'year') => {
-    let startDate: string;
-    const today = new Date().toISOString().split('T')[0];
-
-    if (period === '7days') {
-      startDate = getDateNDaysAgo(7);
-    } else if (period === 'month') {
-      startDate = getDateNMonthsAgo(1);
-    } else { // 'year'
-      startDate = getDateNYearsAgo(1);
-    }
-
-    return transactions
-      .filter(tx =>
-        tx.type === 'deposit' &&
-        tx.reason === 'Dépôt manuel admin' && 
-        tx.date.split(' ')[0] >= startDate &&
-        tx.date.split(' ')[0] <= today
-      )
-      .reduce((sum, tx) => sum + tx.amount, 0);
-  },
-
   getGlobalStats: () => {
     const totalUsers = users.length;
     const totalGroups = groups.length;
@@ -479,16 +406,6 @@ export const MockService = {
       .filter(t => t.type === 'withdrawal' && t.status === 'success')
       .reduce((sum, t) => sum + t.amount, 0);
       
-    // Calculate withdrawal fees
-    const withdrawalFees = transactions
-      .filter(t => t.type === 'withdrawal' && t.status === 'success')
-      .reduce((sum, t) => sum + (t.amount * (systemSettings.withdrawalFeeRate / 100)), 0);
-
-    // Mock interest for now, as there's no loan tracking system
-    const mockInterestRevenue = 25000; // Example mock value for interest
-
-    const totalAccumulatedFees = withdrawalFees + mockInterestRevenue;
-
     const totalTransactions = transactions.length;
     const successTransactions = transactions.filter(t => t.status === 'success').length;
     const successRate = totalTransactions > 0 ? Math.round((successTransactions / totalTransactions) * 100) : 0;
@@ -521,11 +438,7 @@ export const MockService = {
       growthData,
       eligibleUsersCount,
       totalCollectedByAgents,
-      pendingKYCCount,
-      totalAccumulatedFees,
-      adminDeposits7Days: MockService.getAdminDepositsByPeriod('7days'),
-      adminDepositsMonth: MockService.getAdminDepositsByPeriod('month'),
-      adminDepositsYear: MockService.getAdminDepositsByPeriod('year'),
+      pendingKYCCount
     };
   },
 
@@ -547,40 +460,6 @@ export const MockService = {
   getAgents: () => [...agents],
   getAgentSubmissions: (agentId: string) => {
     return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
-  },
-  addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'totalFormsSubmitted'>) => {
-    const newAgent: Agent = {
-      ...agent,
-      id: `AGT-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-      joinedDate: new Date().toISOString().split('T')[0],
-      totalFormsSubmitted: 0,
-      status: 'active', // Default status
-      profilePictureUrl: agent.profilePictureUrl || `https://placehold.co/100x100/gray/white?text=${agent.fullName.charAt(0)}`,
-      password: agent.password || 'defaultpassword' // Default password if not provided
-    };
-    agents = [...agents, newAgent];
-    return newAgent;
-  },
-  updateAgent: (agentId: string, updates: Partial<Agent>) => {
-    const agentIndex = agents.findIndex(a => a.id === agentId);
-    if (agentIndex !== -1) {
-      agents[agentIndex] = { ...agents[agentIndex], ...updates };
-      return agents[agentIndex];
-    }
-    return null;
-  },
-  deleteAgent: (agentId: string) => {
-    const initialLength = agents.length;
-    agents = agents.filter(a => a.id !== agentId);
-    return agents.length < initialLength; // True if an agent was removed
-  },
-  resetAgentPassword: (agentId: string, newPassword: string) => {
-    const agentIndex = agents.findIndex(a => a.id === agentId);
-    if (agentIndex !== -1) {
-      agents[agentIndex].password = newPassword; // In a real app, this would be hashed
-      return true;
-    }
-    return false;
   },
 
   // KYC Logic

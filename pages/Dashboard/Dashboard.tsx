@@ -52,11 +52,7 @@ import {
   Fingerprint,
   Image,
   FileWarning,
-  KeyRound,
-  Edit,
-  Trash2,
-  ToggleLeft,
-  ToggleRight
+  KeyRound
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument } from '../../types';
@@ -76,17 +72,6 @@ const Dashboard: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
   const [agentSubmissions, setAgentSubmissions] = useState<FieldSubmission[]>([]);
-  const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false);
-  const [newAgentForm, setNewAgentForm] = useState({ fullName: '', email: '', phone: '', zone: '', profilePictureUrl: '', password: '' });
-  const [isEditAgentModalOpen, setIsEditAgentModalOpen] = useState(false);
-  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
-  const [editAgentForm, setEditAgentForm] = useState<Partial<Agent>>({});
-
-  // Agent Password Reset State
-  const [isResetAgentPasswordModalOpen, setIsResetAgentPasswordModalOpen] = useState(false);
-  const [selectedAgentForPasswordReset, setSelectedAgentForPasswordReset] = useState<Agent | null>(null);
-  const [newAgentPasswordInput, setNewAgentPasswordInput] = useState('');
-
 
   // Group View State
   const [viewingGroup, setViewingGroup] = useState<Group | null>(null);
@@ -136,10 +121,6 @@ const Dashboard: React.FC = () => {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
-
-  // Transactions Pagination State
-  const [transactionCurrentPage, setTransactionCurrentPage] = useState(1);
-  const [transactionsPerPage] = useState(10); // 10 transactions par page
 
   // KYC State
   const [kycSubmissions, setKycSubmissions] = useState<User[]>([]);
@@ -241,14 +222,10 @@ const Dashboard: React.FC = () => {
     setViewingGroup(null);
     setViewingAgent(null);
     // Reset pagination when switching views
-    setCurrentPage(1); // For users
-    setTransactionCurrentPage(1); // For transactions
+    setCurrentPage(1);
     setUserSearchTerm('');
     setKycSearchTerm('');
     setKycFilterStatus('all');
-    setTransactionSearch('');
-    setTransactionFilterType('all');
-    setTransactionFilterStatus('all');
   };
 
   const openDepositModal = (user: User) => {
@@ -362,19 +339,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const toggleUserAccountStatus = (user: User) => {
-    const newStatus = user.status === 'active' ? 'suspended' : 'active';
-    if(window.confirm(`Voulez-vous ${newStatus === 'suspended' ? 'suspendre' : 'activer'} le compte de ${user.fullName} ?`)) {
-      MockService.toggleUserStatus(user.id, newStatus);
-      setUsers(MockService.getUsers()); // Refresh users to update status
-      setTransactions(MockService.getTransactions()); // Refresh transaction history
-      alert(`Statut du compte de ${user.fullName} mis à jour à "${newStatus}".`);
-    }
-  };
-
   // Filter Logic for Transactions
   const getFilteredTransactions = () => {
-    const filtered = transactions.filter(tx => {
+    return transactions.filter(tx => {
       const matchType = transactionFilterType === 'all' || tx.type === transactionFilterType;
       const matchStatus = transactionFilterStatus === 'all' || tx.status === transactionFilterStatus;
       const matchSearch = transactionSearch === '' || 
@@ -382,7 +349,6 @@ const Dashboard: React.FC = () => {
         tx.id.toLowerCase().includes(transactionSearch.toLowerCase());
       return matchType && matchStatus && matchSearch;
     });
-    return filtered.sort((a, b) => b.date.localeCompare(a.date)); // Sort by date descending
   };
 
   // Logic for Clients Pagination
@@ -410,25 +376,6 @@ const Dashboard: React.FC = () => {
       setCurrentPage(pageNumber);
     }
   };
-
-  // Logic for Transactions Pagination
-  const getPaginatedTransactions = () => {
-    const filtered = getFilteredTransactions();
-    const indexOfLastItem = transactionCurrentPage * transactionsPerPage;
-    const indexOfFirstItem = indexOfLastItem - transactionsPerPage;
-    const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filtered.length / transactionsPerPage);
-    return { filtered, currentItems, totalPages };
-  };
-
-  const { filtered: allFilteredTransactions, currentItems: currentTransactions, totalPages: totalTransactionPages } = getPaginatedTransactions();
-
-  const handleTransactionPageChange = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalTransactionPages) {
-      setTransactionCurrentPage(pageNumber);
-    }
-  };
-
 
   // KYC Logic
   const getFilteredKYCSubmissions = () => {
@@ -482,128 +429,10 @@ const Dashboard: React.FC = () => {
       } else {
         alert("Erreur lors de la réinitialisation du mot de passe.");
       }
-    }
-  };
-
-  // Agent Management Logic
-  const handleAddAgent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newAgentForm.fullName && newAgentForm.email && newAgentForm.phone && newAgentForm.zone && newAgentForm.password) {
-      const createdAgent = MockService.addAgent(newAgentForm);
-      setAgents([...agents, createdAgent]);
-      setNewAgentForm({ fullName: '', email: '', phone: '', zone: '', profilePictureUrl: '', password: '' });
-      setIsAddAgentModalOpen(false);
-      alert('Agent ajouté avec succès !');
     } else {
-      alert('Veuillez remplir tous les champs obligatoires.');
+      alert("Veuillez entrer un nouveau mot de passe.");
     }
   };
-
-  const openEditAgentModal = (agent: Agent) => {
-    setEditingAgent(agent);
-    setEditAgentForm({ ...agent }); // Populate form with current agent data
-    setIsEditAgentModalOpen(true);
-  };
-
-  const handleUpdateAgent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingAgent && editAgentForm.fullName && editAgentForm.email && editAgentForm.phone && editAgentForm.zone) {
-      const updatedAgent = MockService.updateAgent(editingAgent.id, editAgentForm);
-      if (updatedAgent) {
-        setAgents(MockService.getAgents()); // Refresh agents list
-        setIsEditAgentModalOpen(false);
-        setEditingAgent(null);
-        setEditAgentForm({});
-        alert('Agent mis à jour avec succès !');
-      } else {
-        alert('Erreur lors de la mise à jour de l\'agent.');
-      }
-    } else {
-      alert('Veuillez remplir tous les champs obligatoires.');
-    }
-  };
-
-  // Removed handleDeleteAgent function as requested.
-  // const handleDeleteAgent = (agentId: string) => {
-  //   if (window.confirm('Êtes-vous sûr de vouloir supprimer cet agent ? Cette action est irréversible.')) {
-  //     const success = MockService.deleteAgent(agentId);
-  //     if (success) {
-  //       setAgents(MockService.getAgents()); // Refresh agents list
-  //       alert('Agent supprimé avec succès !');
-  //     } else {
-  //       alert('Erreur lors de la suppression de l\'agent.');
-  //     }
-  //   }
-  // };
-
-  const toggleAgentStatus = (agent: Agent) => {
-    const newStatus = agent.status === 'active' ? 'inactive' : 'active';
-    if (window.confirm(`Voulez-vous ${newStatus === 'active' ? 'activer' : 'désactiver'} l'agent ${agent.fullName} ?`)) {
-      const updatedAgent = MockService.updateAgent(agent.id, { status: newStatus });
-      if (updatedAgent) {
-        setAgents(MockService.getAgents());
-        alert(`Statut de l'agent ${agent.fullName} mis à jour à "${newStatus}".`);
-      } else {
-        alert('Erreur lors de la mise à jour du statut de l\'agent.');
-      }
-    }
-  };
-
-  // Agent Password Reset Logic
-  const openResetAgentPasswordModal = (agent: Agent) => {
-    setSelectedAgentForPasswordReset(agent);
-    setNewAgentPasswordInput('');
-    setIsResetAgentPasswordModalOpen(true);
-  };
-
-  const handleResetAgentPasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedAgentForPasswordReset && newAgentPasswordInput.trim()) {
-      const success = MockService.resetAgentPassword(selectedAgentForPasswordReset.id, newAgentPasswordInput);
-      if (success) {
-        setIsResetAgentPasswordModalOpen(false);
-        setSelectedAgentForPasswordReset(null);
-        setNewAgentPasswordInput('');
-        alert(`Le mot de passe de l'agent ${selectedAgentForPasswordReset.fullName} a été réinitialisé avec succès !`);
-      } else {
-        alert("Erreur lors de la réinitialisation du mot de passe de l'agent.");
-      }
-    }
-  };
-
-  // Calculate user status distribution for statistics
-  const getUserStatusDistribution = () => {
-    const active = users.filter(u => u.status === 'active').length;
-    const inactive = users.filter(u => u.status === 'inactive').length;
-    const suspended = users.filter(u => u.status === 'suspended').length;
-    const total = users.length;
-
-    return {
-      active: total > 0 ? (active / total) * 100 : 0,
-      inactive: total > 0 ? (inactive / total) * 100 : 0,
-      suspended: total > 0 ? (suspended / total) * 100 : 0,
-      totalUsers: total
-    };
-  };
-
-  const getKycStatusDistribution = () => {
-    const verified = users.filter(u => u.kycStatus === 'verified').length;
-    const pending = users.filter(u => u.kycStatus === 'pending').length;
-    const rejected = users.filter(u => u.kycStatus === 'rejected').length;
-    const notSubmitted = users.filter(u => u.kycStatus === 'not_submitted').length;
-    const total = users.length;
-
-    return {
-      verified: total > 0 ? (verified / total) * 100 : 0,
-      pending: total > 0 ? (pending / total) * 100 : 0,
-      rejected: total > 0 ? (rejected / total) * 100 : 0,
-      notSubmitted: total > 0 ? (notSubmitted / total) * 100 : 0,
-      totalUsers: total
-    };
-  };
-
-  const userStatusDistribution = getUserStatusDistribution();
-  const kycStatusDistribution = getKycStatusDistribution();
 
 
   const renderContent = () => {
@@ -619,13 +448,13 @@ const Dashboard: React.FC = () => {
                </div>
                <div className="flex gap-2">
                   <button 
-                    onClick={() => handleNavClick('users')}
+                    onClick={() => setCurrentView('users')}
                     className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
                   >
                     <Plus className="h-4 w-4" /> Nouveau Client
                   </button>
                   <button 
-                    onClick={() => handleNavClick('users')}
+                    onClick={() => setCurrentView('users')}
                     className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
                   >
                     <Wallet className="h-4 w-4" /> Dépôt Rapide
@@ -634,12 +463,12 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* KPIs Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"> {/* Adjusted grid columns */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 hover:shadow-md transition-shadow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="p-3 sm:p-4 bg-gray-200 rounded-lg">
                   <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
                 </div>
-                <div className="text-center"> {/* Removed flex-1 as it's not needed with flex-col parent */}
+                <div>
                   <p className="text-sm text-gray-500 font-medium">Solde Total</p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
                 </div>
@@ -665,46 +494,20 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* New Agents KPI Card */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleNavClick('agents')}>
-                <div className="p-3 sm:p-4 bg-blue-100 rounded-lg">
-                  <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 text-blue-700" />
+              {/* Alert / Pending Card */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setCurrentView('agents')}>
+                <div className="p-3 sm:p-4 bg-yellow-100 rounded-lg relative">
+                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-700" />
+                  {pendingSubmissionsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white"></span>
+                  )}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">Total Agents</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{agents.length}</p>
-                </div>
-              </div>
-
-              {/* Accumulated Fees KPI Card */}
-              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                <div className="p-3 sm:p-4 bg-purple-100 rounded-lg">
-                  <Banknote className="h-6 w-6 sm:h-8 sm:w-8 text-purple-700" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 font-medium">Frais Accumulés</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalAccumulatedFees.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
-                </div>
-              </div>
-            </div>
-
-            {/* Admin Deposits Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-gray-700" /> Dépôts Admin
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">7 Derniers Jours</p>
-                  <p className="text-xl font-bold text-gray-800">{stats?.adminDeposits7Days.toLocaleString()} FCFA</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">Ce Mois</p>
-                  <p className="text-xl font-bold text-gray-800">{stats?.adminDepositsMonth.toLocaleString()} FCFA</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">Cette Année</p>
-                  <p className="text-xl font-bold text-gray-800">{stats?.adminDepositsYear.toLocaleString()} FCFA</p>
+                  <p className="text-sm text-gray-500 font-medium">En Attente</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    {pendingSubmissionsCount} 
+                    <span className="text-xs font-normal text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded-full">Actions requises</span>
+                  </p>
                 </div>
               </div>
             </div>
@@ -717,23 +520,23 @@ const Dashboard: React.FC = () => {
                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                      <Activity className="h-5 w-5 text-gray-500" /> Dernières Transactions
                    </h3>
-                   <button onClick={() => handleNavClick('transactions')} className="text-sm text-gray-700 hover:text-gray-800 font-medium">Voir tout</button>
+                   <button onClick={() => setCurrentView('transactions')} className="text-sm text-gray-700 hover:text-gray-800 font-medium">Voir tout</button>
                  </div>
                  <div className="divide-y divide-gray-100">
                    {transactions.slice(0, 5).map((tx) => (
                      <div key={tx.id} className="px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
                        <div className="flex items-center gap-3">
-                         <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : tx.type === 'status_change' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
-                           {tx.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> : tx.type === 'loan_eligibility' ? <Shield className="h-4 w-4" /> : tx.type === 'status_change' ? <RefreshCcw className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
+                         <div className={`p-2 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                           {tx.type === 'deposit' ? <ArrowUpRight className="h-4 w-4" /> : tx.type === 'loan_eligibility' ? <Shield className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
                          </div>
                          <div>
                            <p className="text-sm font-medium text-gray-900">{tx.userFullName}</p>
-                           <p className="text-xs text-gray-500">{tx.date.split(' ')[0]} • {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : tx.type === 'loan_eligibility' ? 'Crédit' : 'Statut'}</p>
+                           <p className="text-xs text-gray-500">{tx.date.split(' ')[0]} • {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Crédit'}</p>
                          </div>
                        </div>
                        <div className="text-right">
                          <p className={`text-sm font-bold ${tx.status === 'failed' ? 'text-gray-400 line-through' : (tx.type === 'deposit' ? 'text-green-600' : 'text-gray-900')}`}>
-                           {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                           {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
                          </p>
                          <span className={`text-[10px] ${tx.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                            {tx.status === 'success' ? 'Validé' : 'Échoué'}
@@ -771,7 +574,7 @@ const Dashboard: React.FC = () => {
                    ))}
                  </div>
                  <div className="bg-gray-50 px-6 py-3 text-center border-t border-gray-100">
-                    <button onClick={() => handleNavClick('users')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Gérer tous les clients</button>
+                    <button onClick={() => setCurrentView('users')} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Gérer tous les clients</button>
                  </div>
                </div>
             </div>
@@ -882,11 +685,8 @@ const Dashboard: React.FC = () => {
         return (
           <div className="space-y-8">
              <div className="flex justify-between items-center">
-               <h2 className="text-2xl font-bold text-gray-800">Gestion des Agents</h2>
-               <button 
-                 onClick={() => setIsAddAgentModalOpen(true)}
-                 className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2"
-               >
+               <h2 className="text-2xl font-bold text-gray-800">Nos Partenaires / Agents</h2>
+               <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2">
                  <Plus className="h-4 w-4" /> Nouvel Agent
                </button>
              </div>
@@ -896,12 +696,8 @@ const Dashboard: React.FC = () => {
                   <div key={agent.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col hover:shadow-md transition-shadow">
                      <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
-                           <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 overflow-hidden">
-                              {agent.profilePictureUrl ? (
-                                <img src={agent.profilePictureUrl} alt={agent.fullName} className="object-cover w-full h-full" />
-                              ) : (
-                                <Briefcase className="h-6 w-6" />
-                              )}
+                           <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
+                              <Briefcase className="h-6 w-6" />
                            </div>
                            <div>
                               <h3 className="font-bold text-gray-900">{agent.fullName}</h3>
@@ -927,44 +723,13 @@ const Dashboard: React.FC = () => {
                         </div>
                      </div>
 
-                     <div className="flex gap-2 mt-auto">
-                       <button 
-                         onClick={() => handleViewAgent(agent)}
-                         className="flex-1 bg-gray-100 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 text-sm"
-                       >
-                          <FileText className="h-4 w-4" />
-                          Voir activité
-                       </button>
-                       <button 
-                         onClick={() => openEditAgentModal(agent)}
-                         className="p-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
-                         title="Modifier l'agent"
-                       >
-                         <Edit className="h-4 w-4" />
-                       </button>
-                       <button 
-                         onClick={() => toggleAgentStatus(agent)}
-                         className={`p-2 rounded-lg ${agent.status === 'active' ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'} transition-colors`}
-                         title={agent.status === 'active' ? "Désactiver l'agent" : "Activer l'agent"}
-                       >
-                         {agent.status === 'active' ? <ToggleLeft className="h-4 w-4" /> : <ToggleRight className="h-4 w-4" />}
-                       </button>
-                       <button 
-                         onClick={() => openResetAgentPasswordModal(agent)}
-                         className="p-2 rounded-lg bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors"
-                         title="Réinitialiser le mot de passe"
-                       >
-                         <KeyRound className="h-4 w-4" />
-                       </button>
-                       {/* Removed Delete Agent Button */}
-                       {/* <button 
-                         onClick={() => handleDeleteAgent(agent.id)}
-                         className="p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                         title="Supprimer l'agent"
-                       >
-                         <Trash2 className="h-4 w-4" />
-                       </button> */}
-                     </div>
+                     <button 
+                       onClick={() => handleViewAgent(agent)}
+                       className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                     >
+                        <FileText className="h-4 w-4" />
+                        Voir activité terrain
+                     </button>
                   </div>
                 ))}
              </div>
@@ -1029,14 +794,14 @@ const Dashboard: React.FC = () => {
                  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                    <div className="flex justify-between items-start mb-4">
                      <div>
-                       <p className="text-gray-500 text-sm font-medium">KYC en attente</p>
-                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.pendingKYCCount}</h3>
+                       <p className="text-gray-500 text-sm font-medium">Groupes Tontine</p>
+                       <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalGroups}</h3>
                      </div>
-                     <div className="bg-yellow-100 p-2 rounded-lg">
-                       <Fingerprint className="h-6 w-6 text-yellow-600" />
+                     <div className="bg-gray-200 p-2 rounded-lg">
+                       <Layers className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
                      </div>
                    </div>
-                   <p className="text-xs text-gray-400">Vérifications requises</p>
+                   <p className="text-xs text-gray-400">Actifs en cours</p>
                  </div>
                </div>
              )}
@@ -1110,62 +875,50 @@ const Dashboard: React.FC = () => {
                   )}
                 </div>
 
-                {/* User Status & KYC Distribution - Right */}
+                {/* Top Users & Distribution - Right */}
                 <div className="space-y-6">
-                   {/* User Status Distribution */}
+                   {/* Top Depositors */}
+                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <ArrowUpRight className="h-5 w-5 text-gray-700" />
+                        Top Épargnants
+                      </h3>
+                      <div className="space-y-4">
+                        {stats && stats.topDepositors.map((user: User, index: number) => (
+                          <div key={user.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
+                             <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm ${
+                               index === 0 ? 'bg-yellow-100 text-yellow-700' : 
+                               index === 1 ? 'bg-gray-200 text-gray-700' :
+                               'bg-orange-100 text-orange-800'
+                             }`}>
+                               {index + 1}
+                             </div>
+                             <div className="flex-1 min-w-0">
+                               <p className="text-sm font-medium text-gray-900 truncate">{user.fullName}</p>
+                               <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+                             </div>
+                             <div className="text-right">
+                               <p className="text-sm font-bold text-green-600">{user.depositAmount.toLocaleString()}</p>
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+
+                   {/* Status Distribution */}
                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                       <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                          <PieChart className="h-5 w-5 text-gray-700" />
-                         Statut des Clients
+                         Répartition
                       </h3>
-                      {userStatusDistribution.totalUsers > 0 ? (
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-green-500"></span>Actifs</span>
-                            <span className="font-medium">{userStatusDistribution.active.toFixed(1)}%</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-red-500"></span>Inactifs</span>
-                            <span className="font-medium">{userStatusDistribution.inactive.toFixed(1)}%</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-yellow-500"></span>Suspendus</span>
-                            <span className="font-medium">{userStatusDistribution.suspended.toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center text-gray-500 text-sm py-4">Aucun client pour la répartition.</div>
-                      )}
-                   </div>
-
-                   {/* KYC Status Distribution */}
-                   <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                      <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                         <Fingerprint className="h-5 w-5 text-gray-700" />
-                         Statut KYC
-                      </h3>
-                      {kycStatusDistribution.totalUsers > 0 ? (
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-green-500"></span>Vérifié</span>
-                            <span className="font-medium">{kycStatusDistribution.verified.toFixed(1)}%</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-yellow-500"></span>En attente</span>
-                            <span className="font-medium">{kycStatusDistribution.pending.toFixed(1)}%</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-red-500"></span>Rejeté</span>
-                            <span className="font-medium">{kycStatusDistribution.rejected.toFixed(1)}%</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-2 text-gray-700"><span className="h-3 w-3 rounded-full bg-gray-500"></span>Non soumis</span>
-                            <span className="font-medium">{kycStatusDistribution.notSubmitted.toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center text-gray-500 text-sm py-4">Aucun client pour la répartition KYC.</div>
-                      )}
+                      <div className="flex items-center justify-center py-4">
+                         <div className="relative w-32 h-32 rounded-full border-[8px] border-gray-700 flex items-center justify-center shadow-inner">
+                            <span className="text-2xl font-bold text-gray-800">100%</span>
+                         </div>
+                      </div>
+                      <div className="text-center text-sm text-gray-500">
+                        Tous les clients sont <span className="text-gray-800 font-bold">Actifs</span>
+                      </div>
                    </div>
                 </div>
              </div>
@@ -1196,9 +949,8 @@ const Dashboard: React.FC = () => {
                     </h3>
                     <div className="space-y-4">
                        <div>
-                         <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">Nom de la Plateforme</label>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la Plateforme</label>
                          <input 
-                           id="siteName"
                            type="text" 
                            value={settings.siteName}
                            onChange={(e) => setSettings({...settings, siteName: e.target.value})}
@@ -1207,9 +959,8 @@ const Dashboard: React.FC = () => {
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
-                           <label htmlFor="supportEmail" className="block text-sm font-medium text-gray-700 mb-1">Email Support</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Email Support</label>
                            <input 
-                             id="supportEmail"
                              type="email" 
                              value={settings.supportEmail}
                              onChange={(e) => setSettings({...settings, supportEmail: e.target.value})}
@@ -1217,9 +968,8 @@ const Dashboard: React.FC = () => {
                            />
                          </div>
                          <div>
-                           <label htmlFor="supportPhone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone Support</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone Support</label>
                            <input 
-                             id="supportPhone"
                              type="text" 
                              value={settings.supportPhone}
                              onChange={(e) => setSettings({...settings, supportPhone: e.target.value})}
@@ -1228,9 +978,8 @@ const Dashboard: React.FC = () => {
                          </div>
                        </div>
                        <div className="pt-2">
-                          <label htmlFor="maintenanceMode" className="flex items-center cursor-pointer">
+                          <label className="flex items-center cursor-pointer">
                              <input 
-                               id="maintenanceMode"
                                type="checkbox" 
                                checked={settings.maintenanceMode}
                                onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
@@ -1252,9 +1001,8 @@ const Dashboard: React.FC = () => {
                     </h3>
                     <div className="space-y-4">
                        <div>
-                         <label htmlFor="defaultCurrency" className="block text-sm font-medium text-gray-700 mb-1">Devise par défaut</label>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Devise par défaut</label>
                          <select 
-                           id="defaultCurrency"
                            value={settings.defaultCurrency}
                            onChange={(e) => setSettings({...settings, defaultCurrency: e.target.value})}
                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
@@ -1266,10 +1014,9 @@ const Dashboard: React.FC = () => {
                        </div>
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
-                           <label htmlFor="loanInterestRate" className="block text-sm font-medium text-gray-700 mb-1">Taux d'intérêt Prêt (%)</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Taux d'intérêt Prêt (%)</label>
                            <div className="relative">
                              <input 
-                               id="loanInterestRate"
                                type="number" 
                                step="0.1"
                                value={settings.loanInterestRate}
@@ -1280,10 +1027,9 @@ const Dashboard: React.FC = () => {
                            </div>
                          </div>
                          <div>
-                           <label htmlFor="tontineCommission" className="block text-sm font-medium text-gray-700 mb-1">Commission Tontine (%)</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Commission Tontine (%)</label>
                            <div className="relative">
                              <input 
-                               id="tontineCommission"
                                type="number" 
                                step="0.1"
                                value={settings.tontineCommission}
@@ -1294,14 +1040,13 @@ const Dashboard: React.FC = () => {
                            </div>
                          </div>
                          <div>
-                           <label htmlFor="withdrawalFeeRate" className="block text-sm font-medium text-gray-700 mb-1">Taux de frais de retrait (%)</label>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Commission Agent (%)</label>
                            <div className="relative">
                              <input 
-                               id="withdrawalFeeRate"
                                type="number" 
                                step="0.1"
-                               value={settings.withdrawalFeeRate}
-                               onChange={(e) => setSettings({...settings, withdrawalFeeRate: parseFloat(e.target.value)})}
+                               value={settings.agentCommission}
+                               onChange={(e) => setSettings({...settings, agentCommission: parseFloat(e.target.value)})}
                                className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                              />
                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
@@ -1321,9 +1066,8 @@ const Dashboard: React.FC = () => {
                        <div className="space-y-4">
                           <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Lock className="h-4 w-4 text-gray-400" /> Politique de mot de passe</h4>
                           <div>
-                             <label htmlFor="minPasswordLength" className="block text-sm font-medium text-gray-700 mb-1">Longueur minimum du mot de passe</label>
+                             <label className="block text-sm font-medium text-gray-700 mb-1">Longueur minimum du mot de passe</label>
                              <input 
-                               id="minPasswordLength"
                                type="number" 
                                value={settings.minPasswordLength}
                                onChange={(e) => setSettings({...settings, minPasswordLength: parseInt(e.target.value)})}
@@ -1331,9 +1075,8 @@ const Dashboard: React.FC = () => {
                              />
                           </div>
                           <div>
-                            <label htmlFor="enableTwoFactor" className="flex items-center cursor-pointer">
+                            <label className="flex items-center cursor-pointer">
                                <input 
-                                 id="enableTwoFactor"
                                  type="checkbox" 
                                  checked={settings.enableTwoFactor}
                                  onChange={(e) => setSettings({...settings, enableTwoFactor: e.target.checked})}
@@ -1349,9 +1092,8 @@ const Dashboard: React.FC = () => {
                        <div className="space-y-4">
                           <h4 className="text-sm font-semibold text-gray-900 flex items-center gap-2"><Bell className="h-4 w-4 text-gray-400" /> Notifications</h4>
                           <div>
-                            <label htmlFor="emailNotifications" className="flex items-center cursor-pointer">
+                            <label className="flex items-center cursor-pointer">
                                <input 
-                                 id="emailNotifications"
                                  type="checkbox" 
                                  checked={settings.emailNotifications}
                                  onChange={(e) => setSettings({...settings, emailNotifications: e.target.checked})}
@@ -1381,53 +1123,37 @@ const Dashboard: React.FC = () => {
                 <Plus className="h-5 w-5" /> Inscrire un nouveau client
               </h3>
               <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="newFullName" className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
-                  <input 
-                    id="newFullName"
-                    type="text" 
-                    placeholder="Nom complet" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.fullName}
-                    onChange={e => setNewUser({...newUser, fullName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newUsername" className="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur (Pseudo)</label>
-                  <input 
-                    id="newUsername"
-                    type="text" 
-                    placeholder="Nom d'utilisateur (Pseudo)" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.username}
-                    onChange={e => setNewUser({...newUser, username: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-                  <input 
-                    id="newPassword"
-                    type="password" 
-                    placeholder="Mot de passe" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.password}
-                    onChange={e => setNewUser({...newUser, password: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="newDepositAmount" className="block text-sm font-medium text-gray-700 mb-1">Dépôt initial (FCFA)</label>
-                  <input 
-                    id="newDepositAmount"
-                    type="number" 
-                    placeholder="Dépôt initial (FCFA)" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newUser.depositAmount || ''}
-                    onChange={e => setNewUser({...newUser, depositAmount: Number(e.target.value)})}
-                  />
-                </div>
+                <input 
+                  type="text" 
+                  placeholder="Nom complet" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.fullName}
+                  onChange={e => setNewUser({...newUser, fullName: e.target.value})}
+                  required
+                />
+                <input 
+                  type="text" 
+                  placeholder="Nom d'utilisateur (Pseudo)" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.username}
+                  onChange={e => setNewUser({...newUser, username: e.target.value})}
+                  required
+                />
+                <input 
+                  type="password" 
+                  placeholder="Mot de passe" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.password}
+                  onChange={e => setNewUser({...newUser, password: e.target.value})}
+                  required
+                />
+                <input 
+                  type="number" 
+                  placeholder="Dépôt initial (FCFA)" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newUser.depositAmount || ''}
+                  onChange={e => setNewUser({...newUser, depositAmount: Number(e.target.value)})}
+                />
                 <button type="submit" className="md:col-span-2 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors w-full">
                   Enregistrer le client
                 </button>
@@ -1439,10 +1165,8 @@ const Dashboard: React.FC = () => {
                <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  <h3 className="text-lg font-semibold text-gray-800">Liste des clients</h3>
                  <div className="relative w-full sm:w-auto">
-                   <label htmlFor="userSearch" className="sr-only">Rechercher un client</label>
                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                    <input 
-                      id="userSearch"
                       type="text" 
                       placeholder="Rechercher un client..." 
                       value={userSearchTerm}
@@ -1461,7 +1185,6 @@ const Dashboard: React.FC = () => {
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identifiant (ID)</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom Complet</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th> {/* Added Status column */}
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'inscription</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FCFA)</th>
                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -1476,23 +1199,6 @@ const Dashboard: React.FC = () => {
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.username}</td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.fullName}</td>
-                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                             {user.status === 'active' && (
-                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                 <CheckCircle className="h-3 w-3" /> Actif
-                               </span>
-                             )}
-                             {user.status === 'suspended' && (
-                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                 <XCircle className="h-3 w-3" /> Suspendu
-                               </span>
-                             )}
-                             {user.status === 'inactive' && (
-                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                 <AlertCircle className="h-3 w-3" /> Inactif
-                               </span>
-                             )}
-                           </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <div className="flex items-center gap-1.5">
                                  <Calendar className="h-3 w-3 text-gray-400" />
@@ -1501,18 +1207,6 @@ const Dashboard: React.FC = () => {
                            </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-bold">{user.depositAmount.toLocaleString()}</td>
                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
-                             <button 
-                              onClick={() => toggleUserAccountStatus(user)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
-                                user.status === 'active' 
-                                  ? 'bg-red-100 text-red-700 hover:bg-red-200 border border-red-200' 
-                                  : 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                              }`}
-                              title={user.status === 'active' ? "Suspendre le client" : "Activer le client"}
-                             >
-                               {user.status === 'active' ? <ToggleLeft className="h-3 w-3 sm:h-4 sm:w-4" /> : <ToggleRight className="h-3 w-3 sm:h-4 sm:w-4" />} 
-                               {user.status === 'active' ? 'Suspendre' : 'Activer'}
-                             </button>
                              <button 
                               onClick={() => toggleUserLoanEligibility(user)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
@@ -1552,7 +1246,7 @@ const Dashboard: React.FC = () => {
                        ))
                      ) : (
                        <tr>
-                         <td colSpan={7} className="px-6 py-10 text-center text-gray-500"> {/* Adjusted colspan */}
+                         <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
                            Aucun client trouvé pour cette recherche.
                          </td>
                        </tr>
@@ -1767,9 +1461,7 @@ const Dashboard: React.FC = () => {
 
                     <div className="p-3 border-t border-gray-100 bg-white rounded-b-xl">
                       <form onSubmit={handleSendMessage} className="flex gap-2">
-                        <label htmlFor="chatInput" className="sr-only">Écrire un message</label>
                         <input
-                          id="chatInput"
                           type="text"
                           value={chatInput}
                           onChange={(e) => setChatInput(e.target.value)}
@@ -1802,10 +1494,8 @@ const Dashboard: React.FC = () => {
                 <Plus className="h-5 w-5" /> Créer un nouveau groupe
               </h3>
               <form onSubmit={handleCreateGroup} className="space-y-4">
-                <div>
-                  <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input 
-                    id="groupName"
                     type="text" 
                     placeholder="Nom du groupe" 
                     className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
@@ -1813,11 +1503,7 @@ const Dashboard: React.FC = () => {
                     onChange={e => setNewGroup({...newGroup, name: e.target.value})}
                     required
                   />
-                </div>
-                <div>
-                  <label htmlFor="groupTargetAmount" className="block text-sm font-medium text-gray-700 mb-1">Objectif (Montant Cible)</label>
                   <input 
-                    id="groupTargetAmount"
                     type="number" 
                     placeholder="Objectif (Montant Cible)" 
                     className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
@@ -1826,17 +1512,13 @@ const Dashboard: React.FC = () => {
                     required
                   />
                 </div>
-                <div>
-                  <label htmlFor="groupDescription" className="block text-sm font-medium text-gray-700 mb-1">Description du groupe</label>
-                  <textarea 
-                    id="groupDescription"
-                    placeholder="Description du groupe..." 
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none"
-                    rows={3}
-                    value={newGroup.description}
-                    onChange={e => setNewGroup({...newGroup, description: e.target.value})}
-                  ></textarea>
-                </div>
+                <textarea 
+                  placeholder="Description du groupe..." 
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none"
+                  rows={3}
+                  value={newGroup.description}
+                  onChange={e => setNewGroup({...newGroup, description: e.target.value})}
+                ></textarea>
                 <button type="submit" className="w-full md:w-auto px-8 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors">
                   Créer le groupe
                 </button>
@@ -1891,6 +1573,7 @@ const Dashboard: React.FC = () => {
         );
 
       case 'transactions':
+        const filteredTransactions = getFilteredTransactions();
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
@@ -1900,56 +1583,40 @@ const Dashboard: React.FC = () => {
                <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
                  <div className="flex justify-between items-center">
                    <h3 className="text-lg font-semibold text-gray-800">Mouvements financiers</h3>
-                   <span className="text-sm text-gray-500">{allFilteredTransactions.length} résultats</span>
+                   <span className="text-sm text-gray-500">{filteredTransactions.length} résultats</span>
                  </div>
                  
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                    <div className="relative">
-                      <label htmlFor="transactionSearch" className="sr-only">Rechercher une transaction</label>
                       <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input 
-                        id="transactionSearch"
                         type="text" 
                         placeholder="Rechercher (Nom, ID)..." 
                         value={transactionSearch}
-                        onChange={(e) => {
-                          setTransactionSearch(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on search
-                        }}
+                        onChange={(e) => setTransactionSearch(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
                       />
                    </div>
                    
                    <div className="relative">
-                      <label htmlFor="transactionFilterType" className="sr-only">Filtrer par type</label>
                       <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
-                        id="transactionFilterType"
                         value={transactionFilterType}
-                        onChange={(e) => {
-                          setTransactionFilterType(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
+                        onChange={(e) => setTransactionFilterType(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les types</option>
                         <option value="deposit">Dépôts</option>
                         <option value="withdrawal">Retraits</option>
                         <option value="loan_eligibility">Crédit / Éligibilité</option>
-                        <option value="status_change">Changement Statut</option> {/* Added status_change filter */}
                       </select>
                    </div>
 
                    <div className="relative">
-                      <label htmlFor="transactionFilterStatus" className="sr-only">Filtrer par statut</label>
                       <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
-                        id="transactionFilterStatus"
                         value={transactionFilterStatus}
-                        onChange={(e) => {
-                          setTransactionFilterStatus(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
+                        onChange={(e) => setTransactionFilterStatus(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les statuts</option>
@@ -1973,140 +1640,57 @@ const Dashboard: React.FC = () => {
                      </tr>
                    </thead>
                    <tbody className="bg-white divide-y divide-gray-200">
-                     {currentTransactions.length > 0 ? (
-                       currentTransactions.map((tx) => (
-                         <tr key={tx.id} className="hover:bg-gray-50">
-                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
-                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
-                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                             {tx.type === 'deposit' && (
-                               <div className="flex items-center gap-2 text-green-600">
-                                 <ArrowUpRight className="h-4 w-4" />
-                                 <span>Dépôt</span>
-                               </div>
-                             )}
-                             {tx.type === 'withdrawal' && (
-                               <div className="flex items-center gap-2 text-orange-600">
-                                 <ArrowDownLeft className="h-4 w-4" />
-                                 <span>Retrait</span>
-                               </div>
-                             )}
-                             {tx.type === 'loan_eligibility' && (
-                               <div className="flex items-center gap-2 text-blue-600">
-                                 <Shield className="h-4 w-4" />
-                                 <span>Éligibilité</span>
-                               </div>
-                             )}
-                             {tx.type === 'status_change' && (
-                               <div className="flex items-center gap-2 text-purple-600">
-                                 <RefreshCcw className="h-4 w-4" />
-                                 <span>Statut</span>
-                               </div>
-                             )}
-                           </td>
-                           <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                             {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
-                           </td>
-                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                             {tx.status === 'success' ? (
-                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                 <CheckCircle className="h-3 w-3" /> Succès
-                               </span>
-                             ) : (
-                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                 <XCircle className="h-3 w-3" /> Échec
-                               </span>
-                             )}
-                           </td>
-                           <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                             {tx.reason ? (
-                               <span className={`flex items-center gap-1 ${tx.status === 'failed' ? 'text-red-500' : 'text-gray-500'}`}>
-                                 {tx.status === 'failed' ? <AlertCircle className="h-3 w-3 flex-shrink-0" /> : <FileText className="h-3 w-3 flex-shrink-0" />} 
-                                 {tx.reason}
-                               </span>
-                             ) : '-'}
-                           </td>
-                         </tr>
-                       ))
-                     ) : (
-                       <tr>
-                         <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
-                           Aucune transaction trouvée pour cette recherche.
+                     {filteredTransactions.map((tx) => (
+                       <tr key={tx.id} className="hover:bg-gray-50">
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm">
+                           {tx.type === 'deposit' && (
+                             <div className="flex items-center gap-2 text-green-600">
+                               <ArrowUpRight className="h-4 w-4" />
+                               <span>Dépôt</span>
+                             </div>
+                           )}
+                           {tx.type === 'withdrawal' && (
+                             <div className="flex items-center gap-2 text-orange-600">
+                               <ArrowDownLeft className="h-4 w-4" />
+                               <span>Retrait</span>
+                             </div>
+                           )}
+                           {tx.type === 'loan_eligibility' && (
+                             <div className="flex items-center gap-2 text-blue-600">
+                               <Shield className="h-4 w-4" />
+                               <span>Éligibilité</span>
+                             </div>
+                           )}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                           {tx.type === 'loan_eligibility' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm">
+                           {tx.status === 'success' ? (
+                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                               <CheckCircle className="h-3 w-3" /> Succès
+                             </span>
+                           ) : (
+                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                               <XCircle className="h-3 w-3" /> Échec
+                             </span>
+                           )}
+                         </td>
+                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                           {tx.reason ? (
+                             <span className={`flex items-center gap-1 ${tx.status === 'failed' ? 'text-red-500' : 'text-gray-500'}`}>
+                               {tx.status === 'failed' ? <AlertCircle className="h-3 w-3 flex-shrink-0" /> : <FileText className="h-3 w-3 flex-shrink-0" />} 
+                               {tx.reason}
+                             </span>
+                           ) : '-'}
                          </td>
                        </tr>
-                     )}
+                     ))}
                    </tbody>
                  </table>
                </div>
-
-               {/* Pagination Controls for Transactions */}
-               {allFilteredTransactions.length > 0 && (
-                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                       <div>
-                          <p className="text-sm text-gray-700">
-                             Affichage de <span className="font-medium">{(transactionCurrentPage - 1) * transactionsPerPage + 1}</span> à <span className="font-medium">{Math.min(transactionCurrentPage * transactionsPerPage, allFilteredTransactions.length)}</span> sur <span className="font-medium">{allFilteredTransactions.length}</span> résultats
-                          </p>
-                       </div>
-                       <div>
-                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                             <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
-                                disabled={transactionCurrentPage === 1}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Précédent</span>
-                                <ChevronLeft className="h-5 w-5" />
-                             </button>
-                             
-                             {/* Generate Page Numbers */}
-                             {Array.from({ length: totalTransactionPages }, (_, i) => i + 1).map((number) => (
-                               <button
-                                  key={number}
-                                  onClick={() => handleTransactionPageChange(number)}
-                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                    transactionCurrentPage === number
-                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
-                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                  }`}
-                               >
-                                  {number}
-                               </button>
-                             ))}
-
-                             <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
-                                disabled={transactionCurrentPage === totalTransactionPages}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Suivant</span>
-                                <ChevronRight className="h-5 w-5" />
-                             </button>
-                          </nav>
-                       </div>
-                    </div>
-                    {/* Mobile Pagination simplified */}
-                    <div className="flex items-center justify-between w-full sm:hidden">
-                       <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
-                          disabled={transactionCurrentPage === 1}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Précédent
-                       </button>
-                       <span className="text-sm text-gray-700">
-                          Page {transactionCurrentPage} / {totalTransactionPages}
-                       </span>
-                       <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
-                          disabled={transactionCurrentPage === totalTransactionPages}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Suivant
-                       </button>
-                    </div>
-                 </div>
-               )}
             </div>
           </div>
         );
@@ -2139,9 +1723,8 @@ const Dashboard: React.FC = () => {
                 {isEditProfile ? (
                   <form onSubmit={handleUpdateProfile} className="space-y-4">
                      <div>
-                       <label htmlFor="profileFullName" className="block text-sm font-medium text-gray-700">Nom Complet</label>
+                       <label className="block text-sm font-medium text-gray-700">Nom Complet</label>
                        <input 
-                        id="profileFullName"
                         type="text" 
                         value={profileForm.fullName}
                         onChange={e => setProfileForm({...profileForm, fullName: e.target.value})}
@@ -2149,9 +1732,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profileEmail" className="block text-sm font-medium text-gray-700">Email</label>
+                       <label className="block text-sm font-medium text-gray-700">Email</label>
                        <input 
-                        id="profileEmail"
                         type="email" 
                         value={profileForm.email}
                         onChange={e => setProfileForm({...profileForm, email: e.target.value})}
@@ -2159,9 +1741,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profilePhoneNumber" className="block text-sm font-medium text-gray-700">Téléphone</label>
+                       <label className="block text-sm font-medium text-gray-700">Téléphone</label>
                        <input 
-                        id="profilePhoneNumber"
                         type="text" 
                         value={profileForm.phoneNumber}
                         onChange={e => setProfileForm({...profileForm, phoneNumber: e.target.value})}
@@ -2169,9 +1750,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profileAddress" className="block text-sm font-medium text-gray-700">Adresse</label>
+                       <label className="block text-sm font-medium text-gray-700">Adresse</label>
                        <input 
-                        id="profileAddress"
                         type="text" 
                         value={profileForm.address}
                         onChange={e => setProfileForm({...profileForm, address: e.target.value})}
@@ -2179,9 +1759,8 @@ const Dashboard: React.FC = () => {
                        />
                      </div>
                      <div>
-                       <label htmlFor="profilePictureUrl" className="block text-sm font-medium text-gray-700">URL Photo de Profil</label>
+                       <label className="block text-sm font-medium text-gray-700">URL Photo de Profil</label>
                        <input 
-                        id="profilePictureUrl"
                         type="text" 
                         value={profileForm.profilePictureUrl}
                         onChange={e => setProfileForm({...profileForm, profilePictureUrl: e.target.value})}
@@ -2244,10 +1823,8 @@ const Dashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="relative">
-                    <label htmlFor="kycSearch" className="sr-only">Rechercher une soumission KYC</label>
                     <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
-                      id="kycSearch"
                       type="text"
                       placeholder="Rechercher (Nom, ID)..."
                       value={kycSearchTerm}
@@ -2257,10 +1834,8 @@ const Dashboard: React.FC = () => {
                   </div>
 
                   <div className="relative">
-                    <label htmlFor="kycFilterStatus" className="sr-only">Filtrer par statut KYC</label>
                     <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <select
-                      id="kycFilterStatus"
                       value={kycFilterStatus}
                       onChange={(e) => setKycFilterStatus(e.target.value)}
                       className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
@@ -2386,13 +1961,12 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="depositAmount" className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <DollarSign className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    id="depositAmount"
                     type="number"
                     min="1"
                     required
@@ -2405,13 +1979,12 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="depositNote" className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <FileText className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    id="depositNote"
                     type="text"
                     value={depositNote}
                     onChange={(e) => setDepositNote(e.target.value)}
@@ -2544,19 +2117,19 @@ const Dashboard: React.FC = () => {
                      selectedUserTransactions.slice(0, 5).map(tx => (
                        <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
                          <div className="flex items-center gap-3">
-                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : tx.type === 'status_change' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
-                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : tx.type === 'status_change' ? <RefreshCcw className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
                            </div>
                            <div>
                              <p className="text-sm font-medium text-gray-900 capitalize">
-                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : tx.type === 'status_change' ? 'Statut Compte' : 'Retrait'}
+                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : 'Retrait'}
                              </p>
                              <p className="text-xs text-gray-500">{tx.date}</p>
                            </div>
                          </div>
                          <div className="text-right">
-                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' || tx.type === 'status_change' ? 'text-gray-600' : 'text-orange-600'}`}>
-                             {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
+                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
+                             {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
                            </p>
                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                              {tx.status === 'success' ? 'Succès' : 'Échec'}
@@ -2605,435 +2178,9 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="selectedMemberId" className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
                 <div className="relative">
                    <select 
-                     id="selectedMemberId"
-                     value={selectedMemberId} 
-                     onChange={(e) => setSelectedMemberId(e.target.value)}
-                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
-                     required
-                   >
-                     <option value="" disabled>-- Choisir un membre --</option>
-                     {users.map(user => (
-                       <option key={user.id} value={user.id}>
-                         {user.fullName} ({user.username})
-                       </option>
-                     ))}
-                   </select>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddMemberModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Ajouter
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* KYC Detail Modal */}
-      {isKYCDetailModalOpen && selectedUserForKYC && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
-                  {selectedUserForKYC.fullName.charAt(0)}
-                </div>
-                <div className="text-white">
-                  <h3 className="text-2xl font-bold">{selectedUserForKYC.fullName}</h3>
-                  <p className="text-gray-300 text-sm">Vérification d'identité (KYC)</p>
-                  <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold ${
-                    selectedUserForKYC.kycStatus === 'verified' ? 'bg-green-600 text-white' :
-                    selectedUserForKYC.kycStatus === 'pending' ? 'bg-yellow-600 text-white' :
-                    selectedUserForKYC.kycStatus === 'rejected' ? 'bg-red-600 text-white' :
-                    'bg-gray-600 text-white'
-                  }`}>
-                    {selectedUserForKYC.kycStatus.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsKYCDetailModalOpen(false)}
-                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 bg-gray-50">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Documents Section */}
-                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
-                    <Image className="h-4 w-4 text-gray-700" /> Documents Soumis
-                  </h4>
-                  {selectedUserKYCDocuments.length > 0 ? (
-                    <div className="space-y-4">
-                      {selectedUserKYCDocuments.map((doc) => (
-                        <div key={doc.id} className="border border-gray-200 rounded-lg p-3 flex items-center gap-3">
-                          <div className="flex-shrink-0 h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                            <img src={doc.documentUrl} alt={doc.type} className="object-cover w-full h-full" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 capitalize">{doc.type.replace('_', ' ')}</p>
-                            <p className="text-xs text-gray-500">Soumis le: {doc.submissionDate.split(' ')[0]}</p>
-                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              doc.status === 'approved' ? 'bg-green-100 text-green-700' :
-                              doc.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {doc.status.toUpperCase()}
-                            </span>
-                          </div>
-                          <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 text-sm py-4">Aucun document soumis.</div>
-                  )}
-                </div>
-
-                {/* Review Actions */}
-                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
-                      <Fingerprint className="h-4 w-4 text-gray-700" /> Actions de Vérification
-                    </h4>
-                    {selectedUserForKYC.kycStatus === 'pending' ? (
-                      <div className="space-y-4">
-                        <div>
-                          <label htmlFor="rejectionReason" className="block text-sm font-medium text-gray-700 mb-1">Raison du rejet (si applicable)</label>
-                          <textarea
-                            id="rejectionReason"
-                            rows={3}
-                            value={kycRejectionReason}
-                            onChange={(e) => setKycRejectionReason(e.target.value)}
-                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                            placeholder="Ex: Document illisible, informations manquantes..."
-                          ></textarea>
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handleUpdateKYCStatus('rejected')}
-                            disabled={!kycRejectionReason.trim()}
-                            className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <XCircle className="h-4 w-4 inline-block mr-2" /> Rejeter
-                          </button>
-                          <button
-                            onClick={() => handleUpdateKYCStatus('verified')}
-                            className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-                          >
-                            <CheckCircle className="h-4 w-4 inline-block mr-2" /> Approuver
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center text-gray-500 text-sm py-8">
-                        Ce statut KYC ne nécessite pas d'action de vérification.
-                        {selectedUserForKYC.kycStatus === 'rejected' && selectedUserKYCDocuments[0]?.rejectionReason && (
-                          <p className="mt-4 text-red-600 font-medium">Raison du rejet: {selectedUserKYCDocuments[0].rejectionReason}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                    <p>Dernière mise à jour: {selectedUserForKYC.kycVerifiedDate || selectedUserForKYC.kycSubmissionDate || '-'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-100 px-6 py-4 flex justify-end">
-              <button
-                onClick={() => setIsKYCDetailModalOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        );
-
-      default:
-        return <div>Vue non trouvée</div>;
-    }
-  };
-
-  return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity"
-          onClick={() => setIsMobileMenuOpen(false)}
-        ></div>
-      )}
-
-      {/* Deposit Modal */}
-      {isDepositModalOpen && selectedUserForDeposit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Wallet className="h-6 w-6 text-gray-700" />
-                Faire un dépôt
-              </h3>
-              <button onClick={() => setIsDepositModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmitDeposit} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <p className="text-sm text-gray-500 mb-1">Bénéficiaire</p>
-                <p className="text-lg font-bold text-gray-800">{selectedUserForDeposit.fullName}</p>
-                <p className="text-xs text-gray-500">ID: {selectedUserForDeposit.username}</p>
-              </div>
-              
-              <div>
-                <label htmlFor="depositAmount" className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <DollarSign className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="depositAmount"
-                    type="number"
-                    min="1"
-                    required
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="depositNote" className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="depositNote"
-                    type="text"
-                    value={depositNote}
-                    onChange={(e) => setDepositNote(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                    placeholder="Ex: Dépôt espèce guichet"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsDepositModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Confirmer le dépôt
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* User Details Modal */}
-      {isUserDetailModalOpen && selectedUserForDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-             {/* Header */}
-             <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
-               <div className="flex items-center gap-4">
-                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
-                   {selectedUserForDetail.fullName.charAt(0)}
-                 </div>
-                 <div className="text-white">
-                   <h3 className="text-2xl font-bold">{selectedUserForDetail.fullName}</h3>
-                   <p className="text-gray-300 text-sm">@{selectedUserForDetail.username}</p>
-                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-white border border-gray-600">
-                     {selectedUserForDetail.status ? selectedUserForDetail.status.toUpperCase() : 'ACTIF'}
-                   </span>
-                 </div>
-               </div>
-               <button 
-                onClick={() => setIsUserDetailModalOpen(false)} 
-                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
-               >
-                <X className="h-5 w-5" />
-               </button>
-             </div>
-
-             {/* Content */}
-             <div className="p-6 bg-gray-50">
-               
-               {/* Info Grid */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                 {/* Contact Card */}
-                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <UserCircle className="h-4 w-4 text-gray-700" /> Informations Personnelles
-                   </h4>
-                   <div className="space-y-3 text-sm">
-                     <div className="flex items-start gap-3">
-                       <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Email</span>
-                         <span className="text-gray-700">{selectedUserForDetail.email || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3">
-                       <Phone className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Téléphone</span>
-                         <span className="text-gray-700">{selectedUserForDetail.phoneNumber || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3">
-                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Adresse</span>
-                         <span className="text-gray-700">{selectedUserForDetail.address || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
-                        <CreditCard className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <span className="block text-gray-500 text-xs">Statut Crédit</span>
-                          {selectedUserForDetail.loanEligible ? (
-                            <span className="text-green-600 font-medium">Éligible au prêt</span>
-                          ) : (
-                            <span className="text-gray-500">Non éligible</span>
-                          )}
-                        </div>
-                     </div>
-                   </div>
-                 </div>
-
-                 {/* Balance Card */}
-                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <Wallet className="h-4 w-4 text-gray-700" /> Solde du Compte
-                   </h4>
-                   <div className="flex flex-col h-full justify-center pb-4">
-                     <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
-                     <span className="text-3xl font-bold text-gray-800 tracking-tight">
-                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FCFA</span>
-                     </span>
-                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
-                       <span className="text-gray-500">Membre depuis</span>
-                       <span className="font-medium text-gray-700">{selectedUserForDetail.joinedDate}</span>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-
-               {/* Recent Transactions Snippet */}
-               <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                 <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h4 className="text-gray-800 font-semibold flex items-center gap-2 text-sm">
-                      <Activity className="h-4 w-4 text-gray-700" /> Dernières Transactions
-                    </h4>
-                    <span className="text-xs text-gray-500">5 dernières</span>
-                 </div>
-                 <div className="divide-y divide-gray-100">
-                   {selectedUserTransactions.length > 0 ? (
-                     selectedUserTransactions.slice(0, 5).map(tx => (
-                       <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
-                         <div className="flex items-center gap-3">
-                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : tx.type === 'status_change' ? 'bg-purple-100 text-purple-600' : 'bg-orange-100 text-orange-600'}`}>
-                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : tx.type === 'status_change' ? <RefreshCcw className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
-                           </div>
-                           <div>
-                             <p className="text-sm font-medium text-gray-900 capitalize">
-                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : tx.type === 'status_change' ? 'Statut Compte' : 'Retrait'}
-                             </p>
-                             <p className="text-xs text-gray-500">{tx.date}</p>
-                           </div>
-                         </div>
-                         <div className="text-right">
-                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' || tx.type === 'status_change' ? 'text-gray-600' : 'text-orange-600'}`}>
-                             {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
-                           </p>
-                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                             {tx.status === 'success' ? 'Succès' : 'Échec'}
-                           </span>
-                         </div>
-                       </div>
-                     ))
-                   ) : (
-                     <div className="p-4 text-center text-gray-500 text-sm">Aucune transaction enregistrée.</div>
-                   )}
-                 </div>
-               </div>
-
-             </div>
-             <div className="bg-gray-100 px-6 py-4 flex justify-end">
-               <button 
-                onClick={() => setIsUserDetailModalOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-               >
-                 Fermer
-               </button>
-             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Member Modal */}
-      {isAddMemberModalOpen && selectedGroupForMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Users className="h-6 w-6 text-gray-700" />
-                Ajouter un membre
-              </h3>
-              <button onClick={() => setIsAddMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddMemberToGroup} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                 <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
-                 <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
-                 <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
-              </div>
-
-              <div>
-                <label htmlFor="selectedMemberId" className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
-                <div className="relative">
-                   <select 
-                     id="selectedMemberId"
                      value={selectedMemberId} 
                      onChange={(e) => setSelectedMemberId(e.target.value)}
                      className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
@@ -3222,13 +2369,12 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div>
-                <label htmlFor="newPasswordInput" className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    id="newPasswordInput"
                     type="password"
                     required
                     value={newPasswordInput}
@@ -3243,271 +2389,6 @@ const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsResetPasswordModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
-                >
-                  Réinitialiser
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Agent Modal */}
-      {isAddAgentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <UserPlus className="h-6 w-6 text-gray-700" />
-                Ajouter un nouvel agent
-              </h3>
-              <button onClick={() => setIsAddAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddAgent} className="space-y-4">
-              <div>
-                <label htmlFor="newAgentFullName" className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
-                <input 
-                  id="newAgentFullName"
-                  type="text" 
-                  value={newAgentForm.fullName}
-                  onChange={e => setNewAgentForm({...newAgentForm, fullName: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="newAgentEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input 
-                  id="newAgentEmail"
-                  type="email" 
-                  value={newAgentForm.email}
-                  onChange={e => setNewAgentForm({...newAgentForm, email: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="newAgentPhone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                <input 
-                  id="newAgentPhone"
-                  type="text" 
-                  value={newAgentForm.phone}
-                  onChange={e => setNewAgentForm({...newAgentForm, phone: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="newAgentZone" className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
-                <input 
-                  id="newAgentZone"
-                  type="text" 
-                  value={newAgentForm.zone}
-                  onChange={e => setNewAgentForm({...newAgentForm, zone: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="newAgentPassword" className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
-                <input 
-                  id="newAgentPassword"
-                  type="password" 
-                  value={newAgentForm.password}
-                  onChange={e => setNewAgentForm({...newAgentForm, password: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="newAgentProfilePictureUrl" className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
-                <input 
-                  id="newAgentProfilePictureUrl"
-                  type="text" 
-                  value={newAgentForm.profilePictureUrl}
-                  onChange={e => setNewAgentForm({...newAgentForm, profilePictureUrl: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Ex: https://example.com/agent.jpg"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddAgentModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Ajouter l'agent
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Agent Modal */}
-      {isEditAgentModalOpen && editingAgent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Edit className="h-6 w-6 text-gray-700" />
-                Modifier l'agent
-              </h3>
-              <button onClick={() => setIsEditAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleUpdateAgent} className="space-y-4">
-              <div>
-                <label htmlFor="editAgentFullName" className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
-                <input 
-                  id="editAgentFullName"
-                  type="text" 
-                  value={editAgentForm.fullName}
-                  onChange={e => setEditAgentForm({...editAgentForm, fullName: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="editAgentEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input 
-                  id="editAgentEmail"
-                  type="email" 
-                  value={editAgentForm.email}
-                  onChange={e => setEditAgentForm({...editAgentForm, email: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="editAgentPhone" className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                <input 
-                  id="editAgentPhone"
-                  type="text" 
-                  value={editAgentForm.phone}
-                  onChange={e => setEditAgentForm({...editAgentForm, phone: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="editAgentZone" className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
-                <input 
-                  id="editAgentZone"
-                  type="text" 
-                  value={editAgentForm.zone}
-                  onChange={e => setEditAgentForm({...editAgentForm, zone: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="editAgentStatus" className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-                <select 
-                  id="editAgentStatus"
-                  value={editAgentForm.status}
-                  onChange={e => setEditAgentForm({...editAgentForm, status: e.target.value as 'active' | 'inactive'})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  required
-                >
-                  <option value="active">Actif</option>
-                  <option value="inactive">Inactif</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="editAgentProfilePictureUrl" className="block text-sm font-medium text-gray-700 mb-1">URL Photo de Profil (Optionnel)</label>
-                <input 
-                  id="editAgentProfilePictureUrl"
-                  type="text" 
-                  value={editAgentForm.profilePictureUrl}
-                  onChange={e => setEditAgentForm({...editAgentForm, profilePictureUrl: e.target.value})}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Ex: https://example.com/agent.jpg"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsEditAgentModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Mettre à jour
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Agent Password Modal */}
-      {isResetAgentPasswordModalOpen && selectedAgentForPasswordReset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <KeyRound className="h-6 w-6 text-gray-700" />
-                Réinitialiser le mot de passe de l'agent
-              </h3>
-              <button onClick={() => setIsResetAgentPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleResetAgentPasswordSubmit} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <p className="text-sm text-gray-500 mb-1">Agent</p>
-                <p className="text-lg font-bold text-gray-800">{selectedAgentForPasswordReset.fullName}</p>
-                <p className="text-xs text-gray-500">ID: {selectedAgentForPasswordReset.id}</p>
-              </div>
-              
-              <div>
-                <label htmlFor="newAgentPasswordInput" className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="newAgentPasswordInput"
-                    type="password"
-                    required
-                    value={newAgentPasswordInput}
-                    onChange={(e) => setNewAgentPasswordInput(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
-                    placeholder="Entrez le nouveau mot de passe"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsResetAgentPasswordModalOpen(false)}
                   className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                 >
                   Annuler
@@ -3575,7 +2456,7 @@ const Dashboard: React.FC = () => {
             onClick={() => handleNavClick('agents')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
-            <Briefcase className="h-5 w-5" /> Agents
+            <Briefcase className="h-5 w-5" /> Partenaires
           </button>
 
           <button 

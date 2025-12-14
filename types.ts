@@ -36,7 +36,7 @@ export interface AdminProfile {
 }
 
 export type TransactionStatus = 'success' | 'failed';
-export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility' | 'status_change'; // Added 'status_change'
+export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility';
 
 export interface Transaction {
   id: string;
@@ -68,7 +68,6 @@ export interface SystemSettings {
   loanInterestRate: number; // Pourcentage
   tontineCommission: number; // Pourcentage
   agentCommission: number; // Pourcentage commission agents
-  withdrawalFeeRate: number; // Nouveau champ: Taux de frais de retrait (%)
   minPasswordLength: number;
   enableTwoFactor: boolean;
   emailNotifications: boolean;
@@ -84,8 +83,6 @@ export interface Agent {
   status: 'active' | 'inactive';
   totalFormsSubmitted: number;
   joinedDate: string;
-  profilePictureUrl?: string; // Nouveau champ pour la photo de profil
-  password?: string; // Nouveau champ pour le mot de passe de l'agent
 }
 
 export interface FieldSubmission {
