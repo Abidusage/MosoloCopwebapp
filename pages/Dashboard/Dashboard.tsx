@@ -72,6 +72,8 @@ const Dashboard: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [viewingAgent, setViewingAgent] = useState<Agent | null>(null);
   const [agentSubmissions, setAgentSubmissions] = useState<FieldSubmission[]>([]);
+  const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false); // New state for Add Agent modal
+  const [newAgentForm, setNewAgentForm] = useState({ fullName: '', email: '', phone: '', zone: '' }); // New state for new agent form
 
   // Group View State
   const [viewingGroup, setViewingGroup] = useState<Group | null>(null);
@@ -315,6 +317,19 @@ const Dashboard: React.FC = () => {
   const handleBackToAgents = () => {
     setViewingAgent(null);
     setAgentSubmissions([]);
+  };
+
+  const handleAddAgent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newAgentForm.fullName && newAgentForm.email && newAgentForm.phone && newAgentForm.zone) {
+      const createdAgent = MockService.addAgent(newAgentForm);
+      setAgents([...agents, createdAgent]);
+      setNewAgentForm({ fullName: '', email: '', phone: '', zone: '' });
+      setIsAddAgentModalOpen(false);
+      alert('Agent ajouté avec succès !');
+    } else {
+      alert('Veuillez remplir tous les champs pour ajouter un agent.');
+    }
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -702,8 +717,11 @@ const Dashboard: React.FC = () => {
         return (
           <div className="space-y-8">
              <div className="flex justify-between items-center">
-               <h2 className="text-2xl font-bold text-gray-800">Nos Partenaires / Agents</h2>
-               <button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2">
+               <h2 className="text-2xl font-bold text-gray-800">Gestion des Agents</h2> {/* Renamed title */}
+               <button 
+                 onClick={() => setIsAddAgentModalOpen(true)} // Open modal
+                 className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2"
+               >
                  <Plus className="h-4 w-4" /> Nouvel Agent
                </button>
              </div>
@@ -1557,95 +1575,6 @@ const Dashboard: React.FC = () => {
           );
         }
 
-        // List View (Default)
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Gestion des Groupes</h2>
-            
-            {/* Create Group Form */}
-             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <Plus className="h-5 w-5" /> Créer un nouveau groupe
-              </h3>
-              <form onSubmit={handleCreateGroup} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input 
-                    type="text" 
-                    placeholder="Nom du groupe" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newGroup.name}
-                    onChange={e => setNewGroup({...newGroup, name: e.target.value})}
-                    required
-                  />
-                  <input 
-                    type="number" 
-                    placeholder="Objectif (Montant Cible)" 
-                    className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
-                    value={newGroup.targetAmount || ''}
-                    onChange={e => setNewGroup({...newGroup, targetAmount: Number(e.target.value)})}
-                    required
-                  />
-                </div>
-                <textarea 
-                  placeholder="Description du groupe..." 
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none"
-                  rows={3}
-                  value={newGroup.description}
-                  onChange={e => setNewGroup({...newGroup, description: e.target.value})}
-                ></textarea>
-                <button type="submit" className="w-full md:w-auto px-8 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors">
-                  Créer le groupe
-                </button>
-              </form>
-            </div>
-
-            {/* Groups Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {groups.map(group => (
-                <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="bg-gray-200 p-2 rounded-lg">
-                        <Layers className="h-6 w-6 text-gray-700" />
-                      </div>
-                      <span className="bg-gray-100 text-gray-600 py-1 px-3 rounded-full text-xs font-medium">
-                        {group.createdAt}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{group.name}</h3>
-                    <p className="text-gray-500 text-sm mb-4 h-12 overflow-hidden line-clamp-2">{group.description}</p>
-                    <div className="border-t border-gray-100 pt-4 flex justify-between items-center text-sm mb-4">
-                      <span className="text-gray-600">
-                        <strong>{group.memberCount}</strong> Membres
-                      </span>
-                      <span className="text-gray-800 font-semibold">
-                        Obj: {group.targetAmount.toLocaleString()} FCFA
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleViewGroup(group)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
-                    >
-                      <Eye className="h-4 w-4" />
-                      Voir détails
-                    </button>
-                    <button 
-                      onClick={() => openAddMemberModal(group)}
-                      className="px-3 border border-gray-800 text-gray-800 rounded-lg hover:bg-gray-100 transition-colors"
-                      title="Ajouter un membre rapide"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
       case 'transactions':
         const filteredTransactions = getFilteredTransactions();
         return (
@@ -2319,6 +2248,86 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Add Agent Modal */}
+      {isAddAgentModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Briefcase className="h-6 w-6 text-gray-700" />
+                Ajouter un nouvel Agent
+              </h3>
+              <button onClick={() => setIsAddAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddAgent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                <input
+                  type="text"
+                  required
+                  value={newAgentForm.fullName}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, fullName: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Nom complet de l'agent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={newAgentForm.email}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, email: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <input
+                  type="text"
+                  required
+                  value={newAgentForm.phone}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, phone: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Ex: 07 00 00 00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zone d'opération</label>
+                <input
+                  type="text"
+                  required
+                  value={newAgentForm.zone}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, zone: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Ex: Marché Adjamé"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddAgentModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Ajouter l'Agent
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* KYC Detail Modal */}
       {isKYCDetailModalOpen && selectedUserForKYC && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -2558,7 +2567,7 @@ const Dashboard: React.FC = () => {
             onClick={() => handleNavClick('agents')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
-            <Briefcase className="h-5 w-5" /> Partenaires
+            <Briefcase className="h-5 w-5" /> Agents {/* Renamed from Partenaires */}
           </button>
 
           <button 

@@ -490,6 +490,18 @@ export const MockService = {
   getAgentSubmissions: (agentId: string) => {
     return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
   },
+  addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'status' | 'totalFormsSubmitted'>) => {
+    const randomId = `AGT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const newAgent: Agent = {
+      ...agent,
+      id: randomId,
+      joinedDate: new Date().toISOString().split('T')[0],
+      status: 'active', // Default status for new agents
+      totalFormsSubmitted: 0,
+    };
+    agents = [...agents, newAgent];
+    return newAgent;
+  },
 
   // KYC Logic
   getKYCSubmissions: () => {
