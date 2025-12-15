@@ -150,6 +150,7 @@ let systemSettings: SystemSettings = {
   loanInterestRate: 5.5,
   tontineCommission: 1.0,
   agentCommission: 2.5,
+  withdrawalFeeRate: 0.5, // Nouveau: 0.5% de frais de retrait
   minPasswordLength: 8,
   enableTwoFactor: false,
   emailNotifications: true
@@ -441,6 +442,15 @@ export const MockService = {
     const adminDeposits = MockService.getAdminDeposits();
     const totalAdminDepositsAmount = adminDeposits.reduce((sum, tx) => sum + tx.amount, 0);
 
+    // New financial calculations
+    const totalTontineCommission = totalDepositsValue * (systemSettings.tontineCommission / 100);
+    const totalWithdrawalFees = totalWithdrawalsValue * (systemSettings.withdrawalFeeRate / 100);
+    // For now, a mock value for loan interest as there's no detailed loan system
+    const totalLoanInterest = 50000; // Example mock value
+
+    const totalProfit = totalTontineCommission + totalWithdrawalFees + totalLoanInterest;
+
+
     return {
       totalUsers,
       totalGroups,
@@ -453,7 +463,11 @@ export const MockService = {
       eligibleUsersCount,
       totalCollectedByAgents,
       pendingKYCCount,
-      totalAdminDepositsAmount, // New stat
+      totalAdminDepositsAmount,
+      totalTontineCommission,
+      totalLoanInterest,
+      totalWithdrawalFees,
+      totalProfit,
     };
   },
 
