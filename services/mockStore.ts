@@ -418,6 +418,19 @@ export const MockService = {
       .filter(t => t.type === 'withdrawal' && t.status === 'success')
       .reduce((sum, t) => sum + t.amount, 0);
       
+    // Calculate withdrawal fees
+    const withdrawalFees = totalWithdrawalsValue * (systemSettings.withdrawalFeeRate / 100);
+    
+    // Simplified calculation for tontine commissions (e.g., 1% of total deposits)
+    const tontineCommissions = totalDepositsValue * (systemSettings.tontineCommission / 100);
+
+    // Simplified calculation for loan interest collected (e.g., 2% of total deposits)
+    // Using a fraction of the loanInterestRate for mock purposes
+    const loanInterestCollected = totalDepositsValue * (systemSettings.loanInterestRate / 100) * 0.1; 
+
+    const totalProfit = withdrawalFees + tontineCommissions + loanInterestCollected;
+
+
     const totalTransactions = transactions.length;
     const successTransactions = transactions.filter(t => t.status === 'success').length;
     const successRate = totalTransactions > 0 ? Math.round((successTransactions / totalTransactions) * 100) : 0;
@@ -441,22 +454,6 @@ export const MockService = {
 
     const adminDeposits = MockService.getAdminDeposits();
     const totalAdminDepositsAmount = adminDeposits.reduce((sum, tx) => sum + tx.amount, 0);
-
-    // New financial calculations
-    const totalSuccessfulWithdrawals = transactions
-      .filter(t => t.type === 'withdrawal' && t.status === 'success')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    const withdrawalFees = totalSuccessfulWithdrawals * (systemSettings.withdrawalFeeRate / 100);
-    
-    // Simplified calculation for tontine commissions (e.g., 1% of total deposits)
-    const tontineCommissions = totalDepositsValue * (systemSettings.tontineCommission / 100);
-
-    // Simplified calculation for loan interest collected (e.g., 2% of total deposits)
-    const loanInterestCollected = totalDepositsValue * (systemSettings.loanInterestRate / 100) * 0.1; // A fraction of the rate for mock
-
-    const totalProfit = withdrawalFees + tontineCommissions + loanInterestCollected;
-
 
     return {
       totalUsers,
