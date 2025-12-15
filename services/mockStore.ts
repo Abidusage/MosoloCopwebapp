@@ -75,6 +75,7 @@ let users: User[] = [
   },
   { 
     id: 'US6677C6', 
+    username: 'fatou_d', 
     fullName: 'Fatou Diallo', 
     depositAmount: 250000, 
     joinedDate: '2024-03-01',
@@ -89,6 +90,7 @@ let users: User[] = [
   },
   { 
     id: 'US7788D7', 
+    username: 'kofi_a', 
     fullName: 'Kofi Annan', 
     depositAmount: 500000, 
     joinedDate: '2024-03-10',
@@ -145,13 +147,12 @@ let systemSettings: SystemSettings = {
   supportPhone: '+225 01 02 03 04',
   maintenanceMode: false,
   defaultCurrency: 'FCFA',
-  loanInterestRate: 5.5, // Pourcentage
-  tontineCommission: 1.0, // Pourcentage
-  agentCommission: 2.5, // Pourcentage commission agents
+  loanInterestRate: 5.5,
+  tontineCommission: 1.0,
+  agentCommission: 2.5,
   minPasswordLength: 8,
   enableTwoFactor: false,
-  emailNotifications: true,
-  withdrawalFeeRate: 0.5, // Ajouté: 0.5% de frais de retrait
+  emailNotifications: true
 };
 
 // Données Mock Agents
@@ -416,19 +417,6 @@ export const MockService = {
       .filter(t => t.type === 'withdrawal' && t.status === 'success')
       .reduce((sum, t) => sum + t.amount, 0);
       
-    // Calculate withdrawal fees
-    const withdrawalFees = totalWithdrawalsValue * (systemSettings.withdrawalFeeRate / 100);
-    
-    // Simplified calculation for tontine commissions (e.g., 1% of total deposits)
-    const tontineCommissions = totalDepositsValue * (systemSettings.tontineCommission / 100);
-
-    // Simplified calculation for loan interest collected (e.g., 2% of total deposits)
-    // Using a fraction of the loanInterestRate for mock purposes
-    const loanInterestCollected = totalDepositsValue * (systemSettings.loanInterestRate / 100) * 0.1; 
-
-    const totalProfit = withdrawalFees + tontineCommissions + loanInterestCollected;
-
-
     const totalTransactions = transactions.length;
     const successTransactions = transactions.filter(t => t.status === 'success').length;
     const successRate = totalTransactions > 0 ? Math.round((successTransactions / totalTransactions) * 100) : 0;
@@ -465,11 +453,7 @@ export const MockService = {
       eligibleUsersCount,
       totalCollectedByAgents,
       pendingKYCCount,
-      totalAdminDepositsAmount,
-      totalProfit, // New stat
-      tontineCommissions, // New stat
-      loanInterestCollected, // New stat
-      withdrawalFees, // New stat
+      totalAdminDepositsAmount, // New stat
     };
   },
 

@@ -71,7 +71,6 @@ export interface SystemSettings {
   minPasswordLength: number;
   enableTwoFactor: boolean;
   emailNotifications: boolean;
-  withdrawalFeeRate: number; // Nouveau champ pour le taux de frais de retrait
 }
 
 // Nouveaux types pour les Agents/Partenaires
