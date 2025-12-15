@@ -1137,19 +1137,6 @@ const Dashboard: React.FC = () => {
                            </div>
                          </div>
                          <div>
-                           <label className="block text-sm font-medium text-gray-700 mb-1">Commission Agent (%)</label>
-                           <div className="relative">
-                             <input 
-                               type="number" 
-                               step="0.1"
-                               value={settings.agentCommission}
-                               onChange={(e) => setSettings({...settings, agentCommission: parseFloat(e.target.value)})}
-                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                             />
-                             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
-                           </div>
-                         </div>
-                         <div>
                            <label className="block text-sm font-medium text-gray-700 mb-1">Taux de frais de retrait (%)</label>
                            <div className="relative">
                              <input 
@@ -2059,6 +2046,427 @@ const Dashboard: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return <div>Vue non trouvée</div>;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
+
+      {/* Deposit Modal */}
+      {isDepositModalOpen && selectedUserForDeposit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Wallet className="h-6 w-6 text-gray-700" />
+                Faire un dépôt
+              </h3>
+              <button onClick={() => setIsDepositModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitDeposit} className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <p className="text-sm text-gray-500 mb-1">Bénéficiaire</p>
+                <p className="text-lg font-bold text-gray-800">{selectedUserForDeposit.fullName}</p>
+                <p className="text-xs text-gray-500">ID: {selectedUserForDeposit.username}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={depositNote}
+                    onChange={(e) => setDepositNote(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                    placeholder="Ex: Dépôt espèce guichet"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsDepositModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Confirmer le dépôt
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {isUserDetailModalOpen && selectedUserForDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+             {/* Header */}
+             <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
+               <div className="flex items-center gap-4">
+                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
+                   {selectedUserForDetail.fullName.charAt(0)}
+                 </div>
+                 <div className="text-white">
+                   <h3 className="text-2xl font-bold">{selectedUserForDetail.fullName}</h3>
+                   <p className="text-gray-300 text-sm">@{selectedUserForDetail.username}</p>
+                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-white border border-gray-600">
+                     {selectedUserForDetail.status ? selectedUserForDetail.status.toUpperCase() : 'ACTIF'}
+                   </span>
+                 </div>
+               </div>
+               <button 
+                onClick={() => setIsUserDetailModalOpen(false)} 
+                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
+               >
+                <X className="h-5 w-5" />
+               </button>
+             </div>
+
+             {/* Content */}
+             <div className="p-6 bg-gray-50">
+               
+               {/* Info Grid */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                 {/* Contact Card */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <UserCircle className="h-4 w-4 text-gray-700" /> Informations Personnelles
+                   </h4>
+                   <div className="space-y-3 text-sm">
+                     <div className="flex items-start gap-3">
+                       <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Email</span>
+                         <span className="text-gray-700">{selectedUserForDetail.email || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <Phone className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Téléphone</span>
+                         <span className="text-gray-700">{selectedUserForDetail.phoneNumber || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Adresse</span>
+                         <span className="text-gray-700">{selectedUserForDetail.address || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
+                        <CreditCard className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <span className="block text-gray-500 text-xs">Statut Crédit</span>
+                          {selectedUserForDetail.loanEligible ? (
+                            <span className="text-green-600 font-medium">Éligible au prêt</span>
+                          ) : (
+                            <span className="text-gray-500">Non éligible</span>
+                          )}
+                        </div>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* Balance Card */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <Wallet className="h-4 w-4 text-gray-700" /> Solde du Compte
+                   </h4>
+                   <div className="flex flex-col h-full justify-center pb-4">
+                     <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
+                     <span className="text-3xl font-bold text-gray-800 tracking-tight">
+                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FCFA</span>
+                     </span>
+                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
+                       <span className="text-gray-500">Membre depuis</span>
+                       <span className="font-medium text-gray-700">{selectedUserForDetail.joinedDate}</span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Recent Transactions Snippet */}
+               <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                 <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h4 className="text-gray-800 font-semibold flex items-center gap-2 text-sm">
+                      <Activity className="h-4 w-4 text-gray-700" /> Dernières Transactions
+                    </h4>
+                    <span className="text-xs text-gray-500">5 dernières</span>
+                 </div>
+                 <div className="divide-y divide-gray-100">
+                   {selectedUserTransactions.length > 0 ? (
+                     selectedUserTransactions.slice(0, 5).map(tx => (
+                       <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
+                         <div className="flex items-center gap-3">
+                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                           </div>
+                           <div>
+                             <p className="text-sm font-medium text-gray-900 capitalize">
+                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : 'Retrait'}
+                             </p>
+                             <p className="text-xs text-gray-500">{tx.date}</p>
+                           </div>
+                         </div>
+                         <div className="text-right">
+                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
+                             {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
+                           </p>
+                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                             {tx.status === 'success' ? 'Succès' : 'Échec'}
+                           </span>
+                         </div>
+                       </div>
+                     ))
+                   ) : (
+                     <div className="p-4 text-center text-gray-500 text-sm">Aucune transaction enregistrée.</div>
+                   )}
+                 </div>
+               </div>
+
+             </div>
+             <div className="bg-gray-100 px-6 py-4 flex justify-end">
+               <button 
+                onClick={() => setIsUserDetailModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+               >
+                 Fermer
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {isAddMemberModalOpen && selectedGroupForMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+             <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Users className="h-6 w-6 text-gray-700" />
+                Ajouter un membre
+              </h3>
+              <button onClick={() => setIsAddMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddMemberToGroup} className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                 <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
+                 <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
+                 <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
+                <div className="relative">
+                   <select 
+                     value={selectedMemberId} 
+                     onChange={(e) => setSelectedMemberId(e.target.value)}
+                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
+                     required
+                   >
+                     <option value="" disabled>-- Choisir un membre --</option>
+                     {users.map(user => (
+                       <option key={user.id} value={user.id}>
+                         {user.fullName} ({user.username})
+                       </option>
+                     ))}
+                   </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddMemberModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Detail Modal */}
+      {isKYCDetailModalOpen && selectedUserForKYC && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
+                  {selectedUserForKYC.fullName.charAt(0)}
+                </div>
+                <div className="text-white">
+                  <h3 className="text-2xl font-bold">{selectedUserForKYC.fullName}</h3>
+                  <p className="text-gray-300 text-sm">Vérification d'identité (KYC)</p>
+                  <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold ${
+                    selectedUserForKYC.kycStatus === 'verified' ? 'bg-green-600 text-white' :
+                    selectedUserForKYC.kycStatus === 'pending' ? 'bg-yellow-600 text-white' :
+                    selectedUserForKYC.kycStatus === 'rejected' ? 'bg-red-600 text-white' :
+                    'bg-gray-600 text-white'
+                  }`}>
+                    {selectedUserForKYC.kycStatus.replace('_', ' ').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsKYCDetailModalOpen(false)}
+                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 bg-gray-50">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Documents Section */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
+                    <Image className="h-4 w-4 text-gray-700" /> Documents Soumis
+                  </h4>
+                  {selectedUserKYCDocuments.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedUserKYCDocuments.map((doc) => (
+                        <div key={doc.id} className="border border-gray-200 rounded-lg p-3 flex items-center gap-3">
+                          <div className="flex-shrink-0 h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                            <img src={doc.documentUrl} alt={doc.type} className="object-cover w-full h-full" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 capitalize">{doc.type.replace('_', ' ')}</p>
+                            <p className="text-xs text-gray-500">Soumis le: {doc.submissionDate.split(' ')[0]}</p>
+                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              doc.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              doc.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {doc.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                            <Eye className="h-4 w-4" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 text-sm py-4">Aucun document soumis.</div>
+                  )}
+                </div>
+
+                {/* Review Actions */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
+                      <Fingerprint className="h-4 w-4 text-gray-700" /> Actions de Vérification
+                    </h4>
+                    {selectedUserForKYC.kycStatus === 'pending' ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Raison du rejet (si applicable)</label>
+                          <textarea
+                            rows={3}
+                            value={kycRejectionReason}
+                            onChange={(e) => setKycRejectionReason(e.target.value)}
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                            placeholder="Ex: Document illisible, informations manquantes..."
+                          ></textarea>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleUpdateKYCStatus('rejected')}
+                            disabled={!kycRejectionReason.trim()}
+                            className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <XCircle className="h-4 w-4 inline-block mr-2" /> Rejeter
+                          </button>
+                          <button
+                            onClick={() => handleUpdateKYCStatus('verified')}
+                            className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                          >
+                            <CheckCircle className="h-4 w-4 inline-block mr-2" /> Approuver
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 text-sm py-8">
+                        Ce statut KYC ne nécessite pas d'action de vérification.
+                        {selectedUserForKYC.kycStatus === 'rejected' && selectedUserKYCDocuments[0]?.rejectionReason && (
+                          <p className="mt-4 text-red-600 font-medium">Raison du rejet: {selectedUserKYCDocuments[0].rejectionReason}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
+                    <p>Dernière mise à jour: {selectedUserForKYC.kycVerifiedDate || selectedUserForKYC.kycSubmissionDate || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-100 px-6 py-4 flex justify-end">
+              <button
+                onClick={() => setIsKYCDetailModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Fermer
+              </button>
             </div>
           </div>
         );
