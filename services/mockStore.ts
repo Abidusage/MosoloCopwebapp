@@ -118,6 +118,11 @@ let transactions: Transaction[] = [
   { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00' },
   { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin' },
   { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo' },
+  { id: 'TRX-009', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 10000, status: 'success', date: '2024-06-18 10:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-010', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 20000, status: 'success', date: '2024-06-17 11:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-011', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 5000, status: 'success', date: '2024-06-15 12:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-012', userId: 'US4455A4', userFullName: 'Awa Sanogo', type: 'deposit', amount: 30000, status: 'success', date: '2024-05-20 13:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-013', userId: 'US5566B5', userFullName: 'Moussa Traoré', type: 'deposit', amount: 10000, status: 'success', date: '2024-04-10 14:00', reason: 'Dépôt manuel admin' },
 ];
 
 let messages: Message[] = [
@@ -391,6 +396,12 @@ export const MockService = {
     return fieldSubmissions.filter(s => s.status === 'pending').length;
   },
 
+  getAdminDeposits: () => {
+    return transactions.filter(tx => 
+      tx.type === 'deposit' && tx.reason === 'Dépôt manuel admin'
+    ).sort((a, b) => b.date.localeCompare(a.date));
+  },
+
   getGlobalStats: () => {
     const totalUsers = users.length;
     const totalGroups = groups.length;
@@ -427,6 +438,9 @@ export const MockService = {
       users: Math.floor(Math.random() * 10) + (index * 2) + 5 // Fake growth
     }));
 
+    const adminDeposits = MockService.getAdminDeposits();
+    const totalAdminDepositsAmount = adminDeposits.reduce((sum, tx) => sum + tx.amount, 0);
+
     return {
       totalUsers,
       totalGroups,
@@ -438,7 +452,8 @@ export const MockService = {
       growthData,
       eligibleUsersCount,
       totalCollectedByAgents,
-      pendingKYCCount
+      pendingKYCCount,
+      totalAdminDepositsAmount, // New stat
     };
   },
 

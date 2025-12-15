@@ -136,6 +136,9 @@ const Dashboard: React.FC = () => {
   const [selectedUserForPasswordReset, setSelectedUserForPasswordReset] = useState<User | null>(null);
   const [newPasswordInput, setNewPasswordInput] = useState('');
 
+  // Admin Deposits for Profile View
+  const [adminDeposits, setAdminDeposits] = useState<Transaction[]>([]);
+
 
   useEffect(() => {
     // Load initial data
@@ -156,6 +159,7 @@ const Dashboard: React.FC = () => {
     setStats(MockService.getGlobalStats());
     setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
     setKycSubmissions(MockService.getKYCSubmissions());
+    setAdminDeposits(MockService.getAdminDeposits()); // Fetch admin deposits
   }, []);
 
   useEffect(() => {
@@ -166,6 +170,9 @@ const Dashboard: React.FC = () => {
     }
     if (currentView === 'kyc') {
       setKycSubmissions(MockService.getKYCSubmissions());
+    }
+    if (currentView === 'profile') { // Refresh admin deposits when viewing profile
+      setAdminDeposits(MockService.getAdminDeposits());
     }
   }, [currentView, transactions, users]);
 
@@ -244,6 +251,7 @@ const Dashboard: React.FC = () => {
         // Refresh Data
         setUsers(MockService.getUsers());
         setTransactions(MockService.getTransactions()); // Refresh transaction history
+        setAdminDeposits(MockService.getAdminDeposits()); // Refresh admin deposits
         setIsDepositModalOpen(false);
         setSelectedUserForDeposit(null);
         setDepositAmount('');
@@ -489,6 +497,17 @@ const Dashboard: React.FC = () => {
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Groupes Tontine</p>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{groups.length}</p>
+                </div>
+              </div>
+
+              {/* New KPI Card for Total Admin Deposits */}
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 bg-blue-100 rounded-lg">
+                  <Banknote className="h-6 w-6 sm:h-8 sm:w-8 text-blue-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Dépôts Admin</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalAdminDepositsAmount.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
                 </div>
               </div>
 
@@ -1793,6 +1812,35 @@ const Dashboard: React.FC = () => {
                         <span>{adminProfile?.address || 'Non renseigné'}</span>
                       </div>
                     </div>
+
+                    {/* Admin Deposits List in Profile */}
+                    <div className="mt-8 bg-gray-50 p-5 rounded-lg border border-gray-100">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Banknote className="h-5 w-5 text-gray-700" /> Mes Dépôts (Admin)
+                      </h3>
+                      {adminDeposits.length > 0 ? (
+                        <div className="space-y-3">
+                          {adminDeposits.map((tx) => (
+                            <div key={tx.id} className="flex justify-between items-center text-sm bg-white p-3 rounded-md shadow-sm border border-gray-100">
+                              <div className="flex items-center gap-2">
+                                <ArrowUpRight className="h-4 w-4 text-green-600" />
+                                <div>
+                                  <p className="font-medium text-gray-900">Dépôt à {tx.userFullName}</p>
+                                  <p className="text-xs text-gray-500">{tx.date.split(' ')[0]}</p>
+                                </div>
+                              </div>
+                              <span className="font-bold text-green-600">+{tx.amount.toLocaleString()} FCFA</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">Aucun dépôt effectué par l'admin pour le moment.</p>
+                      )}
+                      <div className="mt-4 pt-4 border-t border-gray-100 text-right">
+                        <p className="text-base font-bold text-gray-800">Total: {stats?.totalAdminDepositsAmount.toLocaleString()} FCFA</p>
+                      </div>
+                    </div>
+
                     <button 
                       onClick={() => setIsEditProfile(true)}
                       className="mt-8 w-full border border-gray-800 text-gray-800 rounded-lg py-2 hover:bg-gray-100 transition-colors text-sm font-medium"
