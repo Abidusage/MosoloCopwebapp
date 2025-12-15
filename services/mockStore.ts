@@ -253,7 +253,7 @@ export const MockService = {
   getUserTransactions: (userId: string) => {
     return transactions.filter(t => t.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
   },
-  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus'>) => {
+  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus' | 'status'>) => {
     // Generate 8 character ID uppercase
     const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
     
@@ -261,7 +261,7 @@ export const MockService = {
       ...user,
       id: randomId,
       joinedDate: new Date().toISOString().split('T')[0],
-      status: 'active',
+      status: 'active', // Default status for new users
       email: `${user.username}@mosolocoop.com`, // Fake default email
       address: 'Non renseigné',
       phoneNumber: 'Non renseigné',
@@ -288,6 +288,30 @@ export const MockService = {
         status: 'success',
         date: new Date().toISOString().replace('T', ' ').substring(0, 16),
         reason: !currentStatus ? 'Éligibilité Accordée' : 'Éligibilité Révoquée'
+      };
+      transactions = [newTransaction, ...transactions];
+      return true;
+    }
+    return false;
+  },
+
+  toggleUserStatus: (userId: string) => {
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      const currentStatus = users[userIndex].status;
+      const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+      users[userIndex].status = newStatus;
+
+      // Log history
+      const newTransaction: Transaction = {
+        id: `TRX-${Date.now()}`,
+        userId: users[userIndex].id,
+        userFullName: users[userIndex].fullName,
+        type: 'status_change',
+        amount: 0,
+        status: 'success',
+        date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        reason: newStatus === 'active' ? 'Compte activé par Admin' : 'Compte suspendu par Admin'
       };
       transactions = [newTransaction, ...transactions];
       return true;
