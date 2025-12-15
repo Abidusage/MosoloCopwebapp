@@ -147,12 +147,13 @@ let systemSettings: SystemSettings = {
   supportPhone: '+225 01 02 03 04',
   maintenanceMode: false,
   defaultCurrency: 'FCFA',
-  loanInterestRate: 5.5,
-  tontineCommission: 1.0,
-  agentCommission: 2.5,
+  loanInterestRate: 5.5, // Pourcentage
+  tontineCommission: 1.0, // Pourcentage
+  agentCommission: 2.5, // Pourcentage commission agents
   minPasswordLength: 8,
   enableTwoFactor: false,
-  emailNotifications: true
+  emailNotifications: true,
+  withdrawalFeeRate: 0.5, // Ajouté: 0.5% de frais de retrait
 };
 
 // Données Mock Agents
@@ -441,6 +442,22 @@ export const MockService = {
     const adminDeposits = MockService.getAdminDeposits();
     const totalAdminDepositsAmount = adminDeposits.reduce((sum, tx) => sum + tx.amount, 0);
 
+    // New financial calculations
+    const totalSuccessfulWithdrawals = transactions
+      .filter(t => t.type === 'withdrawal' && t.status === 'success')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const withdrawalFees = totalSuccessfulWithdrawals * (systemSettings.withdrawalFeeRate / 100);
+    
+    // Simplified calculation for tontine commissions (e.g., 1% of total deposits)
+    const tontineCommissions = totalDepositsValue * (systemSettings.tontineCommission / 100);
+
+    // Simplified calculation for loan interest collected (e.g., 2% of total deposits)
+    const loanInterestCollected = totalDepositsValue * (systemSettings.loanInterestRate / 100) * 0.1; // A fraction of the rate for mock
+
+    const totalProfit = withdrawalFees + tontineCommissions + loanInterestCollected;
+
+
     return {
       totalUsers,
       totalGroups,
@@ -453,7 +470,11 @@ export const MockService = {
       eligibleUsersCount,
       totalCollectedByAgents,
       pendingKYCCount,
-      totalAdminDepositsAmount, // New stat
+      totalAdminDepositsAmount,
+      totalProfit, // New stat
+      tontineCommissions, // New stat
+      loanInterestCollected, // New stat
+      withdrawalFees, // New stat
     };
   },
 

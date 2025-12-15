@@ -469,7 +469,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* KPIs Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6"> {/* Adjusted grid columns */}
               <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="p-3 sm:p-4 bg-gray-200 rounded-lg">
                   <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
@@ -528,6 +528,47 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* New Financial KPIs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 bg-green-100 rounded-lg">
+                  <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-green-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Bénéfices Totaux</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalProfit.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                </div>
+              </div>
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 bg-purple-100 rounded-lg">
+                  <CreditCard className="h-6 w-6 sm:h-8 sm:w-8 text-purple-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Commissions Tontine</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.tontineCommissions.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                </div>
+              </div>
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 bg-orange-100 rounded-lg">
+                  <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-orange-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Intérêts Prêts</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.loanInterestCollected.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                </div>
+              </div>
+              <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="p-3 sm:p-4 bg-red-100 rounded-lg">
+                  <ArrowDownLeft className="h-6 w-6 sm:h-8 sm:w-8 text-red-700" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 font-medium">Frais de Retrait</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.withdrawalFees.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                </div>
+              </div>
+            </div>
+
 
             {/* Recent Activity Split */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -847,8 +888,47 @@ const Dashboard: React.FC = () => {
                           </div>
                        </div>
 
-                       {/* Deposit Bar */}
+                       {/* New Financial Breakdown Bars */}
                        <div>
+                         <div className="flex justify-between text-sm mb-1">
+                           <span className="font-medium text-gray-700">Bénéfices Totaux</span>
+                           <span className="font-bold text-green-600">{stats.totalProfit.toLocaleString()} FCFA</span>
+                         </div>
+                         <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                           <div className="bg-green-500 h-4 rounded-full" style={{ width: `${(stats.totalProfit / stats.totalDepositsValue) * 100}%` }}></div>
+                         </div>
+                       </div>
+                       <div>
+                         <div className="flex justify-between text-sm mb-1">
+                           <span className="font-medium text-gray-700">Commissions Tontine</span>
+                           <span className="font-bold text-purple-600">{stats.tontineCommissions.toLocaleString()} FCFA</span>
+                         </div>
+                         <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                           <div className="bg-purple-500 h-4 rounded-full" style={{ width: `${(stats.tontineCommissions / stats.totalProfit) * 100}%` }}></div>
+                         </div>
+                       </div>
+                       <div>
+                         <div className="flex justify-between text-sm mb-1">
+                           <span className="font-medium text-gray-700">Intérêts Prêts</span>
+                           <span className="font-bold text-orange-600">{stats.loanInterestCollected.toLocaleString()} FCFA</span>
+                         </div>
+                         <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                           <div className="bg-orange-500 h-4 rounded-full" style={{ width: `${(stats.loanInterestCollected / stats.totalProfit) * 100}%` }}></div>
+                         </div>
+                       </div>
+                       <div>
+                         <div className="flex justify-between text-sm mb-1">
+                           <span className="font-medium text-gray-700">Frais de Retrait</span>
+                           <span className="font-bold text-red-600">{stats.withdrawalFees.toLocaleString()} FCFA</span>
+                         </div>
+                         <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                           <div className="bg-red-500 h-4 rounded-full" style={{ width: `${(stats.withdrawalFees / stats.totalProfit) * 100}%` }}></div>
+                         </div>
+                       </div>
+
+
+                       {/* Deposit Bar */}
+                       <div className="pt-6 border-t border-gray-100 mt-6">
                          <div className="flex justify-between text-sm mb-1">
                            <span className="font-medium text-gray-700">Volume Global Dépôts</span>
                            <span className="font-bold text-green-600">{stats.totalDepositsValue.toLocaleString()} FCFA</span>
@@ -1064,6 +1144,19 @@ const Dashboard: React.FC = () => {
                                step="0.1"
                                value={settings.agentCommission}
                                onChange={(e) => setSettings({...settings, agentCommission: parseFloat(e.target.value)})}
+                               className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                             />
+                             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                           </div>
+                         </div>
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Taux de frais de retrait (%)</label>
+                           <div className="relative">
+                             <input 
+                               type="number" 
+                               step="0.1"
+                               value={settings.withdrawalFeeRate}
+                               onChange={(e) => setSettings({...settings, withdrawalFeeRate: parseFloat(e.target.value)})}
                                className="w-full p-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                              />
                              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
