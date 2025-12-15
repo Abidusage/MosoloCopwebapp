@@ -74,6 +74,10 @@ const Dashboard: React.FC = () => {
   const [agentSubmissions, setAgentSubmissions] = useState<FieldSubmission[]>([]);
   const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false); // New state for Add Agent modal
   const [newAgentForm, setNewAgentForm] = useState({ fullName: '', email: '', phone: '', zone: '' }); // New state for new agent form
+  const [isAgentResetPasswordModalOpen, setIsAgentResetPasswordModalOpen] = useState(false);
+  const [selectedAgentForPasswordReset, setSelectedAgentForPasswordReset] = useState<Agent | null>(null);
+  const [newAgentPasswordInput, setNewAgentPasswordInput] = useState('');
+
 
   // Group View State
   const [viewingGroup, setViewingGroup] = useState<Group | null>(null);
@@ -176,7 +180,10 @@ const Dashboard: React.FC = () => {
     if (currentView === 'profile') { // Refresh admin deposits when viewing profile
       setAdminDeposits(MockService.getAdminDeposits());
     }
-  }, [currentView, transactions, users]);
+    if (currentView === 'agents') { // Refresh agents list when viewing agents
+      setAgents(MockService.getAgents());
+    }
+  }, [currentView, transactions, users, agents]); // Added agents to dependency array
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -331,6 +338,41 @@ const Dashboard: React.FC = () => {
       alert('Veuillez remplir tous les champs pour ajouter un agent.');
     }
   };
+
+  const handleToggleAgentStatus = (agent: Agent) => {
+    const newStatus = agent.status === 'active' ? 'inactive' : 'active';
+    if (window.confirm(`Voulez-vous vraiment ${newStatus === 'inactive' ? 'suspendre' : 'activer'} l'agent ${agent.fullName} ?`)) {
+      const success = MockService.toggleAgentStatus(agent.id);
+      if (success) {
+        setAgents(MockService.getAgents()); // Refresh agents list
+        alert(`Statut de l'agent ${agent.fullName} mis à jour à "${newStatus}".`);
+      } else {
+        alert("Erreur lors de la mise à jour du statut de l'agent.");
+      }
+    }
+  };
+
+  const openAgentResetPasswordModal = (agent: Agent) => {
+    setSelectedAgentForPasswordReset(agent);
+    setNewAgentPasswordInput('');
+    setIsAgentResetPasswordModalOpen(true);
+  };
+
+  const handleAgentResetPasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedAgentForPasswordReset && newAgentPasswordInput.trim()) {
+      const success = MockService.resetAgentPassword(selectedAgentForPasswordReset.id, newAgentPasswordInput);
+      if (success) {
+        setIsAgentResetPasswordModalOpen(false);
+        setSelectedAgentForPasswordReset(null);
+        setNewAgentPasswordInput('');
+        alert(`Le mot de passe de l'agent ${selectedAgentForPasswordReset.fullName} a été réinitialisé avec succès !`);
+      } else {
+        alert("Erreur lors de la réinitialisation du mot de passe de l'agent.");
+      }
+    }
+  };
+
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -758,13 +800,33 @@ const Dashboard: React.FC = () => {
                         </div>
                      </div>
 
-                     <button 
-                       onClick={() => handleViewAgent(agent)}
-                       className="w-full bg-gray-100 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
-                     >
-                        <FileText className="h-4 w-4" />
-                        Voir activité terrain
-                     </button>
+                     <div className="flex gap-2 mt-4">
+                       <button 
+                         onClick={() => handleViewAgent(agent)}
+                         className="flex-1 bg-gray-100 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                       >
+                          <FileText className="h-4 w-4" />
+                          Voir activité terrain
+                       </button>
+                       <button 
+                         onClick={() => handleToggleAgentStatus(agent)}
+                         className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm ${
+                           agent.status === 'active' 
+                             ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                             : 'bg-green-100 text-green-700 hover:bg-green-200'
+                         }`}
+                         title={agent.status === 'active' ? 'Suspendre l\'agent' : 'Activer l\'agent'}
+                       >
+                         {agent.status === 'active' ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                       </button>
+                       <button 
+                         onClick={() => openAgentResetPasswordModal(agent)}
+                         className="px-3 py-2 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors text-sm"
+                         title="Réinitialiser le mot de passe"
+                       >
+                         <KeyRound className="h-4 w-4" />
+                       </button>
+                     </div>
                   </div>
                 ))}
              </div>
@@ -2500,6 +2562,64 @@ const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsResetPasswordModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
+                >
+                  Réinitialiser
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Password Reset Modal */}
+      {isAgentResetPasswordModalOpen && selectedAgentForPasswordReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <KeyRound className="h-6 w-6 text-gray-700" />
+                Réinitialiser le mot de passe de l'agent
+              </h3>
+              <button onClick={() => setIsAgentResetPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAgentResetPasswordSubmit} className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <p className="text-sm text-gray-500 mb-1">Agent</p>
+                <p className="text-lg font-bold text-gray-800">{selectedAgentForPasswordReset.fullName}</p>
+                <p className="text-xs text-gray-500">ID: {selectedAgentForPasswordReset.id}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={newAgentPasswordInput}
+                    onChange={(e) => setNewAgentPasswordInput(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
+                    placeholder="Entrez le nouveau mot de passe"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAgentResetPasswordModalOpen(false)}
                   className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                 >
                   Annuler

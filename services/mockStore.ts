@@ -75,8 +75,8 @@ let users: User[] = [
   },
   { 
     id: 'US6677C6', 
-    username: 'fatou_d', 
     fullName: 'Fatou Diallo', 
+    username: 'fatou_d', 
     depositAmount: 250000, 
     joinedDate: '2024-03-01',
     email: 'fatou.d@example.com',
@@ -158,8 +158,8 @@ let systemSettings: SystemSettings = {
 
 // Données Mock Agents
 let agents: Agent[] = [
-  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10' },
-  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05' },
+  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10', password: 'password123' },
+  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05', password: 'password123' },
 ];
 
 // Données Mock Soumissions Terrain
@@ -490,7 +490,7 @@ export const MockService = {
   getAgentSubmissions: (agentId: string) => {
     return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
   },
-  addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'status' | 'totalFormsSubmitted'>) => {
+  addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'status' | 'totalFormsSubmitted' | 'password'>) => {
     const randomId = `AGT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const newAgent: Agent = {
       ...agent,
@@ -498,9 +498,26 @@ export const MockService = {
       joinedDate: new Date().toISOString().split('T')[0],
       status: 'active', // Default status for new agents
       totalFormsSubmitted: 0,
+      password: 'password123' // Default password for new agents
     };
     agents = [...agents, newAgent];
     return newAgent;
+  },
+  toggleAgentStatus: (agentId: string) => {
+    const agentIndex = agents.findIndex(a => a.id === agentId);
+    if (agentIndex !== -1) {
+      agents[agentIndex].status = agents[agentIndex].status === 'active' ? 'inactive' : 'active';
+      return true;
+    }
+    return false;
+  },
+  resetAgentPassword: (agentId: string, newPassword: string) => {
+    const agentIndex = agents.findIndex(a => a.id === agentId);
+    if (agentIndex !== -1) {
+      agents[agentIndex].password = newPassword; // In a real app, this would be hashed
+      return true;
+    }
+    return false;
   },
 
   // KYC Logic
