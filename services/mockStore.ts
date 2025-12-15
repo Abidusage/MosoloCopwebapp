@@ -75,7 +75,6 @@ let users: User[] = [
   },
   { 
     id: 'US6677C6', 
-    username: 'fatou_d', 
     fullName: 'Fatou Diallo', 
     depositAmount: 250000, 
     joinedDate: '2024-03-01',
@@ -90,7 +89,6 @@ let users: User[] = [
   },
   { 
     id: 'US7788D7', 
-    username: 'kofi_a', 
     fullName: 'Kofi Annan', 
     depositAmount: 500000, 
     joinedDate: '2024-03-10',
