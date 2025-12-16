@@ -417,6 +417,16 @@ export const MockService = {
     return false;
   },
 
+  updateTransactionStatus: (transactionId: string, newStatus: 'success' | 'failed' | 'pending', reason?: string) => {
+    const transactionIndex = transactions.findIndex(t => t.id === transactionId);
+    if (transactionIndex !== -1) {
+      transactions[transactionIndex].status = newStatus;
+      transactions[transactionIndex].reason = reason; // Update reason if provided
+      return true;
+    }
+    return false;
+  },
+
   // Stats Logic
   getTotalDeposits: () => {
     return users.reduce((sum, user) => sum + user.depositAmount, 0);
