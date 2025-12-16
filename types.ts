@@ -35,8 +35,8 @@ export interface AdminProfile {
   profilePictureUrl?: string; // Nouveau champ pour la photo de profil
 }
 
-export type TransactionStatus = 'success' | 'failed';
-export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility' | 'status_change'; // Added 'status_change'
+export type TransactionStatus = 'success' | 'failed' | 'pending'; // Added 'pending'
+export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility' | 'status_change';
 
 export interface Transaction {
   id: string;
@@ -47,6 +47,7 @@ export interface Transaction {
   status: TransactionStatus;
   date: string;
   reason?: string; // Raison de l'échec ou note
+  paymentMethod?: string; // Nouveau champ pour le moyen de paiement
 }
 
 export interface Message {

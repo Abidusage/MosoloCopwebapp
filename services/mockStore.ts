@@ -110,19 +110,21 @@ let groups: Group[] = [
 ];
 
 let transactions: Transaction[] = [
-  { id: 'TRX-001', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 50000, status: 'success', date: '2024-03-10 10:00', reason: 'Dépôt initial' },
-  { id: 'TRX-002', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'withdrawal', amount: 20000, status: 'success', date: '2024-03-11 14:30' },
-  { id: 'TRX-003', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 100000, status: 'failed', date: '2024-03-12 09:15', reason: 'Fonds insuffisants sur le moyen de paiement' },
-  { id: 'TRX-004', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'withdrawal', amount: 500000, status: 'failed', date: '2024-03-13 11:20', reason: 'Solde disponible insuffisant' },
-  { id: 'TRX-005', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 25000, status: 'success', date: '2024-03-14 08:45' },
-  { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00' },
-  { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin' },
-  { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo' },
-  { id: 'TRX-009', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 10000, status: 'success', date: '2024-06-18 10:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-010', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 20000, status: 'success', date: '2024-06-17 11:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-011', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 5000, status: 'success', date: '2024-06-15 12:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-012', userId: 'US4455A4', userFullName: 'Awa Sanogo', type: 'deposit', amount: 30000, status: 'success', date: '2024-05-20 13:00', reason: 'Dépôt manuel admin' },
-  { id: 'TRX-013', userId: 'US5566B5', userFullName: 'Moussa Traoré', type: 'deposit', amount: 10000, status: 'success', date: '2024-04-10 14:00', reason: 'Dépôt manuel admin' },
+  { id: 'TRX-001', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 50000, status: 'success', date: '2024-03-10 10:00', reason: 'Dépôt initial', paymentMethod: 'Orange Money' },
+  { id: 'TRX-002', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'withdrawal', amount: 20000, status: 'success', date: '2024-03-11 14:30', paymentMethod: 'Moov Money' },
+  { id: 'TRX-003', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 100000, status: 'failed', date: '2024-03-12 09:15', reason: 'Fonds insuffisants sur le moyen de paiement', paymentMethod: 'Wave' },
+  { id: 'TRX-004', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'withdrawal', amount: 500000, status: 'failed', date: '2024-03-13 11:20', reason: 'Solde disponible insuffisant', paymentMethod: 'Orange Money' },
+  { id: 'TRX-005', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 25000, status: 'success', date: '2024-03-14 08:45', paymentMethod: 'MTN Mobile Money' },
+  { id: 'TRX-006', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'withdrawal', amount: 10000, status: 'success', date: '2024-03-15 16:00', paymentMethod: 'Wave' },
+  { id: 'TRX-007', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'loan_eligibility', amount: 0, status: 'success', date: '2024-03-16 09:00', reason: 'Éligibilité activée par Admin', paymentMethod: 'N/A' },
+  { id: 'TRX-008', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 15000, status: 'success', date: '2024-03-20 11:30', reason: 'Collecte Agent Michel Yapo', paymentMethod: 'Espèces' },
+  { id: 'TRX-009', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'deposit', amount: 10000, status: 'success', date: '2024-06-18 10:00', reason: 'Dépôt manuel admin', paymentMethod: 'Virement Bancaire' },
+  { id: 'TRX-010', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 20000, status: 'success', date: '2024-06-17 11:00', reason: 'Dépôt manuel admin', paymentMethod: 'Orange Money' },
+  { id: 'TRX-011', userId: 'US1129Z3', userFullName: 'Paul Biya', type: 'deposit', amount: 5000, status: 'success', date: '2024-06-15 12:00', reason: 'Dépôt manuel admin', paymentMethod: 'Moov Money' },
+  { id: 'TRX-012', userId: 'US4455A4', userFullName: 'Awa Sanogo', type: 'deposit', amount: 30000, status: 'success', date: '2024-05-20 13:00', reason: 'Dépôt manuel admin', paymentMethod: 'Wave' },
+  { id: 'TRX-013', userId: 'US5566B5', userFullName: 'Moussa Traoré', type: 'deposit', amount: 10000, status: 'success', date: '2024-04-10 14:00', reason: 'Dépôt manuel admin', paymentMethod: 'Espèces' },
+  { id: 'TRX-014', userId: 'US9382Y2', userFullName: 'Marie Koné', type: 'deposit', amount: 50000, status: 'pending', date: '2024-06-19 09:00', reason: 'Dépôt en attente de confirmation', paymentMethod: 'Orange Money' },
+  { id: 'TRX-015', userId: 'US8492X1', userFullName: 'Jean Dupont', type: 'withdrawal', amount: 10000, status: 'pending', date: '2024-06-19 11:00', reason: 'Retrait en cours de traitement', paymentMethod: 'Wave' },
 ];
 
 let messages: Message[] = [
@@ -287,7 +289,8 @@ export const MockService = {
         amount: 0,
         status: 'success',
         date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-        reason: !currentStatus ? 'Éligibilité Accordée' : 'Éligibilité Révoquée'
+        reason: !currentStatus ? 'Éligibilité Accordée' : 'Éligibilité Révoquée',
+        paymentMethod: 'N/A'
       };
       transactions = [newTransaction, ...transactions];
       return true;
@@ -311,7 +314,8 @@ export const MockService = {
         amount: 0,
         status: 'success',
         date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-        reason: newStatus === 'active' ? 'Compte activé par Admin' : 'Compte suspendu par Admin'
+        reason: newStatus === 'active' ? 'Compte activé par Admin' : 'Compte suspendu par Admin',
+        paymentMethod: 'N/A'
       };
       transactions = [newTransaction, ...transactions];
       return true;
@@ -389,7 +393,7 @@ export const MockService = {
   // Transaction Logic
   getTransactions: () => [...transactions],
   
-  makeDeposit: (userId: string, amount: number, note?: string) => {
+  makeDeposit: (userId: string, amount: number, note?: string, paymentMethod: string = 'Inconnu') => {
     const user = users.find(u => u.id === userId);
     if (user) {
       // Update Balance
@@ -404,7 +408,8 @@ export const MockService = {
         amount: amount,
         status: 'success',
         date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-        reason: note || 'Dépôt manuel admin'
+        reason: note || 'Dépôt manuel admin',
+        paymentMethod: paymentMethod
       };
       transactions = [newTransaction, ...transactions];
       return true;

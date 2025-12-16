@@ -103,6 +103,7 @@ const Dashboard: React.FC = () => {
   const [selectedUserForDeposit, setSelectedUserForDeposit] = useState<User | null>(null);
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [depositNote, setDepositNote] = useState<string>('');
+  const [depositPaymentMethod, setDepositPaymentMethod] = useState<string>('Orange Money'); // New state for payment method
 
   // Add Member to Group Modal State
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
@@ -248,6 +249,7 @@ const Dashboard: React.FC = () => {
     setSelectedUserForDeposit(user);
     setDepositAmount('');
     setDepositNote('');
+    setDepositPaymentMethod('Orange Money'); // Default payment method
     setIsDepositModalOpen(true);
   };
 
@@ -255,7 +257,7 @@ const Dashboard: React.FC = () => {
     e.preventDefault();
     const amount = Number(depositAmount);
     if (selectedUserForDeposit && amount > 0) {
-      const success = MockService.makeDeposit(selectedUserForDeposit.id, amount, depositNote);
+      const success = MockService.makeDeposit(selectedUserForDeposit.id, amount, depositNote, depositPaymentMethod);
       if (success) {
         // Refresh Data
         setUsers(MockService.getUsers());
@@ -265,6 +267,7 @@ const Dashboard: React.FC = () => {
         setSelectedUserForDeposit(null);
         setDepositAmount('');
         setDepositNote('');
+        setDepositPaymentMethod('Orange Money');
         alert(`Dépôt de ${amount.toLocaleString()} FCFA effectué pour ${selectedUserForDeposit.fullName}`);
       }
     } else {
@@ -1716,7 +1719,7 @@ const Dashboard: React.FC = () => {
                         <option value="deposit">Dépôts</option>
                         <option value="withdrawal">Retraits</option>
                         <option value="loan_eligibility">Crédit / Éligibilité</option>
-                        <option value="status_change">Changement Statut</option> {/* Added status_change */}
+                        <option value="status_change">Changement Statut</option>
                       </select>
                    </div>
 
@@ -1729,6 +1732,7 @@ const Dashboard: React.FC = () => {
                       >
                         <option value="all">Tous les statuts</option>
                         <option value="success">Succès</option>
+                        <option value="pending">En attente</option> {/* Added pending status */}
                         <option value="failed">Échec</option>
                       </select>
                    </div>
@@ -1742,6 +1746,7 @@ const Dashboard: React.FC = () => {
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Moyen de Paiement</th> {/* New column */}
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Détails/Raison</th>
@@ -1778,6 +1783,7 @@ const Dashboard: React.FC = () => {
                              </div>
                            )}
                          </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{tx.paymentMethod || 'N/A'}</td> {/* Display payment method */}
                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                            {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
                          </td>
@@ -1785,6 +1791,10 @@ const Dashboard: React.FC = () => {
                            {tx.status === 'success' ? (
                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                <CheckCircle className="h-3 w-3" /> Succès
+                             </span>
+                           ) : tx.status === 'pending' ? (
+                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                               <AlertCircle className="h-3 w-3" /> En attente
                              </span>
                            ) : (
                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -2118,6 +2128,28 @@ const Dashboard: React.FC = () => {
                     className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
                     placeholder="0"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Moyen de paiement</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <CreditCard className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                    value={depositPaymentMethod}
+                    onChange={(e) => setDepositPaymentMethod(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base appearance-none bg-white"
+                  >
+                    <option value="Orange Money">Orange Money</option>
+                    <option value="Moov Money">Moov Money</option>
+                    <option value="Wave">Wave</option>
+                    <option value="MTN Mobile Money">MTN Mobile Money</option>
+                    <option value="Virement Bancaire">Virement Bancaire</option>
+                    <option value="Espèces">Espèces</option>
+                    <option value="Autre">Autre</option>
+                  </select>
                 </div>
               </div>
 
