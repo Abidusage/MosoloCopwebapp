@@ -371,6 +371,21 @@ export const MockService = {
     return false;
   },
 
+  updateGroup: (groupId: string, updates: Partial<Omit<Group, 'id' | 'createdAt' | 'memberCount' | 'memberIds'>>) => {
+    const groupIndex = groups.findIndex(g => g.id === groupId);
+    if (groupIndex !== -1) {
+      groups[groupIndex] = { ...groups[groupIndex], ...updates };
+      return true;
+    }
+    return false;
+  },
+
+  deleteGroup: (groupId: string) => {
+    const initialLength = groups.length;
+    groups = groups.filter(g => g.id !== groupId);
+    return groups.length < initialLength;
+  },
+
   // Chat Logic
   getGroupMessages: (groupId: string) => {
     return messages.filter(m => m.groupId === groupId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
