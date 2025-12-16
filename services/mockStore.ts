@@ -371,6 +371,19 @@ export const MockService = {
     return false;
   },
 
+  removeMemberFromGroup: (groupId: string, userId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    if (group && group.memberIds) {
+      const initialLength = group.memberIds.length;
+      group.memberIds = group.memberIds.filter(id => id !== userId);
+      if (group.memberIds.length < initialLength) {
+        group.memberCount -= 1;
+        return true;
+      }
+    }
+    return false;
+  },
+
   updateGroup: (groupId: string, updates: Partial<Omit<Group, 'id' | 'createdAt' | 'memberCount' | 'memberIds'>>) => {
     const groupIndex = groups.findIndex(g => g.id === groupId);
     if (groupIndex !== -1) {
