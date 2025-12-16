@@ -161,6 +161,10 @@ const Dashboard: React.FC = () => {
   const [newTransactionStatus, setNewTransactionStatus] = useState<TransactionStatus | ''>('');
   const [transactionStatusReason, setTransactionStatusReason] = useState('');
 
+  // Transaction Pagination State
+  const [transactionCurrentPage, setTransactionCurrentPage] = useState(1);
+  const [transactionsPerPage] = useState(10);
+
 
   useEffect(() => {
     // Load initial data
@@ -199,7 +203,7 @@ const Dashboard: React.FC = () => {
     if (currentView === 'agents') { // Refresh agents list when viewing agents
       setAgents(MockService.getAgents());
     }
-    if (currentView === 'transaction_management') { // Refresh transactions for management view
+    if (currentView === 'transaction_management' || currentView === 'transactions') { // Refresh transactions for management view
       setTransactions(MockService.getTransactions());
     }
     if (currentView === 'groups') { // Refresh groups when viewing groups
@@ -263,11 +267,12 @@ const Dashboard: React.FC = () => {
     // Reset specific view states
     setViewingGroup(null);
     setViewingAgent(null);
-    // Reset pagination when switching views
-    setCurrentPage(1);
+    // Reset pagination and search/filters when switching views
+    setCurrentPage(1); // For users
     setUserSearchTerm('');
     setKycSearchTerm('');
     setKycFilterStatus('all');
+    setTransactionCurrentPage(1); // For transactions
     setTransactionSearch('');
     setTransactionFilterType('all');
     setTransactionFilterStatus('all');
@@ -518,18 +523,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Filter Logic for Transactions (used in both 'transactions' and 'transaction_management')
-  const getFilteredTransactions = (allTransactions: Transaction[]) => {
-    return allTransactions.filter(tx => {
-      const matchType = transactionFilterType === 'all' || tx.type === transactionFilterType;
-      const matchStatus = transactionFilterStatus === 'all' || tx.status === transactionFilterStatus;
-      const matchSearch = transactionSearch === '' || 
-        tx.userFullName.toLowerCase().includes(transactionSearch.toLowerCase()) ||
-        tx.id.toLowerCase().includes(transactionSearch.toLowerCase());
-      return matchType && matchStatus && matchSearch;
-    });
-  };
-
   // Logic for Clients Pagination
   const getPaginatedUsers = () => {
     // 1. Filter
@@ -550,8 +543,8 @@ const Dashboard: React.FC = () => {
 
   const { filtered: filteredUsers, currentItems: currentUsers, totalPages: totalUserPages } = getPaginatedUsers();
 
-  const handlePageChange = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber >= 1 && pageNumber <= totalUserPages) {
+  const handleUserPageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalUserPages) {
       setCurrentPage(pageNumber);
     }
   };
@@ -637,6 +630,34 @@ const Dashboard: React.FC = () => {
       } else {
         alert("Erreur lors de la mise à jour du statut de la transaction.");
       }
+    }
+  };
+
+  // Transaction Filtering and Pagination Logic
+  const getPaginatedAndFilteredTransactions = (allTransactions: Transaction[]) => {
+    // 1. Apply filters
+    const filtered = allTransactions.filter(tx => {
+      const matchType = transactionFilterType === 'all' || tx.type === transactionFilterType;
+      const matchStatus = transactionFilterStatus === 'all' || tx.status === transactionFilterStatus;
+      const matchSearch = transactionSearch === '' || 
+        tx.userFullName.toLowerCase().includes(transactionSearch.toLowerCase()) ||
+        tx.id.toLowerCase().includes(transactionSearch.toLowerCase()) ||
+        tx.userId.toLowerCase().includes(transactionSearch.toLowerCase()); // Include userId in search
+      return matchType && matchStatus && matchSearch;
+    });
+
+    // 2. Paginate
+    const indexOfLastItem = transactionCurrentPage * transactionsPerPage;
+    const indexOfFirstItem = indexOfLastItem - transactionsPerPage;
+    const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filtered.length / transactionsPerPage);
+
+    return { filtered, currentItems, totalPages };
+  };
+
+  const handleTransactionPageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalTransactionPages) {
+      setTransactionCurrentPage(pageNumber);
     }
   };
 
@@ -1592,7 +1613,7 @@ const Dashboard: React.FC = () => {
                        <div>
                           <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                              <button
-                                onClick={() => handlePageChange(currentPage - 1)}
+                                onClick={() => handleUserPageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                                 className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                              >
@@ -1604,7 +1625,7 @@ const Dashboard: React.FC = () => {
                              {Array.from({ length: totalUserPages }, (_, i) => i + 1).map((number) => (
                                <button
                                   key={number}
-                                  onClick={() => handlePageChange(number)}
+                                  onClick={() => handleUserPageChange(number)}
                                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                                     currentPage === number
                                       ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
@@ -1616,7 +1637,7 @@ const Dashboard: React.FC = () => {
                              ))}
 
                              <button
-                                onClick={() => handlePageChange(currentPage + 1)}
+                                onClick={() => handleUserPageChange(currentPage + 1)}
                                 disabled={currentPage === totalUserPages}
                                 className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalUserPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                              >
@@ -1629,7 +1650,7 @@ const Dashboard: React.FC = () => {
                     {/* Mobile Pagination simplified */}
                     <div className="flex items-center justify-between w-full sm:hidden">
                        <button
-                          onClick={() => handlePageChange(currentPage - 1)}
+                          onClick={() => handleUserPageChange(currentPage - 1)}
                           disabled={currentPage === 1}
                           className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                        >
@@ -1639,7 +1660,7 @@ const Dashboard: React.FC = () => {
                           Page {currentPage} / {totalUserPages}
                        </span>
                        <button
-                          onClick={() => handlePageChange(currentPage + 1)}
+                          onClick={() => handleUserPageChange(currentPage + 1)}
                           disabled={currentPage === totalUserPages}
                           className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === totalUserPages ? 'opacity-50 cursor-not-allowed' : ''}`}
                        >
@@ -1920,7 +1941,7 @@ const Dashboard: React.FC = () => {
         );
 
       case 'transactions':
-        const filteredTransactionsHistory = getFilteredTransactions(transactions);
+        const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions);
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
@@ -1938,9 +1959,12 @@ const Dashboard: React.FC = () => {
                       <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input 
                         type="text" 
-                        placeholder="Rechercher (Nom, ID)..." 
+                        placeholder="Rechercher (Nom, ID Transaction, ID Client)..." 
                         value={transactionSearch}
-                        onChange={(e) => setTransactionSearch(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionSearch(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on search
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
                       />
                    </div>
@@ -1949,7 +1973,10 @@ const Dashboard: React.FC = () => {
                       <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
                         value={transactionFilterType}
-                        onChange={(e) => setTransactionFilterType(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionFilterType(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les types</option>
@@ -1964,7 +1991,10 @@ const Dashboard: React.FC = () => {
                       <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
                         value={transactionFilterStatus}
-                        onChange={(e) => setTransactionFilterStatus(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionFilterStatus(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les statuts</option>
@@ -1980,6 +2010,8 @@ const Dashboard: React.FC = () => {
                  <table className="min-w-full divide-y divide-gray-200">
                    <thead className="bg-gray-50">
                      <tr>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaction</th> {/* New */}
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Client</th> {/* New */}
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -1990,8 +2022,14 @@ const Dashboard: React.FC = () => {
                      </tr>
                    </thead>
                    <tbody className="bg-white divide-y divide-gray-200">
-                     {filteredTransactionsHistory.map((tx) => (
+                     {currentTransactionsHistory.map((tx) => (
                        <tr key={tx.id} className="hover:bg-gray-50">
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.id}</span>
+                         </td> {/* New */}
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.userId}</span>
+                         </td> {/* New */}
                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -2052,12 +2090,81 @@ const Dashboard: React.FC = () => {
                    </tbody>
                  </table>
                </div>
+               
+               {/* Pagination Controls for Transactions */}
+               {filteredTransactionsHistory.length > 0 && (
+                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                       <div>
+                          <p className="text-sm text-gray-700">
+                             Affichage de <span className="font-medium">{(transactionCurrentPage - 1) * transactionsPerPage + 1}</span> à <span className="font-medium">{Math.min(transactionCurrentPage * transactionsPerPage, filteredTransactionsHistory.length)}</span> sur <span className="font-medium">{filteredTransactionsHistory.length}</span> résultats
+                          </p>
+                       </div>
+                       <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                             <button
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                                disabled={transactionCurrentPage === 1}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Précédent</span>
+                                <ChevronLeft className="h-5 w-5" />
+                             </button>
+                             
+                             {/* Generate Page Numbers */}
+                             {Array.from({ length: totalTransactionsHistoryPages }, (_, i) => i + 1).map((number) => (
+                               <button
+                                  key={number}
+                                  onClick={() => handleTransactionPageChange(number)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                    transactionCurrentPage === number
+                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                               >
+                                  {number}
+                               </button>
+                             ))}
+
+                             <button
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                                disabled={transactionCurrentPage === totalTransactionsHistoryPages}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionsHistoryPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Suivant</span>
+                                <ChevronRight className="h-5 w-5" />
+                             </button>
+                          </nav>
+                       </div>
+                    </div>
+                    {/* Mobile Pagination simplified */}
+                    <div className="flex items-center justify-between w-full sm:hidden">
+                       <button
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                          disabled={transactionCurrentPage === 1}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Précédent
+                       </button>
+                       <span className="text-sm text-gray-700">
+                          Page {transactionCurrentPage} / {totalTransactionsHistoryPages}
+                       </span>
+                       <button
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                          disabled={transactionCurrentPage === totalTransactionsHistoryPages}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionsHistoryPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Suivant
+                       </button>
+                    </div>
+                 </div>
+               )}
             </div>
           </div>
         );
 
       case 'transaction_management':
-        const transactionsToManage = getFilteredTransactions(transactions);
+        const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions);
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Gestion des Transactions</h2>
@@ -2068,7 +2175,7 @@ const Dashboard: React.FC = () => {
                <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
                  <div className="flex justify-between items-center">
                    <h3 className="text-lg font-semibold text-gray-800">Transactions à Gérer</h3>
-                   <span className="text-sm text-gray-500">{transactionsToManage.length} résultats</span>
+                   <span className="text-sm text-gray-500">{filteredTransactionsToManage.length} résultats</span>
                  </div>
                  
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -2076,9 +2183,12 @@ const Dashboard: React.FC = () => {
                       <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <input 
                         type="text" 
-                        placeholder="Rechercher (Nom, ID)..." 
+                        placeholder="Rechercher (Nom, ID Transaction, ID Client)..." 
                         value={transactionSearch}
-                        onChange={(e) => setTransactionSearch(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionSearch(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on search
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
                       />
                    </div>
@@ -2087,7 +2197,10 @@ const Dashboard: React.FC = () => {
                       <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
                         value={transactionFilterType}
-                        onChange={(e) => setTransactionFilterType(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionFilterType(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les types</option>
@@ -2102,7 +2215,10 @@ const Dashboard: React.FC = () => {
                       <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <select 
                         value={transactionFilterStatus}
-                        onChange={(e) => setTransactionFilterStatus(e.target.value)}
+                        onChange={(e) => {
+                          setTransactionFilterStatus(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
                       >
                         <option value="all">Tous les statuts</option>
@@ -2118,6 +2234,8 @@ const Dashboard: React.FC = () => {
                  <table className="min-w-full divide-y divide-gray-200">
                    <thead className="bg-gray-50">
                      <tr>
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaction</th> {/* New */}
+                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Client</th> {/* New */}
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -2128,8 +2246,14 @@ const Dashboard: React.FC = () => {
                      </tr>
                    </thead>
                    <tbody className="bg-white divide-y divide-gray-200">
-                     {transactionsToManage.map((tx) => (
+                     {currentTransactionsToManage.map((tx) => (
                        <tr key={tx.id} className="hover:bg-gray-50">
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.id}</span>
+                         </td> {/* New */}
+                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.userId}</span>
+                         </td> {/* New */}
                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
                          <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -2211,6 +2335,75 @@ const Dashboard: React.FC = () => {
                    </tbody>
                  </table>
                </div>
+               
+               {/* Pagination Controls for Transactions */}
+               {filteredTransactionsToManage.length > 0 && (
+                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                       <div>
+                          <p className="text-sm text-gray-700">
+                             Affichage de <span className="font-medium">{(transactionCurrentPage - 1) * transactionsPerPage + 1}</span> à <span className="font-medium">{Math.min(transactionCurrentPage * transactionsPerPage, filteredTransactionsToManage.length)}</span> sur <span className="font-medium">{filteredTransactionsToManage.length}</span> résultats
+                          </p>
+                       </div>
+                       <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                             <button
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                                disabled={transactionCurrentPage === 1}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Précédent</span>
+                                <ChevronLeft className="h-5 w-5" />
+                             </button>
+                             
+                             {/* Generate Page Numbers */}
+                             {Array.from({ length: totalTransactionsToManagePages }, (_, i) => i + 1).map((number) => (
+                               <button
+                                  key={number}
+                                  onClick={() => handleTransactionPageChange(number)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                    transactionCurrentPage === number
+                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                               >
+                                  {number}
+                               </button>
+                             ))}
+
+                             <button
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                                disabled={transactionCurrentPage === totalTransactionsToManagePages}
+                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionsToManagePages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                             >
+                                <span className="sr-only">Suivant</span>
+                                <ChevronRight className="h-5 w-5" />
+                             </button>
+                          </nav>
+                       </div>
+                    </div>
+                    {/* Mobile Pagination simplified */}
+                    <div className="flex items-center justify-between w-full sm:hidden">
+                       <button
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                          disabled={transactionCurrentPage === 1}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Précédent
+                       </button>
+                       <span className="text-sm text-gray-700">
+                          Page {transactionCurrentPage} / {totalTransactionsToManagePages}
+                       </span>
+                       <button
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                          disabled={transactionCurrentPage === totalTransactionsToManagePages}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionsToManagePages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                       >
+                          Suivant
+                       </button>
+                    </div>
+                 </div>
+               )}
             </div>
           </div>
         );
@@ -2477,6 +2670,10 @@ const Dashboard: React.FC = () => {
         return <div>Vue non trouvée</div>;
     }
   };
+
+  const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions);
+  const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions);
+
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
