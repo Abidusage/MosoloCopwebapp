@@ -52,7 +52,9 @@ import {
   Fingerprint,
   Image,
   FileWarning,
-  KeyRound
+  KeyRound,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, TransactionStatus } from '../../types';
@@ -74,7 +76,7 @@ const Dashboard: React.FC = () => {
   const [agentSubmissions, setAgentSubmissions] = useState<FieldSubmission[]>([]);
   const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false); // New state for Add Agent modal
   const [newAgentForm, setNewAgentForm] = useState({ fullName: '', email: '', phone: '', zone: '' }); // New state for new agent form
-  const [isAgentResetPasswordModalOpen, setIsAgentResetPasswordModalOpen] = useState(false); // Corrected typo here
+  const [isAgentResetPasswordModalOpen, setIsAgentResetPasswordModalOpen] = useState(false);
   const [selectedAgentForPasswordReset, setSelectedAgentForPasswordReset] = useState<Agent | null>(null);
   const [newAgentPasswordInput, setNewAgentPasswordInput] = useState('');
 
@@ -85,6 +87,13 @@ const Dashboard: React.FC = () => {
   const [groupMessages, setGroupMessages] = useState<Message[]>([]);
   const [chatInput, setChatInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Group Management Modals
+  const [isEditGroupModalOpen, setIsEditGroupModalOpen] = useState(false);
+  const [editingGroupForm, setEditingGroupForm] = useState<Partial<Group>>({ name: '', description: '', targetAmount: 0 });
+  const [isConfirmDeleteGroupModalOpen, setIsConfirmDeleteGroupModalOpen] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
+
 
   // Form States
   const [newUser, setNewUser] = useState({ username: '', password: '', fullName: '', depositAmount: 0 });
@@ -193,7 +202,14 @@ const Dashboard: React.FC = () => {
     if (currentView === 'transaction_management') { // Refresh transactions for management view
       setTransactions(MockService.getTransactions());
     }
-  }, [currentView, transactions, users, agents]); // Added agents to dependency array
+    if (currentView === 'groups') { // Refresh groups when viewing groups
+      setGroups(MockService.getGroups());
+      if (viewingGroup) { // If a group is being viewed, refresh its members and messages
+        setViewingGroupMembers(MockService.getGroupMembers(viewingGroup.id));
+        setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
+      }
+    }
+  }, [currentView, transactions, users, agents, viewingGroup]); // Added viewingGroup to dependency array
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -317,11 +333,31 @@ const Dashboard: React.FC = () => {
     }
   }
 
+  const handleRemoveMemberFromGroup = (groupId: string, userId: string, userName: string) => {
+    if (window.confirm(`Voulez-vous vraiment retirer ${userName} de ce groupe ?`)) {
+      const success = MockService.removeMemberFromGroup(groupId, userId);
+      if (success) {
+        setGroups(MockService.getGroups()); // Refresh groups to update member count
+        if (viewingGroup && viewingGroup.id === groupId) {
+          setViewingGroupMembers(MockService.getGroupMembers(groupId)); // Refresh members list
+        }
+        alert(`${userName} a été retiré du groupe.`);
+      } else {
+        alert("Erreur lors du retrait du membre.");
+      }
+    }
+  };
+
   // Handle viewing group details
   const handleViewGroup = (group: Group) => {
     setViewingGroup(group);
     setViewingGroupMembers(MockService.getGroupMembers(group.id));
     setGroupMessages(MockService.getGroupMessages(group.id));
+    setEditingGroupForm({ // Initialize edit form with current group data
+      name: group.name,
+      description: group.description,
+      targetAmount: group.targetAmount
+    });
   };
 
   const handleBackToGroups = () => {
@@ -329,6 +365,55 @@ const Dashboard: React.FC = () => {
     setViewingGroupMembers([]);
     setGroupMessages([]);
   };
+
+  const openEditGroupModal = () => {
+    if (viewingGroup) {
+      setEditingGroupForm({
+        name: viewingGroup.name,
+        description: viewingGroup.description,
+        targetAmount: viewingGroup.targetAmount
+      });
+      setIsEditGroupModalOpen(true);
+    }
+  };
+
+  const handleUpdateGroup = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (viewingGroup && editingGroupForm.name && editingGroupForm.targetAmount) {
+      const success = MockService.updateGroup(viewingGroup.id, editingGroupForm);
+      if (success) {
+        setGroups(MockService.getGroups()); // Refresh groups list
+        setViewingGroup({ ...viewingGroup, ...editingGroupForm } as Group); // Update current viewing group
+        setIsEditGroupModalOpen(false);
+        alert('Groupe mis à jour avec succès !');
+      } else {
+        alert("Erreur lors de la mise à jour du groupe.");
+      }
+    } else {
+      alert("Veuillez remplir tous les champs requis.");
+    }
+  };
+
+  const openConfirmDeleteGroupModal = (group: Group) => {
+    setGroupToDelete(group);
+    setIsConfirmDeleteGroupModalOpen(true);
+  };
+
+  const handleDeleteGroup = () => {
+    if (groupToDelete) {
+      const success = MockService.deleteGroup(groupToDelete.id);
+      if (success) {
+        setGroups(MockService.getGroups()); // Refresh groups list
+        handleBackToGroups(); // Go back to the main groups list
+        setIsConfirmDeleteGroupModalOpen(false);
+        setGroupToDelete(null);
+        alert('Groupe supprimé avec succès !');
+      } else {
+        alert("Erreur lors de la suppression du groupe.");
+      }
+    }
+  };
+
 
   // Handle viewing agent details
   const handleViewAgent = (agent: Agent) => {
@@ -1572,16 +1657,27 @@ const Dashboard: React.FC = () => {
         if (viewingGroup) {
           return (
             <div className="space-y-8 animate-in slide-in-from-right duration-300">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-between gap-4">
                 <button 
                   onClick={handleBackToGroups}
                   className="p-2 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">{viewingGroup.name}</h2>
-                  <p className="text-gray-500 text-sm">Détails et membres du groupe</p>
+                <h2 className="text-2xl font-bold text-gray-800 flex-1">{viewingGroup.name}</h2>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={openEditGroupModal}
+                    className="flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors shadow-sm"
+                  >
+                    <Edit className="h-4 w-4" /> Modifier
+                  </button>
+                  <button 
+                    onClick={() => openConfirmDeleteGroupModal(viewingGroup)}
+                    className="flex items-center gap-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors shadow-sm"
+                  >
+                    <Trash2 className="h-4 w-4" /> Supprimer
+                  </button>
                 </div>
               </div>
 
@@ -1637,6 +1733,7 @@ const Dashboard: React.FC = () => {
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adhésion</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
@@ -1654,6 +1751,15 @@ const Dashboard: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold">{user.depositAmount.toLocaleString()} FCFA</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <button
+                                    onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
+                                    title="Retirer le membre"
+                                  >
+                                    <X className="h-3 w-3 sm:h-4 sm:w-4" /> Retirer
+                                  </button>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -1722,6 +1828,96 @@ const Dashboard: React.FC = () => {
             </div>
           );
         }
+        // Default view for 'groups' when no specific group is selected
+        return (
+          <div className="space-y-8">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">Gestion des Groupes</h2>
+              <button 
+                onClick={() => { /* Logic to open create group form */ }}
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" /> Nouveau Groupe
+              </button>
+            </div>
+
+            {/* Create Group Form */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Plus className="h-5 w-5" /> Créer un nouveau groupe
+              </h3>
+              <form onSubmit={handleCreateGroup} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input 
+                  type="text" 
+                  placeholder="Nom du groupe" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newGroup.name}
+                  onChange={e => setNewGroup({...newGroup, name: e.target.value})}
+                  required
+                />
+                <input 
+                  type="number" 
+                  placeholder="Objectif cible (FCFA)" 
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newGroup.targetAmount || ''}
+                  onChange={e => setNewGroup({...newGroup, targetAmount: Number(e.target.value)})}
+                  required
+                />
+                <textarea 
+                  placeholder="Description du groupe" 
+                  rows={3}
+                  className="md:col-span-2 p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
+                  value={newGroup.description}
+                  onChange={e => setNewGroup({...newGroup, description: e.target.value})}
+                ></textarea>
+                <button type="submit" className="md:col-span-2 bg-gray-800 text-white py-3 rounded-lg font-medium hover:bg-gray-900 transition-colors w-full">
+                  Créer le groupe
+                </button>
+              </form>
+            </div>
+
+            {/* Groups List */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-800">Groupes Actifs</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                {groups.length > 0 ? (
+                  groups.map((group) => (
+                    <div key={group.id} className="bg-gray-50 rounded-xl p-6 shadow-sm border border-gray-200 flex flex-col hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-gray-200 rounded-lg">
+                          <Layers className="h-6 w-6 text-gray-700" />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900">{group.name}</h4>
+                          <p className="text-sm text-gray-500">{group.memberCount} membres</p>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm mb-4 flex-1">{group.description}</p>
+                      <div className="flex justify-between items-center border-t border-gray-100 pt-4">
+                        <div>
+                          <p className="text-xs text-gray-500">Objectif</p>
+                          <p className="text-base font-bold text-gray-800">{group.targetAmount.toLocaleString()} FCFA</p>
+                        </div>
+                        <button 
+                          onClick={() => handleViewGroup(group)}
+                          className="inline-flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
+                        >
+                          <Eye className="h-4 w-4" /> Voir les détails
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full p-8 text-center text-gray-500">
+                    Aucun groupe créé pour le moment.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
 
       case 'transactions':
         const filteredTransactionsHistory = getFilteredTransactions(transactions);
@@ -2587,6 +2783,114 @@ const Dashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Group Modal */}
+      {isEditGroupModalOpen && viewingGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Edit className="h-6 w-6 text-gray-700" />
+                Modifier le groupe: {viewingGroup.name}
+              </h3>
+              <button onClick={() => setIsEditGroupModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateGroup} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
+                <input
+                  type="text"
+                  required
+                  value={editingGroupForm.name}
+                  onChange={(e) => setEditingGroupForm({...editingGroupForm, name: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Nom du groupe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Objectif cible (FCFA)</label>
+                <input
+                  type="number"
+                  required
+                  value={editingGroupForm.targetAmount || ''}
+                  onChange={(e) => setEditingGroupForm({...editingGroupForm, targetAmount: Number(e.target.value)})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description du groupe</label>
+                <textarea
+                  rows={3}
+                  value={editingGroupForm.description}
+                  onChange={(e) => setEditingGroupForm({...editingGroupForm, description: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Description du groupe"
+                ></textarea>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditGroupModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+                >
+                  Enregistrer les modifications
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Group Modal */}
+      {isConfirmDeleteGroupModalOpen && groupToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Trash2 className="h-6 w-6 text-red-700" />
+                Confirmer la suppression
+              </h3>
+              <button onClick={() => setIsConfirmDeleteGroupModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <p className="text-gray-700 text-lg">
+                Êtes-vous sûr de vouloir supprimer le groupe <span className="font-bold text-red-600">"{groupToDelete.name}"</span> ?
+              </p>
+              <p className="text-sm text-gray-500">Cette action est irréversible.</p>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmDeleteGroupModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteGroup}
+                  className="flex-1 py-3 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                >
+                  Supprimer définitivement
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
