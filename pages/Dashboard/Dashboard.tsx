@@ -74,7 +74,7 @@ const Dashboard: React.FC = () => {
   const [agentSubmissions, setAgentSubmissions] = useState<FieldSubmission[]>([]);
   const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false); // New state for Add Agent modal
   const [newAgentForm, setNewAgentForm] = useState({ fullName: '', email: '', phone: '', zone: '' }); // New state for new agent form
-  const [isAgentResetPasswordModalOpen, setIsAgentResetPasswordModal] = useState(false);
+  const [isAgentResetPasswordModalOpen, setIsAgentResetPasswordModalOpen] = useState(false);
   const [selectedAgentForPasswordReset, setSelectedAgentForPasswordReset] = useState<Agent | null>(null);
   const [newAgentPasswordInput, setNewAgentPasswordInput] = useState('');
 
@@ -2155,1510 +2155,178 @@ const Dashboard: React.FC = () => {
                       Modifier le profil
                     </button>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      
-      case 'kyc':
-        const filteredKYCSubmissions = getFilteredKYCSubmissions();
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Vérification KYC (Connaître Votre Client)</h2>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-800">Soumissions KYC</h3>
-                  <span className="text-sm text-gray-500">{filteredKYCSubmissions.length} résultats</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="relative">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Rechercher (Nom, ID)..."
-                      value={kycSearchTerm}
-                      onChange={(e) => setKycSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <select
-                      value={kycFilterStatus}
-                      onChange={(e) => setKycFilterStatus(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                    >
-                      <option value="all">Tous les statuts</option>
-                      <option value="pending">En attente</option>
-                      <option value="verified">Vérifié</option>
-                      <option value="rejected">Rejeté</option>
-                      <option value="not_submitted">Non soumis</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut KYC</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de Soumission</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de Vérification</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredKYCSubmissions.length > 0 ? (
-                      filteredKYCSubmissions.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                            <div className="text-xs text-gray-500">ID: {user.id}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {user.kycStatus === 'verified' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3" /> Vérifié
-                              </span>
-                            )}
-                            {user.kycStatus === 'pending' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <AlertCircle className="h-3 w-3" /> En attente
-                              </span>
-                            )}
-                            {user.kycStatus === 'rejected' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <XCircle className="h-3 w-3" /> Rejeté
-                              </span>
-                            )}
-                            {user.kycStatus === 'not_submitted' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                <FileWarning className="h-3 w-3" /> Non soumis
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {user.kycSubmissionDate || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {user.kycVerifiedDate || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {user.kycStatus !== 'not_submitted' && (
-                              <button
-                                onClick={() => openKYCDetailModal(user)}
-                                className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
-                                title="Voir les documents KYC"
-                              >
-                                <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
-                          Aucune soumission KYC trouvée.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return <div>Vue non trouvée</div>;
-    }
-  };
-
-  return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity"
-          onClick={() => setIsMobileMenuOpen(false)}
-        ></div>
-      )}
-
-      {/* Deposit Modal */}
-      {isDepositModalOpen && selectedUserForDeposit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Wallet className="h-6 w-6 text-gray-700" />
-                Faire un dépôt
-              </h3>
-              <button onClick={() => setIsDepositModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmitDeposit} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <p className="text-sm text-gray-500 mb-1">Bénéficiaire</p>
-                <p className="text-lg font-bold text-gray-800">{selectedUserForDeposit.fullName}</p>
-                <p className="text-xs text-gray-500">ID: {selectedUserForDeposit.username}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <DollarSign className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Moyen de paiement</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CreditCard className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    value={depositPaymentMethod}
-                    onChange={(e) => setDepositPaymentMethod(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base appearance-none bg-white"
-                  >
-                    <option value="Orange Money">Orange Money</option>
-                    <option value="Moov Money">Moov Money</option>
-                    <option value="Wave">Wave</option>
-                    <option value="MTN Mobile Money">MTN Mobile Money</option>
-                    <option value="Virement Bancaire">Virement Bancaire</option>
-                    <option value="Espèces">Espèces</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={depositNote}
-                    onChange={(e) => setDepositNote(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                    placeholder="Ex: Dépôt espèce guichet"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsDepositModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Confirmer le dépôt
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* User Details Modal */}
-      {isUserDetailModalOpen && selectedUserForDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-             {/* Header */}
-             <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
-               <div className="flex items-center gap-4">
-                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
-                   {selectedUserForDetail.fullName.charAt(0)}
-                 </div>
-                 <div className="text-white">
-                   <h3 className="text-2xl font-bold">{selectedUserForDetail.fullName}</h3>
-                   <p className="text-gray-300 text-sm">@{selectedUserForDetail.username}</p>
-                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-white border border-gray-600">
-                     {selectedUserForDetail.status ? selectedUserForDetail.status.toUpperCase() : 'ACTIF'}
-                   </span>
-                 </div>
-               </div>
-               <button 
-                onClick={() => setIsUserDetailModalOpen(false)} 
-                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
-               >
-                <X className="h-5 w-5" />
-               </button>
-             </div>
-
-             {/* Content */}
-             <div className="p-6 bg-gray-50">
-               
-               {/* Info Grid */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                 {/* Contact Card */}
-                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <UserCircle className="h-4 w-4 text-gray-700" /> Informations Personnelles
-                   </h4>
-                   <div className="space-y-3 text-sm">
-                     <div className="flex items-start gap-3">
-                       <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Email</span>
-                         <span className="text-gray-700">{selectedUserForDetail.email || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3">
-                       <Phone className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Téléphone</span>
-                         <span className="text-gray-700">{selectedUserForDetail.phoneNumber || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3">
-                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Adresse</span>
-                         <span className="text-gray-700">{selectedUserForDetail.address || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
-                        <CreditCard className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <span className="block text-gray-500 text-xs">Statut Crédit</span>
-                          {selectedUserForDetail.loanEligible ? (
-                            <span className="text-green-600 font-medium">Éligible au prêt</span>
-                          ) : (
-                            <span className="text-gray-500">Non éligible</span>
-                          )}
-                        </div>
-                     </div>
-                   </div>
-                 </div>
-
-                 {/* Balance Card */}
-                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <Wallet className="h-4 w-4 text-gray-700" /> Solde du Compte
-                   </h4>
-                   <div className="flex flex-col h-full justify-center pb-4">
-                     <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
-                     <span className="text-3xl font-bold text-gray-800 tracking-tight">
-                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FCFA</span>
-                     </span>
-                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
-                       <span className="text-gray-500">Membre depuis</span>
-                       <span className="font-medium text-gray-700">{selectedUserForDetail.joinedDate}</span>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-
-               {/* Recent Transactions Snippet */}
-               <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                 <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h4 className="text-gray-800 font-semibold flex items-center gap-2 text-sm">
-                      <Activity className="h-4 w-4 text-gray-700" /> Dernières Transactions
-                    </h4>
-                    <span className="text-xs text-gray-500">5 dernières</span>
-                 </div>
-                 <div className="divide-y divide-gray-100">
-                   {selectedUserTransactions.length > 0 ? (
-                     selectedUserTransactions.slice(0, 5).map(tx => (
-                       <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
-                         <div className="flex items-center gap-3">
-                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
-                           </div>
-                           <div>
-                             <p className="text-sm font-medium text-gray-900 capitalize">
-                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : 'Retrait'}
-                             </p>
-                             <p className="text-xs text-gray-500">{tx.date}</p>
-                           </div>
-                         </div>
-                         <div className="text-right">
-                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
-                             {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
-                           </p>
-                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                             {tx.status === 'success' ? 'Succès' : 'Échec'}
-                           </span>
-                         </div>
-                       </div>
-                     ))
-                   ) : (
-                     <div className="p-4 text-center text-gray-500 text-sm">Aucune transaction enregistrée.</div>
-                   )}
-                 </div>
-               </div>
-
-             </div>
-             <div className="bg-gray-100 px-6 py-4 flex justify-end">
-               <button 
-                onClick={() => setIsUserDetailModalOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-               >
-                 Fermer
-               </button>
-             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Member Modal */}
-      {isAddMemberModalOpen && selectedGroupForMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Users className="h-6 w-6 text-gray-700" />
-                Ajouter un membre
-              </h3>
-              <button onClick={() => setIsAddMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddMemberToGroup} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                 <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
-                 <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
-                 <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
-                <div className="relative">
-                   <select 
-                     value={selectedMemberId} 
-                     onChange={(e) => setSelectedMemberId(e.target.value)}
-                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
-                     required
-                   >
-                     <option value="" disabled>-- Choisir un membre --</option>
-                     {users.map(user => (
-                       <option key={user.id} value={user.id}>
-                         {user.fullName} ({user.username})
-                       </option>
-                     ))}
-                   </select>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddMemberModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Ajouter
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Agent Modal */}
-      {isAddAgentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Briefcase className="h-6 w-6 text-gray-700" />
-                Ajouter un nouvel Agent
-              </h3>
-              <button onClick={() => setIsAddAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddAgent} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
-                <input
-                  type="text"
-                  required
-                  value={newAgentForm.fullName}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, fullName: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Nom complet de l'agent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={newAgentForm.email}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, email: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                <input
-                  type="text"
-                  required
-                  value={newAgentForm.phone}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, phone: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Ex: 07 00 00 00"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zone d'opération</label>
-                <input
-                  type="text"
-                  required
-                  value={newAgentForm.zone}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, zone: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Ex: Marché Adjamé"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddAgentModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Ajouter l'Agent
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* KYC Detail Modal */}
-      {isKYCDetailModalOpen && selectedUserForKYC && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
-                  {selectedUserForKYC.fullName.charAt(0)}
-                </div>
-                <div className="text-white">
-                  <h3 className="text-2xl font-bold">{selectedUserForKYC.fullName}</h3>
-                  <p className="text-gray-300 text-sm">Vérification d'identité (KYC)</p>
-                  <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold ${
-                    selectedUserForKYC.kycStatus === 'verified' ? 'bg-green-600 text-white' :
-                    selectedUserForKYC.kycStatus === 'pending' ? 'bg-yellow-600 text-white' :
-                    selectedUserForKYC.kycStatus === 'rejected' ? 'bg-red-600 text-white' :
-                    'bg-gray-600 text-white'
-                  }`}>
-                    {selectedUserForKYC.kycStatus.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsKYCDetailModalOpen(false)}
-                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 bg-gray-50">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Documents Section */}
-                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
-                    <Image className="h-4 w-4 text-gray-700" /> Documents Soumis
-                  </h4>
-                  {selectedUserKYCDocuments.length > 0 ? (
-                    <div className="space-y-4">
-                      {selectedUserKYCDocuments.map((doc) => (
-                        <div key={doc.id} className="border border-gray-200 rounded-lg p-3 flex items-center gap-3">
-                          <div className="flex-shrink-0 h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                            <img src={doc.documentUrl} alt={doc.type} className="object-cover w-full h-full" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 capitalize">{doc.type.replace('_', ' ')}</p>
-                            <p className="text-xs text-gray-500">Soumis le: {doc.submissionDate.split(' ')[0]}</p>
-                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              doc.status === 'approved' ? 'bg-green-100 text-green-700' :
-                              doc.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {doc.status.toUpperCase()}
-                            </span>
-                          </div>
-                          <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 text-sm py-4">Aucun document soumis.</div>
-                  )}
-                </div>
-
-                {/* Review Actions */}
-                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
-                      <Fingerprint className="h-4 w-4 text-gray-700" /> Actions de Vérification
-                    </h4>
-                    {selectedUserForKYC.kycStatus === 'pending' ? (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Raison du rejet (si applicable)</label>
-                          <textarea
-                            rows={3}
-                            value={kycRejectionReason}
-                            onChange={(e) => setKycRejectionReason(e.target.value)}
-                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                            placeholder="Ex: Document illisible, informations manquantes..."
-                          ></textarea>
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handleUpdateKYCStatus('rejected')}
-                            disabled={!kycRejectionReason.trim()}
-                            className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <XCircle className="h-4 w-4 inline-block mr-2" /> Rejeter
-                          </button>
-                          <button
-                            onClick={() => handleUpdateKYCStatus('verified')}
-                            className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-                          >
-                            <CheckCircle className="h-4 w-4 inline-block mr-2" /> Approuver
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center text-gray-500 text-sm py-8">
-                        Ce statut KYC ne nécessite pas d'action de vérification.
-                        {selectedUserForKYC.kycStatus === 'rejected' && selectedUserKYCDocuments[0]?.rejectionReason && (
-                          <p className="mt-4 text-red-600 font-medium">Raison du rejet: {selectedUserKYCDocuments[0].rejectionReason}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                    <p>Dernière mise à jour: {selectedUserForKYC.kycVerifiedDate || selectedUserForKYC.kycSubmissionDate || '-'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-100 px-6 py-4 flex justify-end">
-              <button
-                onClick={() => setIsKYCDetailModalOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        );
-
-      default:
-        return <div>Vue non trouvée</div>;
-    }
-  };
-
-  return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity"
-          onClick={() => setIsMobileMenuOpen(false)}
-        ></div>
-      )}
-
-      {/* Deposit Modal */}
-      {isDepositModalOpen && selectedUserForDeposit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Wallet className="h-6 w-6 text-gray-700" />
-                Faire un dépôt
-              </h3>
-              <button onClick={() => setIsDepositModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmitDeposit} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <p className="text-sm text-gray-500 mb-1">Bénéficiaire</p>
-                <p className="text-lg font-bold text-gray-800">{selectedUserForDeposit.fullName}</p>
-                <p className="text-xs text-gray-500">ID: {selectedUserForDeposit.username}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <DollarSign className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Moyen de paiement</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CreditCard className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    value={depositPaymentMethod}
-                    onChange={(e) => setDepositPaymentMethod(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base appearance-none bg-white"
-                  >
-                    <option value="Orange Money">Orange Money</option>
-                    <option value="Moov Money">Moov Money</option>
-                    <option value="Wave">Wave</option>
-                    <option value="MTN Mobile Money">MTN Mobile Money</option>
-                    <option value="Virement Bancaire">Virement Bancaire</option>
-                    <option value="Espèces">Espèces</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FileText className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={depositNote}
-                    onChange={(e) => setDepositNote(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                    placeholder="Ex: Dépôt espèce guichet"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsDepositModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Confirmer le dépôt
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* User Details Modal */}
-      {isUserDetailModalOpen && selectedUserForDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-             {/* Header */}
-             <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
-               <div className="flex items-center gap-4">
-                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
-                   {selectedUserForDetail.fullName.charAt(0)}
-                 </div>
-                 <div className="text-white">
-                   <h3 className="text-2xl font-bold">{selectedUserForDetail.fullName}</h3>
-                   <p className="text-gray-300 text-sm">@{selectedUserForDetail.username}</p>
-                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-white border border-gray-600">
-                     {selectedUserForDetail.status ? selectedUserForDetail.status.toUpperCase() : 'ACTIF'}
-                   </span>
-                 </div>
-               </div>
-               <button 
-                onClick={() => setIsUserDetailModalOpen(false)} 
-                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
-               >
-                <X className="h-5 w-5" />
-               </button>
-             </div>
-
-             {/* Content */}
-             <div className="p-6 bg-gray-50">
-               
-               {/* Info Grid */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                 {/* Contact Card */}
-                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <UserCircle className="h-4 w-4 text-gray-700" /> Informations Personnelles
-                   </h4>
-                   <div className="space-y-3 text-sm">
-                     <div className="flex items-start gap-3">
-                       <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Email</span>
-                         <span className="text-gray-700">{selectedUserForDetail.email || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3">
-                       <Phone className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Téléphone</span>
-                         <span className="text-gray-700">{selectedUserForDetail.phoneNumber || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3">
-                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                       <div>
-                         <span className="block text-gray-500 text-xs">Adresse</span>
-                         <span className="text-gray-700">{selectedUserForDetail.address || 'Non renseigné'}</span>
-                       </div>
-                     </div>
-                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
-                        <CreditCard className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <span className="block text-gray-500 text-xs">Statut Crédit</span>
-                          {selectedUserForDetail.loanEligible ? (
-                            <span className="text-green-600 font-medium">Éligible au prêt</span>
-                          ) : (
-                            <span className="text-gray-500">Non éligible</span>
-                          )}
-                        </div>
-                     </div>
-                   </div>
-                 </div>
-
-                 {/* Balance Card */}
-                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
-                     <Wallet className="h-4 w-4 text-gray-700" /> Solde du Compte
-                   </h4>
-                   <div className="flex flex-col h-full justify-center pb-4">
-                     <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
-                     <span className="text-3xl font-bold text-gray-800 tracking-tight">
-                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FCFA</span>
-                     </span>
-                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
-                       <span className="text-gray-500">Membre depuis</span>
-                       <span className="font-medium text-gray-700">{selectedUserForDetail.joinedDate}</span>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-
-               {/* Recent Transactions Snippet */}
-               <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                 <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h4 className="text-gray-800 font-semibold flex items-center gap-2 text-sm">
-                      <Activity className="h-4 w-4 text-gray-700" /> Dernières Transactions
-                    </h4>
-                    <span className="text-xs text-gray-500">5 dernières</span>
-                 </div>
-                 <div className="divide-y divide-gray-100">
-                   {selectedUserTransactions.length > 0 ? (
-                     selectedUserTransactions.slice(0, 5).map(tx => (
-                       <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
-                         <div className="flex items-center gap-3">
-                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
-                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
-                           </div>
-                           <div>
-                             <p className="text-sm font-medium text-gray-900 capitalize">
-                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : 'Retrait'}
-                             </p>
-                             <p className="text-xs text-gray-500">{tx.date}</p>
-                           </div>
-                         </div>
-                         <div className="text-right">
-                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
-                             {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
-                           </p>
-                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                             {tx.status === 'success' ? 'Succès' : 'Échec'}
-                           </span>
-                         </div>
-                       </div>
-                     ))
-                   ) : (
-                     <div className="p-4 text-center text-gray-500 text-sm">Aucune transaction enregistrée.</div>
-                   )}
-                 </div>
-               </div>
-
-             </div>
-             <div className="bg-gray-100 px-6 py-4 flex justify-end">
-               <button 
-                onClick={() => setIsUserDetailModalOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-               >
-                 Fermer
-               </button>
-             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Member Modal */}
-      {isAddMemberModalOpen && selectedGroupForMember && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Users className="h-6 w-6 text-gray-700" />
-                Ajouter un membre
-              </h3>
-              <button onClick={() => setIsAddMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddMemberToGroup} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                 <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
-                 <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
-                 <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
-                <div className="relative">
-                   <select 
-                     value={selectedMemberId} 
-                     onChange={(e) => setSelectedMemberId(e.target.value)}
-                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
-                     required
-                   >
-                     <option value="" disabled>-- Choisir un membre --</option>
-                     {users.map(user => (
-                       <option key={user.id} value={user.id}>
-                         {user.fullName} ({user.username})
-                       </option>
-                     ))}
-                   </select>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddMemberModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Ajouter
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Add Agent Modal */}
-      {isAddAgentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Briefcase className="h-6 w-6 text-gray-700" />
-                Ajouter un nouvel Agent
-              </h3>
-              <button onClick={() => setIsAddAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAddAgent} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
-                <input
-                  type="text"
-                  required
-                  value={newAgentForm.fullName}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, fullName: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Nom complet de l'agent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={newAgentForm.email}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, email: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                <input
-                  type="text"
-                  required
-                  value={newAgentForm.phone}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, phone: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Ex: 07 00 00 00"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Zone d'opération</label>
-                <input
-                  type="text"
-                  required
-                  value={newAgentForm.zone}
-                  onChange={(e) => setNewAgentForm({...newAgentForm, zone: e.target.value})}
-                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                  placeholder="Ex: Marché Adjamé"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddAgentModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
-                >
-                  Ajouter l'Agent
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* KYC Detail Modal */}
-      {isKYCDetailModalOpen && selectedUserForKYC && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
-                  {selectedUserForKYC.fullName.charAt(0)}
-                </div>
-                <div className="text-white">
-                  <h3 className="text-2xl font-bold">{selectedUserForKYC.fullName}</h3>
-                  <p className="text-gray-300 text-sm">Vérification d'identité (KYC)</p>
-                  <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold ${
-                    selectedUserForKYC.kycStatus === 'verified' ? 'bg-green-600 text-white' :
-                    selectedUserForKYC.kycStatus === 'pending' ? 'bg-yellow-600 text-white' :
-                    selectedUserForKYC.kycStatus === 'rejected' ? 'bg-red-600 text-white' :
-                    'bg-gray-600 text-white'
-                  }`}>
-                    {selectedUserForKYC.kycStatus.replace('_', ' ').toUpperCase()}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsKYCDetailModalOpen(false)}
-                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 bg-gray-50">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Documents Section */}
-                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                  <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
-                    <Image className="h-4 w-4 text-gray-700" /> Documents Soumis
-                  </h4>
-                  {selectedUserKYCDocuments.length > 0 ? (
-                    <div className="space-y-4">
-                      {selectedUserKYCDocuments.map((doc) => (
-                        <div key={doc.id} className="border border-gray-200 rounded-lg p-3 flex items-center gap-3">
-                          <div className="flex-shrink-0 h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                            <img src={doc.documentUrl} alt={doc.type} className="object-cover w-full h-full" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 capitalize">{doc.type.replace('_', ' ')}</p>
-                            <p className="text-xs text-gray-500">Soumis le: {doc.submissionDate.split(' ')[0]}</p>
-                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                              doc.status === 'approved' ? 'bg-green-100 text-green-700' :
-                              doc.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {doc.status.toUpperCase()}
-                            </span>
-                          </div>
-                          <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
-                            <Eye className="h-4 w-4" />
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 text-sm py-4">Aucun document soumis.</div>
-                  )}
-                </div>
-
-                {/* Review Actions */}
-                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
-                      <Fingerprint className="h-4 w-4 text-gray-700" /> Actions de Vérification
-                    </h4>
-                    {selectedUserForKYC.kycStatus === 'pending' ? (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Raison du rejet (si applicable)</label>
-                          <textarea
-                            rows={3}
-                            value={kycRejectionReason}
-                            onChange={(e) => setKycRejectionReason(e.target.value)}
-                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                            placeholder="Ex: Document illisible, informations manquantes..."
-                          ></textarea>
-                        </div>
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handleUpdateKYCStatus('rejected')}
-                            disabled={!kycRejectionReason.trim()}
-                            className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <XCircle className="h-4 w-4 inline-block mr-2" /> Rejeter
-                          </button>
-                          <button
-                            onClick={() => handleUpdateKYCStatus('verified')}
-                            className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
-                          >
-                            <CheckCircle className="h-4 w-4 inline-block mr-2" /> Approuver
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center text-gray-500 text-sm py-8">
-                        Ce statut KYC ne nécessite pas d'action de vérification.
-                        {selectedUserForKYC.kycStatus === 'rejected' && selectedUserKYCDocuments[0]?.rejectionReason && (
-                          <p className="mt-4 text-red-600 font-medium">Raison du rejet: {selectedUserKYCDocuments[0].rejectionReason}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                    <p>Dernière mise à jour: {selectedUserForKYC.kycVerifiedDate || selectedUserForKYC.kycSubmissionDate || '-'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-100 px-6 py-4 flex justify-end">
-              <button
-                onClick={() => setIsKYCDetailModalOpen(false)}
-                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Password Reset Modal */}
-      {isResetPasswordModalOpen && selectedUserForPasswordReset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <KeyRound className="h-6 w-6 text-gray-700" />
-                Réinitialiser le mot de passe
-              </h3>
-              <button onClick={() => setIsResetPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <p className="text-sm text-gray-500 mb-1">Utilisateur</p>
-                <p className="text-lg font-bold text-gray-800">{selectedUserForPasswordReset.fullName}</p>
-                <p className="text-xs text-gray-500">ID: {selectedUserForPasswordReset.username}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="password"
-                    required
-                    value={newPasswordInput}
-                    onChange={(e) => setNewPasswordInput(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
-                    placeholder="Entrez le nouveau mot de passe"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsResetPasswordModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
-                >
-                  Réinitialiser
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Agent Password Reset Modal */}
-      {isAgentResetPasswordModalOpen && selectedAgentForPasswordReset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <KeyRound className="h-6 w-6 text-gray-700" />
-                Réinitialiser le mot de passe de l'agent
-              </h3>
-              <button onClick={() => setIsAgentResetPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleAgentResetPasswordSubmit} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <p className="text-sm text-gray-500 mb-1">Agent</p>
-                <p className="text-lg font-bold text-gray-800">{selectedAgentForPasswordReset.fullName}</p>
-                <p className="text-xs text-gray-500">ID: {selectedAgentForPasswordReset.id}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="password"
-                    required
-                    value={newAgentPasswordInput}
-                    onChange={(e) => setNewAgentPasswordInput(e.target.value)}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
-                    placeholder="Entrez le nouveau mot de passe"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAgentResetPasswordModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 px-4 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors shadow-lg shadow-orange-200"
-                >
-                  Réinitialiser
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Transaction Status Update Modal (New) */}
-      {isTransactionStatusModalOpen && selectedTransactionForStatusUpdate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Zap className="h-6 w-6 text-gray-700" />
-                Mettre à jour le statut de la transaction
-              </h3>
-              <button onClick={() => setIsTransactionStatusModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleTransactionStatusUpdate} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                <p className="text-sm text-gray-500 mb-1">Transaction ID</p>
-                <p className="text-lg font-bold text-gray-800">{selectedTransactionForStatusUpdate.id}</p>
-                <p className="text-xs text-gray-500">Client: {selectedTransactionForStatusUpdate.userFullName}</p>
-                <p className="text-xs text-gray-500">Montant: {selectedTransactionForStatusUpdate.amount.toLocaleString()} FCFA</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau statut</label>
-                <div className="relative">
-                  <select
-                    value={newTransactionStatus}
-                    onChange={(e) => setNewTransactionStatus(e.target.value as TransactionStatus)}
-                    className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base appearance-none bg-white"
-                    required
-                  >
-                    <option value="" disabled>-- Sélectionner un statut --</option>
-                    <option value="success">Succès</option>
-                    <option value="pending">En attente</option>
-                    <option value="failed">Échec</option>
-                  </select>
-                </div>
-              </div>
-
-              {(newTransactionStatus === 'failed' || newTransactionStatus === 'pending') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Raison (Optionnel)</label>
-                  <textarea
-                    rows={3}
-                    value={transactionStatusReason}
-                    onChange={(e) => setTransactionStatusReason(e.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                    placeholder="Ex: Fonds insuffisants, erreur technique..."
-                  ></textarea>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsTransactionStatusModalOpen(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors shadow-lg ${
-                    newTransactionStatus === 'success' ? 'bg-green-600 text-white hover:bg-green-700 shadow-green-200' :
-                    newTransactionStatus === 'pending' ? 'bg-yellow-600 text-white hover:bg-yellow-700 shadow-yellow-200' :
-                    newTransactionStatus === 'failed' ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-200' :
-                    'bg-gray-800 text-white hover:bg-gray-900 shadow-gray-200'
-                  }`}
-                >
-                  Confirmer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-
-      {/* Sidebar - Responsive */}
-      <aside className={`
-        fixed md:relative inset-y-0 left-0 z-40 md:z-auto
-        w-64 bg-gray-900 text-white flex flex-col
-        transform transition-transform duration-300 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-      `}>
-        <div className="p-6 flex items-center justify-between border-b border-gray-800">
-          <div className="flex items-center gap-2 justify-center w-full">
-            <img 
-              src="/logo.png" 
-              alt="Mosolocoop" 
-              className="h-10 w-auto object-contain rounded-md"
-              onError={(e) => {
-                e.currentTarget.onerror = null; 
-                e.currentTarget.src = "https://placehold.co/150x50/white/black?text=MosoloCoop";
-              }}
-            />
-          </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-gray-200 hover:text-white absolute right-4">
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-        
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          <button 
-            onClick={() => handleNavClick('overview')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'overview' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <LayoutDashboard className="h-5 w-5" /> Vue d'ensemble
-          </button>
-          
-          <button 
-            onClick={() => handleNavClick('users')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'users' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <Users className="h-5 w-5" /> Clients
-          </button>
-
-          <button 
-            onClick={() => handleNavClick('groups')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'groups' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <Layers className="h-5 w-5" /> Groupes
-          </button>
-
-          <button 
-            onClick={() => handleNavClick('agents')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'agents' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <Briefcase className="h-5 w-5" /> Agents {/* Renamed from Partenaires */}
-          </button>
-
-          <button 
-            onClick={() => handleNavClick('kyc')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'kyc' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <Fingerprint className="h-5 w-5" /> Vérification KYC
-          </button>
-
-          <div className="border-t border-gray-800 my-2"></div> {/* Separator */}
-
-          <button 
-            onClick={() => handleNavClick('transaction_management')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'transaction_management' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <Zap className="h-5 w-5" /> Gestion Transactions
-          </button>
-
-          <button 
-            onClick={() => handleNavClick('transactions')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'transactions' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <History className="h-5 w-5" /> Historique Complet
-          </button>
-          
-          <div className="border-t border-gray-800 my-2"></div> {/* Separator */}
-
-          <button 
-            onClick={() => handleNavClick('statistics')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'statistics' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <BarChart3 className="h-5 w-5" /> Statistiques
-          </button>
-          
-          <button 
-            onClick={() => handleNavClick('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'settings' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <Settings className="h-5 w-5" /> Paramètres
-          </button>
-
-          <button 
-            onClick={() => handleNavClick('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'profile' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
-          >
-            <UserCircle className="h-5 w-5" /> Mon Profil
-          </button>
-        </nav>
-
-        <div className="p-4 border-t border-gray-800">
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-200 hover:bg-red-900/50 hover:text-red-100 transition-colors"
-          >
-            <LogOut className="h-5 w-5" /> Déconnexion
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden w-full">
-        {/* Mobile Header */}
-        <div className="md:hidden flex-none bg-gray-900 text-white p-4 flex justify-between items-center shadow-md z-30">
-           <div className="flex items-center gap-2">
-             <img 
-               src="/logo.png" 
-               alt="Mosolocoop" 
-               className="h-8 w-auto object-contain rounded-md bg-white p-0.5" 
-               onError={(e) => {
-                 e.currentTarget.onerror = null; 
-                 e.currentTarget.src = "https://placehold.co/100x40/white/black?text=MosoloCoop";
-               }}
-             />
-           </div>
-           <button 
-             className="p-2 hover:bg-gray-800 rounded-md transition-colors" 
-             onClick={() => setIsMobileMenuOpen(true)}
-           >
-             <Menu className="h-6 w-6" />
-           </button>
-        </div>
-
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-gray-100">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-};
-
-export default Dashboard;
+                <dyad-problem-report summary="11 problems">
+<problem file="pages/Dashboard/Dashboard.tsx" line="2286" column="6" code="17008">JSX element 'div' has no corresponding closing tag.</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="2676" column="10" code="17008">JSX element 'div' has no corresponding closing tag.</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="2805" column="5" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="2806" column="3" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="3662" column="1" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="3664" column="26" code="1005">'&lt;/' expected.</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="373" column="5" code="2552">Cannot find name 'setIsAgentResetPasswordModalOpen'. Did you mean 'isAgentResetPasswordModalOpen'?</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="381" column="9" code="2552">Cannot find name 'setIsAgentResetPasswordModalOpen'. Did you mean 'isAgentResetPasswordModalOpen'?</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="3394" column="38" code="2552">Cannot find name 'setIsAgentResetPasswordModalOpen'. Did you mean 'isAgentResetPasswordModalOpen'?</problem>
+<problem file="pages/Dashboard/Dashboard.tsx" line="3426" column="34" code="2552">Cannot find name 'setIsAgentResetPasswordModalOpen'. Did you mean 'isAgentResetPasswordModalOpen'?</problem>
+<problem file="App.tsx" line="5" column="8" code="1192">Module '&quot;C:/Users/Sage/dyad-apps/MosoloCopwebapp/pages/Dashboard/Dashboard&quot;' has no default export.</problem>
+</dyad-problem-report><think>**Analyzing Compile-Time Errors**
+
+I'm currently addressing 11 TypeScript errors. The immediate focus is on two JSX errors regarding missing closing tags, `</div>`. Following this, I will evaluate the next error, likely related to a type mismatch based on my understanding of TypeScript's tendencies. My strategy is to systematically work through each error, focusing on the most prevalent issues first. The goal is a clean compile.
+
+
+**Debugging Syntax and Types**
+
+I'm presently focusing on the initial JSX syntax errors. After rectifying the `div` closing tag issues, I aim to address the type mismatch, which stems from an invalid string literal. My plan is to first fix the critical syntax errors, then focus on resolving the remaining type issues, prioritizing those that are causing the most significant disruption.
+
+
+**Tackling Remaining Type Issues**
+
+I'm now focusing on resolving the remaining type and import errors. The immediate priority is the typo in the state setter and the invalid `DashboardView` type. I'll meticulously review `types.ts` to ensure the correct values for `DashboardView` are added, and rectify the typo in the `useState` declaration. Also, I will check and confirm that the `Dashboard.tsx` exports the component with `export default Dashboard`. Finally, I am going to verify the import statement in `App.tsx`.
+
+
+**Fixing Missing Closing Tags**
+
+My primary focus is now on ensuring all JSX elements, specifically `div` tags, have corresponding closing tags. Reviewing `Dashboard.tsx`, I've identified and added the necessary `</div>` tags. After addressing the missing closing tags, I will double-check the typo in the state setter and the type mismatch. I will ensure the import statements are correct as well.
+
+
+**Resolving JSX and Type Issues**
+
+I'm now focusing on closing all the missing `div` tags and fixing type errors. I have identified the missing `</div>` in `Dashboard.tsx`, after the `main` tag. I'll meticulously check the JSX structure for missing tags. I'll check that `'transaction_management'` is correctly included in the `DashboardView` type definition. Finally, I will double-check the `useState` declaration for the typo in the state setter, `isAgentResetPasswordModalOpen`, to make sure it matches the state. I'll also confirm that `Dashboard.tsx` is exporting the component correctly with `export default Dashboard;` and that `App.tsx` imports it correctly.
+
+
+**Refining Error Resolutions**
+
+I'm now fully immersed in fixing the critical JSX errors, specifically the missing `</div>` tags within `Dashboard.tsx`, including the modal and profile sections. I'll meticulously ensure all matching opening tags have a corresponding closing tag. Following this, I will correct the typo in the state setter. After addressing these critical issues, I will double-check the `DashboardView` type definition in `types.ts` to ensure `'transaction_management'` is correctly included. Finally, I will verify the export in `Dashboard.tsx` and import in `App.tsx` to fix the module export error.
+
+
+</think>Il semble y avoir plusieurs erreurs de syntaxe et de typage, principalement dues à des balises JSX manquantes et une faute de frappe dans le nom d'une fonction de mise à jour d'état.
+
+Voici les corrections que je vais apporter :
+
+1.  **`types.ts`** : Je vais m'assurer que `'transaction_management'` est bien inclus dans le type `DashboardView`. (Cette modification a déjà été faite lors de la dernière interaction, je vais juste la confirmer).
+2.  **`pages/Dashboard/Dashboard.tsx`** :
+    *   Je corrigerai la faute de frappe `setIsAgentResetPasswordModal` en `setIsAgentResetPasswordModalOpen` dans la déclaration `useState`.
+    *   J'ajouterai les balises de fermeture `</div>` manquantes dans la section `profile` du `renderContent`.
+    *   J'ajouterai la balise de fermeture `</div>` manquante pour la modale `isKYCDetailModalOpen`.
+    *   J'ajouterai la balise de fermeture `</div>` finale pour le composant `Dashboard` lui-même.
+
+Commençons par `types.ts` pour confirmer le type `DashboardView` :
+
+<dyad-write path="types.ts" description="Ensuring 'transaction_management' is included in the DashboardView type.">
+export interface User {
+  id: string;
+  username: string;
+  password?: string; // Optional in list view for security
+  fullName: string;
+  depositAmount: number;
+  joinedDate: string;
+  email?: string;
+  phoneNumber?: string;
+  address?: string;
+  status?: 'active' | 'inactive' | 'suspended';
+  loanEligible?: boolean; // Indicateur d'éligibilité au prêt
+  kycStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected'; // Statut KYC
+  kycSubmissionDate?: string; // Date de soumission KYC
+  kycVerifiedDate?: string; // Date de vérification KYC
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  description: string;
+  memberCount: number;
+  targetAmount: number;
+  createdAt: string;
+  memberIds?: string[]; // Liste des IDs des membres du groupe
+}
+
+export interface AdminProfile {
+  username: string;
+  email: string;
+  fullName: string;
+  role: 'admin';
+  phoneNumber?: string; // Nouveau champ
+  address?: string;    // Nouveau champ
+  profilePictureUrl?: string; // Nouveau champ pour la photo de profil
+}
+
+export type TransactionStatus = 'success' | 'failed' | 'pending'; // Added 'pending'
+export type TransactionType = 'deposit' | 'withdrawal' | 'loan_eligibility' | 'status_change';
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  userFullName: string;
+  type: TransactionType;
+  amount: number;
+  status: TransactionStatus;
+  date: string;
+  reason?: string; // Raison de l'échec ou note
+  paymentMethod?: string; // Nouveau champ pour le moyen de paiement
+}
+
+export interface Message {
+  id: string;
+  groupId: string;
+  userId: string; // 'admin' ou ID utilisateur
+  senderName: string;
+  content: string;
+  timestamp: string;
+  isAdmin: boolean;
+}
+
+export interface SystemSettings {
+  siteName: string;
+  supportEmail: string;
+  supportPhone: string;
+  maintenanceMode: boolean;
+  defaultCurrency: string;
+  loanInterestRate: number; // Pourcentage
+  tontineCommission: number; // Pourcentage
+  agentCommission: number; // Pourcentage commission agents
+  withdrawalFeeRate: number; // Nouveau: Pourcentage de frais de retrait
+  minPasswordLength: number;
+  enableTwoFactor: boolean;
+  emailNotifications: boolean;
+}
+
+// Nouveaux types pour les Agents/Partenaires
+export interface Agent {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  zone: string; // Zone géographique (ex: Marché Adjamé)
+  status: 'active' | 'inactive';
+  totalFormsSubmitted: number;
+  joinedDate: string;
+  profilePictureUrl?: string; // Added for agents
+  password?: string; // Added for agents
+}
+
+export interface FieldSubmission {
+  id: string;
+  agentId: string;
+  agentName: string; // Nom de l'agent qui a envoyé le formulaire
+  clientName: string; // Nom du client rencontré
+  clientPhone: string;
+  type: 'new_registration' | 'daily_collection' | 'loan_request';
+  amount?: number; // Montant collecté si applicable
+  location: string; // Lieu de la rencontre (GPS ou nom)
+  submissionDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+  notes?: string;
+}
+
+// Nouveau type pour les documents KYC
+export interface KYCDocument {
+  id: string;
+  userId: string;
+  type: 'id_card' | 'passport' | 'driver_license' | 'proof_of_address';
+  documentUrl: string; // URL vers le document (mocké)
+  status: 'pending' | 'approved' | 'rejected';
+  submissionDate: string;
+  reviewDate?: string;
+  reviewerId?: string; // ID de l'admin qui a revu
+  rejectionReason?: string;
+}
+
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc' | 'transaction_management';

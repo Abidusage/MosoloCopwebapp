@@ -116,4 +116,4 @@ export interface KYCDocument {
   rejectionReason?: string;
 }
 
-export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc';
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc' | 'transaction_management';
