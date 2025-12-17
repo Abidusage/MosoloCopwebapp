@@ -13,6 +13,7 @@ export interface User {
   kycStatus: 'not_submitted' | 'pending' | 'verified' | 'rejected'; // Statut KYC
   kycSubmissionDate?: string; // Date de soumission KYC
   kycVerifiedDate?: string; // Date de vérification KYC
+  penalties?: Penalty[]; // Nouveau champ pour les pénalités
 }
 
 export interface Group {
@@ -116,4 +117,17 @@ export interface KYCDocument {
   rejectionReason?: string;
 }
 
-export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc' | 'transaction_management';
+// Nouveau type pour les pénalités
+export interface Penalty {
+  id: string;
+  userId: string;
+  userFullName: string;
+  reason: string; // Ex: 'Non-paiement tontine', 'Retard remboursement crédit'
+  amount: number; // Montant de la pénalité
+  date: string; // Date à laquelle la pénalité a été appliquée
+  status: 'active' | 'resolved'; // Statut de la pénalité
+  resolvedDate?: string; // Date de résolution
+  resolvedBy?: string; // Admin qui a résolu
+}
+
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc' | 'transaction_management' | 'penalties';

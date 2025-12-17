@@ -1,4 +1,4 @@
-import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission, KYCDocument } from '../types';
+import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, Penalty } from '../types';
 
 // Initial Mock Data - IDs updated to 8 characters
 let users: User[] = [
@@ -15,7 +15,8 @@ let users: User[] = [
     loanEligible: true,
     kycStatus: 'verified',
     kycSubmissionDate: '2023-10-05',
-    kycVerifiedDate: '2023-10-06'
+    kycVerifiedDate: '2023-10-06',
+    penalties: []
   },
   { 
     id: 'US9382Y2', 
@@ -29,7 +30,10 @@ let users: User[] = [
     status: 'active',
     loanEligible: false,
     kycStatus: 'pending',
-    kycSubmissionDate: '2024-03-25'
+    kycSubmissionDate: '2024-03-25',
+    penalties: [
+      { id: 'PEN-001', userId: 'US9382Y2', userFullName: 'Marie Koné', reason: 'Non-paiement tontine (cycle Fév)', amount: 5000, date: '2024-02-28', status: 'active' }
+    ]
   },
   { 
     id: 'US1129Z3', 
@@ -42,7 +46,8 @@ let users: User[] = [
     address: 'Yaoundé, Bastos',
     status: 'active',
     loanEligible: true,
-    kycStatus: 'not_submitted'
+    kycStatus: 'not_submitted',
+    penalties: []
   },
   // Données supplémentaires pour la pagination
   { 
@@ -58,7 +63,10 @@ let users: User[] = [
     loanEligible: false,
     kycStatus: 'rejected',
     kycSubmissionDate: '2024-03-20',
-    kycVerifiedDate: '2024-03-21'
+    kycVerifiedDate: '2024-03-21',
+    penalties: [
+      { id: 'PEN-002', userId: 'US4455A4', userFullName: 'Awa Sanogo', reason: 'Retard remboursement micro-crédit', amount: 10000, date: '2024-03-15', status: 'active' }
+    ]
   },
   { 
     id: 'US5566B5', 
@@ -71,7 +79,8 @@ let users: User[] = [
     address: 'Korhogo',
     status: 'active',
     loanEligible: false,
-    kycStatus: 'not_submitted'
+    kycStatus: 'not_submitted',
+    penalties: []
   },
   { 
     id: 'US6677C6', 
@@ -86,7 +95,8 @@ let users: User[] = [
     loanEligible: true,
     kycStatus: 'verified',
     kycSubmissionDate: '2024-03-02',
-    kycVerifiedDate: '2024-03-03'
+    kycVerifiedDate: '2024-03-03',
+    penalties: []
   },
   { 
     id: 'US7788D7', 
@@ -100,7 +110,8 @@ let users: User[] = [
     status: 'active',
     loanEligible: true,
     kycStatus: 'pending',
-    kycSubmissionDate: '2024-03-28'
+    kycSubmissionDate: '2024-03-28',
+    penalties: []
   },
 ];
 
@@ -248,6 +259,14 @@ let kycDocuments: KYCDocument[] = [
   }
 ];
 
+// Global penalties array (for easier management in mock store)
+let penalties: Penalty[] = [
+  { id: 'PEN-001', userId: 'US9382Y2', userFullName: 'Marie Koné', reason: 'Non-paiement tontine (cycle Fév)', amount: 5000, date: '2024-02-28', status: 'active' },
+  { id: 'PEN-002', userId: 'US4455A4', userFullName: 'Awa Sanogo', reason: 'Retard remboursement micro-crédit', amount: 10000, date: '2024-03-15', status: 'active' },
+  { id: 'PEN-003', userId: 'US8492X1', userFullName: 'Jean Dupont', reason: 'Non-paiement tontine (cycle Mars)', amount: 7500, date: '2024-03-30', status: 'active' },
+  { id: 'PEN-004', userId: 'US9382Y2', userFullName: 'Marie Koné', reason: 'Pénalité résolue (ancien)', amount: 2000, date: '2023-12-01', status: 'resolved', resolvedDate: '2024-01-10', resolvedBy: 'admin' },
+];
+
 
 export const MockService = {
   // User Logic
@@ -255,7 +274,7 @@ export const MockService = {
   getUserTransactions: (userId: string) => {
     return transactions.filter(t => t.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
   },
-  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus' | 'status'>) => {
+  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus' | 'status' | 'penalties'>) => {
     // Generate 8 character ID uppercase
     const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
     
@@ -268,7 +287,8 @@ export const MockService = {
       address: 'Non renseigné',
       phoneNumber: 'Non renseigné',
       loanEligible: false,
-      kycStatus: 'not_submitted' // Default KYC status for new users
+      kycStatus: 'not_submitted', // Default KYC status for new users
+      penalties: [] // New users start with no penalties
     };
     users = [...users, newUser];
     return newUser;
@@ -517,6 +537,9 @@ export const MockService = {
 
     const totalProfit = totalTontineCommission + totalWithdrawalFees + totalLoanInterest;
 
+    // Penalties stats
+    const activePenaltiesCount = penalties.filter(p => p.status === 'active').length;
+
 
     return {
       totalUsers,
@@ -535,6 +558,7 @@ export const MockService = {
       totalLoanInterest,
       totalWithdrawalFees,
       totalProfit,
+      activePenaltiesCount, // New stat
     };
   },
 
@@ -616,6 +640,50 @@ export const MockService = {
         }
         return doc;
       });
+      return true;
+    }
+    return false;
+  },
+
+  // Penalty Logic (New)
+  getPenalties: () => [...penalties],
+  
+  getUserPenalties: (userId: string) => {
+    return penalties.filter(p => p.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
+  },
+
+  getUsersWithActivePenalties: () => {
+    const usersWithPenalties = users.filter(user => 
+      penalties.some(p => p.userId === user.id && p.status === 'active')
+    );
+    // Attach active penalties to the user object for easier display
+    return usersWithPenalties.map(user => ({
+      ...user,
+      penalties: penalties.filter(p => p.userId === user.id && p.status === 'active')
+    }));
+  },
+
+  addPenalty: (newPenalty: Omit<Penalty, 'id' | 'date' | 'status'>) => {
+    const user = users.find(u => u.id === newPenalty.userId);
+    if (!user) return null;
+
+    const penaltyToAdd: Penalty = {
+      ...newPenalty,
+      id: `PEN-${Date.now()}`,
+      userFullName: user.fullName,
+      date: new Date().toISOString().split('T')[0],
+      status: 'active'
+    };
+    penalties = [...penalties, penaltyToAdd];
+    return penaltyToAdd;
+  },
+
+  resolvePenalty: (penaltyId: string, resolvedByAdmin: string) => {
+    const penaltyIndex = penalties.findIndex(p => p.id === penaltyId);
+    if (penaltyIndex !== -1 && penalties[penaltyIndex].status === 'active') {
+      penalties[penaltyIndex].status = 'resolved';
+      penalties[penaltyIndex].resolvedDate = new Date().toISOString().split('T')[0];
+      penalties[penaltyIndex].resolvedBy = resolvedByAdmin;
       return true;
     }
     return false;
