@@ -2492,59 +2492,7 @@ const Dashboard: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-800">Gestion des Pénalités</h2>
             <p className="text-gray-500 text-sm">Suivez et gérez les pénalités des clients pour non-paiement de tontine ou non-remboursement de crédit.</p>
 
-            {/* Add Penalty Form */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <FileWarning className="h-5 w-5 text-red-700" /> Ajouter une nouvelle pénalité
-              </h3>
-              <form onSubmit={handleAddPenalty} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="penaltyUser" className="block text-sm font-medium text-gray-700 mb-1">Client</label>
-                  <select
-                    id="penaltyUser"
-                    value={newPenaltyForm.userId}
-                    onChange={(e) => setNewPenaltyForm({...newPenaltyForm, userId: e.target.value})}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                    required
-                  >
-                    <option value="" disabled>-- Sélectionner un client --</option>
-                    {users.map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.fullName} (ID: {user.id})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="penaltyReason" className="block text-sm font-medium text-gray-700 mb-1">Raison</label>
-                  <input
-                    id="penaltyReason"
-                    type="text"
-                    placeholder="Ex: Non-paiement tontine"
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                    value={newPenaltyForm.reason}
-                    onChange={e => setNewPenaltyForm({...newPenaltyForm, reason: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="penaltyAmount" className="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
-                  <input
-                    id="penaltyAmount"
-                    type="number"
-                    min="1"
-                    placeholder="0"
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
-                    value={newPenaltyForm.amount || ''}
-                    onChange={e => setNewPenaltyForm({...newPenaltyForm, amount: Number(e.target.value)})}
-                    required
-                  />
-                </div>
-                <button type="submit" className="md:col-span-3 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors w-full">
-                  Ajouter la pénalité
-                </button>
-              </form>
-            </div>
+            {/* The "Add Penalty Form" is removed from here */}
 
             {/* Penalties List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
