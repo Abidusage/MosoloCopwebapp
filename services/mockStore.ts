@@ -460,6 +460,31 @@ export const MockService = {
         paymentMethod: paymentMethod
       };
       transactions = [newTransaction, ...transactions];
+
+      // --- NEW LOGIC: Automatically resolve active penalties for this user ---
+      const activePenaltiesForUser = penalties.filter(p => p.userId === userId && p.status === 'active');
+      if (activePenaltiesForUser.length > 0) {
+        activePenaltiesForUser.forEach(p => {
+          p.status = 'resolved';
+          p.resolvedDate = new Date().toISOString().split('T')[0];
+          p.resolvedBy = 'System (Dépôt)';
+          // Optionally add a transaction for penalty resolution
+          const penaltyResolutionTx: Transaction = {
+            id: `TRX-PEN-${Date.now()}-${p.id}`,
+            userId: user.id,
+            userFullName: user.fullName,
+            type: 'status_change', // Or a new type like 'penalty_resolution'
+            amount: p.amount, // Amount of the penalty resolved
+            status: 'success',
+            date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            reason: `Pénalité résolue automatiquement: ${p.reason}`,
+            paymentMethod: 'N/A'
+          };
+          transactions = [penaltyResolutionTx, ...transactions];
+        });
+      }
+      // --- END NEW LOGIC ---
+
       return true;
     }
     return false;
