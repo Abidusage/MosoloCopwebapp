@@ -663,7 +663,7 @@ export const MockService = {
     }));
   },
 
-  addPenalty: (newPenalty: Omit<Penalty, 'id' | 'date' | 'status'>) => {
+  addPenalty: (newPenalty: Omit<Penalty, 'id' | 'date' | 'status' | 'userFullName'>) => {
     const user = users.find(u => u.id === newPenalty.userId);
     if (!user) return null;
 

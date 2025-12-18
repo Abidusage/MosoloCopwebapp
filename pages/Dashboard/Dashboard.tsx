@@ -51,13 +51,13 @@ import {
   ChevronRight,
   Fingerprint,
   Image,
-  FileWarning,
+  FileWarning, // Added for penalties icon
   KeyRound,
   Edit,
   Trash2
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
-import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, TransactionStatus } from '../../types';
+import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, TransactionStatus, Penalty } from '../../types';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -165,6 +165,15 @@ const Dashboard: React.FC = () => {
   const [transactionCurrentPage, setTransactionCurrentPage] = useState(1);
   const [transactionsPerPage] = useState(10);
 
+  // Penalties State (New)
+  const [penalties, setPenalties] = useState<Penalty[]>([]);
+  const [isAddPenaltyModalOpen, setIsAddPenaltyModalOpen] = useState(false);
+  const [newPenaltyForm, setNewPenaltyForm] = useState({ userId: '', reason: '', amount: 0 });
+  const [penaltySearchTerm, setPenaltySearchTerm] = useState('');
+  const [penaltyFilterStatus, setPenaltyFilterStatus] = useState<string>('all'); // 'all', 'active', 'resolved'
+  const [penaltyCurrentPage, setPenaltyCurrentPage] = useState(1);
+  const [penaltiesPerPage] = useState(10);
+
 
   useEffect(() => {
     // Load initial data
@@ -175,6 +184,7 @@ const Dashboard: React.FC = () => {
     setAdminProfile(currentAdminProfile);
     setSettings(MockService.getSystemSettings());
     setAgents(MockService.getAgents());
+    setPenalties(MockService.getPenalties()); // Fetch penalties
     setProfileForm({
       fullName: currentAdminProfile.fullName,
       email: currentAdminProfile.email,
@@ -213,7 +223,10 @@ const Dashboard: React.FC = () => {
         setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
       }
     }
-  }, [currentView, transactions, users, agents, viewingGroup]); // Added viewingGroup to dependency array
+    if (currentView === 'penalties') { // Refresh penalties when viewing penalties
+      setPenalties(MockService.getPenalties());
+    }
+  }, [currentView, transactions, users, agents, viewingGroup]); // Added penalties to dependency array
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -276,6 +289,9 @@ const Dashboard: React.FC = () => {
     setTransactionSearch('');
     setTransactionFilterType('all');
     setTransactionFilterStatus('all');
+    setPenaltyCurrentPage(1); // For penalties
+    setPenaltySearchTerm('');
+    setPenaltyFilterStatus('all');
   };
 
   const openDepositModal = (user: User) => {
@@ -634,15 +650,15 @@ const Dashboard: React.FC = () => {
   };
 
   // Transaction Filtering and Pagination Logic
-  const getPaginatedAndFilteredTransactions = (allTransactions: Transaction[]) => {
+  const getPaginatedAndFilteredTransactions = (allTransactions: Transaction[], filterType: string = 'all', filterStatus: string = 'all', searchTerm: string = '') => {
     // 1. Apply filters
     const filtered = allTransactions.filter(tx => {
-      const matchType = transactionFilterType === 'all' || tx.type === transactionFilterType;
-      const matchStatus = transactionFilterStatus === 'all' || tx.status === transactionFilterStatus;
-      const matchSearch = transactionSearch === '' || 
-        tx.userFullName.toLowerCase().includes(transactionSearch.toLowerCase()) ||
-        tx.id.toLowerCase().includes(transactionSearch.toLowerCase()) ||
-        tx.userId.toLowerCase().includes(transactionSearch.toLowerCase()); // Include userId in search
+      const matchType = filterType === 'all' || tx.type === filterType;
+      const matchStatus = filterStatus === 'all' || tx.status === filterStatus;
+      const matchSearch = searchTerm === '' || 
+        tx.userFullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.userId.toLowerCase().includes(searchTerm.toLowerCase()); // Include userId in search
       return matchType && matchStatus && matchSearch;
     });
 
@@ -655,14 +671,78 @@ const Dashboard: React.FC = () => {
     return { filtered, currentItems, totalPages };
   };
 
-  const handleTransactionPageChange = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalTransactionPages) {
+  // Modified to accept totalPages as an argument
+  const handleTransactionPageChange = (pageNumber: number, totalPages: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
       setTransactionCurrentPage(pageNumber);
+    }
+  };
+
+  // Penalty Management Functions
+  const handleAddPenalty = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPenaltyForm.userId && newPenaltyForm.reason && newPenaltyForm.amount > 0) {
+      const addedPenalty = MockService.addPenalty(newPenaltyForm);
+      if (addedPenalty) {
+        setPenalties(MockService.getPenalties()); // Refresh penalties list
+        setNewPenaltyForm({ userId: '', reason: '', amount: 0 });
+        setIsAddPenaltyModalOpen(false);
+        alert('Pénalité ajoutée avec succès !');
+      } else {
+        alert('Erreur lors de l\'ajout de la pénalité. L\'utilisateur n\'existe peut-être pas.');
+      }
+    } else {
+      alert('Veuillez remplir tous les champs pour ajouter une pénalité.');
+    }
+  };
+
+  const handleResolvePenalty = (penaltyId: string, userFullName: string) => {
+    if (window.confirm(`Voulez-vous vraiment résoudre la pénalité ${penaltyId} pour ${userFullName} ?`)) {
+      const success = MockService.resolvePenalty(penaltyId, adminProfile?.fullName || 'Admin');
+      if (success) {
+        setPenalties(MockService.getPenalties()); // Refresh penalties list
+        alert(`Pénalité ${penaltyId} pour ${userFullName} résolue avec succès !`);
+      } else {
+        alert('Erreur lors de la résolution de la pénalité.');
+      }
+    }
+  };
+
+  // Penalty Filtering and Pagination Logic
+  const getPaginatedAndFilteredPenalties = (allPenalties: Penalty[], filterStatus: string = 'all', searchTerm: string = '') => {
+    // 1. Apply filters
+    const filtered = allPenalties.filter(penalty => {
+      const matchStatus = filterStatus === 'all' || penalty.status === filterStatus;
+      const matchSearch = searchTerm === '' || 
+        penalty.userFullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        penalty.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        penalty.reason.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchStatus && matchSearch;
+    });
+
+    // 2. Paginate
+    const indexOfLastItem = penaltyCurrentPage * penaltiesPerPage;
+    const indexOfFirstItem = indexOfLastItem - penaltiesPerPage;
+    const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filtered.length / penaltiesPerPage);
+
+    return { filtered, currentItems, totalPages };
+  };
+
+  const handlePenaltyPageChange = (pageNumber: number, totalPages: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setPenaltyCurrentPage(pageNumber);
     }
   };
 
 
   const renderContent = () => {
+    // These need to be inside renderContent to be in scope for the pagination controls
+    const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch);
+    const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch);
+    const { filtered: filteredPenalties, currentItems: currentPenalties, totalPages: totalPenaltyPages } = getPaginatedAndFilteredPenalties(penalties, penaltyFilterStatus, penaltySearchTerm);
+
+
     switch(currentView) {
       case 'overview':
         return (
@@ -1941,7 +2021,6 @@ const Dashboard: React.FC = () => {
         );
 
       case 'transactions':
-        const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions);
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
@@ -2103,7 +2182,7 @@ const Dashboard: React.FC = () => {
                        <div>
                           <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                              <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsHistoryPages)}
                                 disabled={transactionCurrentPage === 1}
                                 className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                              >
@@ -2115,7 +2194,7 @@ const Dashboard: React.FC = () => {
                              {Array.from({ length: totalTransactionsHistoryPages }, (_, i) => i + 1).map((number) => (
                                <button
                                   key={number}
-                                  onClick={() => handleTransactionPageChange(number)}
+                                  onClick={() => handleTransactionPageChange(number, totalTransactionsHistoryPages)}
                                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                                     transactionCurrentPage === number
                                       ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
@@ -2127,7 +2206,7 @@ const Dashboard: React.FC = () => {
                              ))}
 
                              <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsHistoryPages)}
                                 disabled={transactionCurrentPage === totalTransactionsHistoryPages}
                                 className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionsHistoryPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                              >
@@ -2140,7 +2219,7 @@ const Dashboard: React.FC = () => {
                     {/* Mobile Pagination simplified */}
                     <div className="flex items-center justify-between w-full sm:hidden">
                        <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsHistoryPages)}
                           disabled={transactionCurrentPage === 1}
                           className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                        >
@@ -2150,7 +2229,7 @@ const Dashboard: React.FC = () => {
                           Page {transactionCurrentPage} / {totalTransactionsHistoryPages}
                        </span>
                        <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsHistoryPages)}
                           disabled={transactionCurrentPage === totalTransactionsHistoryPages}
                           className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionsHistoryPages ? 'opacity-50 cursor-not-allowed' : ''}`}
                        >
@@ -2164,7 +2243,6 @@ const Dashboard: React.FC = () => {
         );
 
       case 'transaction_management':
-        const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions);
         return (
           <div className="space-y-8">
             <h2 className="text-2xl font-bold text-gray-800">Gestion des Transactions</h2>
@@ -2348,7 +2426,7 @@ const Dashboard: React.FC = () => {
                        <div>
                           <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                              <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsToManagePages)}
                                 disabled={transactionCurrentPage === 1}
                                 className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                              >
@@ -2360,7 +2438,7 @@ const Dashboard: React.FC = () => {
                              {Array.from({ length: totalTransactionsToManagePages }, (_, i) => i + 1).map((number) => (
                                <button
                                   key={number}
-                                  onClick={() => handleTransactionPageChange(number)}
+                                  onClick={() => handleTransactionPageChange(number, totalTransactionsToManagePages)}
                                   className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                                     transactionCurrentPage === number
                                       ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
@@ -2372,7 +2450,7 @@ const Dashboard: React.FC = () => {
                              ))}
 
                              <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsToManagePages)}
                                 disabled={transactionCurrentPage === totalTransactionsToManagePages}
                                 className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionsToManagePages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
                              >
@@ -2385,7 +2463,7 @@ const Dashboard: React.FC = () => {
                     {/* Mobile Pagination simplified */}
                     <div className="flex items-center justify-between w-full sm:hidden">
                        <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1)}
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsToManagePages)}
                           disabled={transactionCurrentPage === 1}
                           className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                        >
@@ -2395,7 +2473,7 @@ const Dashboard: React.FC = () => {
                           Page {transactionCurrentPage} / {totalTransactionsToManagePages}
                        </span>
                        <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1)}
+                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsToManagePages)}
                           disabled={transactionCurrentPage === totalTransactionsToManagePages}
                           className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionsToManagePages ? 'opacity-50 cursor-not-allowed' : ''}`}
                        >
@@ -2404,6 +2482,248 @@ const Dashboard: React.FC = () => {
                     </div>
                  </div>
                )}
+            </div>
+          </div>
+        );
+
+      case 'penalties':
+        return (
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800">Gestion des Pénalités</h2>
+            <p className="text-gray-500 text-sm">Suivez et gérez les pénalités des clients pour non-paiement de tontine ou non-remboursement de crédit.</p>
+
+            {/* Add Penalty Form */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <FileWarning className="h-5 w-5 text-red-700" /> Ajouter une nouvelle pénalité
+              </h3>
+              <form onSubmit={handleAddPenalty} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="penaltyUser" className="block text-sm font-medium text-gray-700 mb-1">Client</label>
+                  <select
+                    id="penaltyUser"
+                    value={newPenaltyForm.userId}
+                    onChange={(e) => setNewPenaltyForm({...newPenaltyForm, userId: e.target.value})}
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                    required
+                  >
+                    <option value="" disabled>-- Sélectionner un client --</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.fullName} (ID: {user.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="penaltyReason" className="block text-sm font-medium text-gray-700 mb-1">Raison</label>
+                  <input
+                    id="penaltyReason"
+                    type="text"
+                    placeholder="Ex: Non-paiement tontine"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                    value={newPenaltyForm.reason}
+                    onChange={e => setNewPenaltyForm({...newPenaltyForm, reason: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="penaltyAmount" className="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
+                  <input
+                    id="penaltyAmount"
+                    type="number"
+                    min="1"
+                    placeholder="0"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                    value={newPenaltyForm.amount || ''}
+                    onChange={e => setNewPenaltyForm({...newPenaltyForm, amount: Number(e.target.value)})}
+                    required
+                  />
+                </div>
+                <button type="submit" className="md:col-span-3 bg-red-600 text-white py-3 rounded-lg font-medium hover:bg-red-700 transition-colors w-full">
+                  Ajouter la pénalité
+                </button>
+              </form>
+            </div>
+
+            {/* Penalties List */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-gray-800">Liste des Pénalités</h3>
+                  <span className="text-sm text-gray-500">{filteredPenalties.length} résultats</span>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="relative">
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Rechercher (Nom, ID, Raison)..." 
+                      value={penaltySearchTerm}
+                      onChange={(e) => {
+                        setPenaltySearchTerm(e.target.value);
+                        setPenaltyCurrentPage(1); // Reset to page 1 on search
+                      }}
+                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <select 
+                      value={penaltyFilterStatus}
+                      onChange={(e) => {
+                        setPenaltyFilterStatus(e.target.value);
+                        setPenaltyCurrentPage(1); // Reset to page 1 on filter change
+                      }}
+                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
+                    >
+                      <option value="all">Tous les statuts</option>
+                      <option value="active">Active</option>
+                      <option value="resolved">Résolue</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pénalité</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client (Nom & ID)</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raison</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {currentPenalties.length > 0 ? (
+                      currentPenalties.map((penalty) => (
+                        <tr key={penalty.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{penalty.id}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{penalty.userFullName}</div>
+                            <div className="text-xs text-gray-500">ID: {penalty.userId}</div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{penalty.reason}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-600">{penalty.amount.toLocaleString()} FCFA</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{penalty.date}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {penalty.status === 'active' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <AlertCircle className="h-3 w-3" /> Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3" /> Résolue
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                            {penalty.status === 'active' && (
+                              <button 
+                                onClick={() => handleResolvePenalty(penalty.id, penalty.userFullName)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 border border-green-200"
+                                title="Marquer comme résolue"
+                              >
+                                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Résoudre
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => openUserDetailModal(users.find(u => u.id === penalty.userId)!)} // Assuming user always exists
+                              className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
+                              title="Voir les détails du client"
+                            >
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir Client
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-10 text-center text-gray-500">
+                          Aucune pénalité trouvée.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination Controls for Penalties */}
+              {filteredPenalties.length > 0 && (
+                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                      <div>
+                         <p className="text-sm text-gray-700">
+                            Affichage de <span className="font-medium">{(penaltyCurrentPage - 1) * penaltiesPerPage + 1}</span> à <span className="font-medium">{Math.min(penaltyCurrentPage * penaltiesPerPage, filteredPenalties.length)}</span> sur <span className="font-medium">{filteredPenalties.length}</span> résultats
+                         </p>
+                      </div>
+                      <div>
+                         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button
+                               onClick={() => handlePenaltyPageChange(penaltyCurrentPage - 1, totalPenaltyPages)}
+                               disabled={penaltyCurrentPage === 1}
+                               className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${penaltyCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                            >
+                               <span className="sr-only">Précédent</span>
+                               <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            
+                            {/* Generate Page Numbers */}
+                            {Array.from({ length: totalPenaltyPages }, (_, i) => i + 1).map((number) => (
+                              <button
+                                 key={number}
+                                 onClick={() => handlePenaltyPageChange(number, totalPenaltyPages)}
+                                 className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                   penaltyCurrentPage === number
+                                     ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
+                                     : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                 }`}
+                              >
+                                 {number}
+                              </button>
+                            ))}
+
+                            <button
+                               onClick={() => handlePenaltyPageChange(penaltyCurrentPage + 1, totalPenaltyPages)}
+                               disabled={penaltyCurrentPage === totalPenaltyPages}
+                               className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${penaltyCurrentPage === totalPenaltyPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                            >
+                               <span className="sr-only">Suivant</span>
+                               <ChevronRight className="h-5 w-5" />
+                            </button>
+                         </nav>
+                      </div>
+                   </div>
+                   {/* Mobile Pagination simplified */}
+                   <div className="flex items-center justify-between w-full sm:hidden">
+                      <button
+                         onClick={() => handlePenaltyPageChange(penaltyCurrentPage - 1, totalPenaltyPages)}
+                         disabled={penaltyCurrentPage === 1}
+                         className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${penaltyCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                         Précédent
+                      </button>
+                      <span className="text-sm text-gray-700">
+                         Page {penaltyCurrentPage} / {totalPenaltyPages}
+                      </span>
+                      <button
+                         onClick={() => handlePenaltyPageChange(penaltyCurrentPage + 1, totalPenaltyPages)}
+                         disabled={penaltyCurrentPage === totalPenaltyPages}
+                         className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${penaltyCurrentPage === totalPenaltyPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                         Suivant
+                      </button>
+                   </div>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -2671,8 +2991,637 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions);
-  const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions);
+
+  return (
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
+
+      {/* Deposit Modal */}
+      {isDepositModalOpen && selectedUserForDeposit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Wallet className="h-6 w-6 text-gray-700" />
+                Faire un dépôt
+              </h3>
+              <button onClick={() => setIsDepositModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmitDeposit} className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <p className="text-sm text-gray-500 mb-1">Bénéficiaire</p>
+                <p className="text-lg font-bold text-gray-800">{selectedUserForDeposit.fullName}</p>
+                <p className="text-xs text-gray-500">ID: {selectedUserForDeposit.username}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-lg"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Moyen de paiement</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <CreditCard className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                    value={depositPaymentMethod}
+                    onChange={(e) => setDepositPaymentMethod(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base appearance-none bg-white"
+                  >
+                    <option value="Orange Money">Orange Money</option>
+                    <option value="Moov Money">Moov Money</option>
+                    <option value="Wave">Wave</option>
+                    <option value="MTN Mobile Money">MTN Mobile Money</option>
+                    <option value="Virement Bancaire">Virement Bancaire</option>
+                    <option value="Espèces">Espèces</option>
+                    <option value="Autre">Autre</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Motif / Référence (Optionnel)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={depositNote}
+                    onChange={(e) => setDepositNote(e.target.value)}
+                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                    placeholder="Ex: Dépôt espèce guichet"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsDepositModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Confirmer le dépôt
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Details Modal */}
+      {isUserDetailModalOpen && selectedUserForDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+             {/* Header */}
+             <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
+               <div className="flex items-center gap-4">
+                 <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
+                   {selectedUserForDetail.fullName.charAt(0)}
+                 </div>
+                 <div className="text-white">
+                   <h3 className="text-2xl font-bold">{selectedUserForDetail.fullName}</h3>
+                   <p className="text-gray-300 text-sm">@{selectedUserForDetail.username}</p>
+                   <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-gray-700 text-white border border-gray-600">
+                     {selectedUserForDetail.status ? selectedUserForDetail.status.toUpperCase() : 'ACTIF'}
+                   </span>
+                 </div>
+               </div>
+               <button 
+                onClick={() => setIsUserDetailModalOpen(false)} 
+                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
+               >
+                <X className="h-5 w-5" />
+               </button>
+             </div>
+
+             {/* Content */}
+             <div className="p-6 bg-gray-50">
+               
+               {/* Info Grid */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                 {/* Contact Card */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <UserCircle className="h-4 w-4 text-gray-700" /> Informations Personnelles
+                   </h4>
+                   <div className="space-y-3 text-sm">
+                     <div className="flex items-start gap-3">
+                       <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Email</span>
+                         <span className="text-gray-700">{selectedUserForDetail.email || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <Phone className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Téléphone</span>
+                         <span className="text-gray-700">{selectedUserForDetail.phoneNumber || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                       <div>
+                         <span className="block text-gray-500 text-xs">Adresse</span>
+                         <span className="text-gray-700">{selectedUserForDetail.address || 'Non renseigné'}</span>
+                       </div>
+                     </div>
+                     <div className="flex items-start gap-3 pt-2 border-t border-gray-100 mt-2">
+                        <CreditCard className="h-4 w-4 text-gray-400 mt-0.5" />
+                        <div>
+                          <span className="block text-gray-500 text-xs">Statut Crédit</span>
+                          {selectedUserForDetail.loanEligible ? (
+                            <span className="text-green-600 font-medium">Éligible au prêt</span>
+                          ) : (
+                            <span className="text-gray-500">Non éligible</span>
+                          )}
+                        </div>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* Balance Card */}
+                 <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                   <h4 className="text-gray-800 font-semibold mb-3 flex items-center gap-2">
+                     <Wallet className="h-4 w-4 text-gray-700" /> Solde du Compte
+                   </h4>
+                   <div className="flex flex-col h-full justify-center pb-4">
+                     <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
+                     <span className="text-3xl font-bold text-gray-800 tracking-tight">
+                       {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FCFA</span>
+                     </span>
+                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
+                       <span className="text-gray-500">Membre depuis</span>
+                       <span className="font-medium text-gray-700">{selectedUserForDetail.joinedDate}</span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Recent Transactions Snippet */}
+               <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                 <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h4 className="text-gray-800 font-semibold flex items-center gap-2 text-sm">
+                      <Activity className="h-4 w-4 text-gray-700" /> Dernières Transactions
+                    </h4>
+                    <span className="text-xs text-gray-500">5 dernières</span>
+                 </div>
+                 <div className="divide-y divide-gray-100">
+                   {selectedUserTransactions.length > 0 ? (
+                     selectedUserTransactions.slice(0, 5).map(tx => (
+                       <div key={tx.id} className="px-5 py-3 flex justify-between items-center hover:bg-gray-50">
+                         <div className="flex items-center gap-3">
+                           <div className={`p-1.5 rounded-full ${tx.type === 'deposit' ? 'bg-green-100 text-green-600' : tx.type === 'loan_eligibility' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                             {tx.type === 'deposit' ? <ArrowUpRight className="h-3 w-3" /> : tx.type === 'loan_eligibility' ? <Shield className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                           </div>
+                           <div>
+                             <p className="text-sm font-medium text-gray-900 capitalize">
+                               {tx.type === 'deposit' ? 'Dépôt' : tx.type === 'loan_eligibility' ? 'Statut Crédit' : 'Retrait'}
+                             </p>
+                             <p className="text-xs text-gray-500">{tx.date}</p>
+                           </div>
+                         </div>
+                         <div className="text-right">
+                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
+                             {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
+                           </p>
+                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                             {tx.status === 'success' ? 'Succès' : 'Échec'}
+                           </span>
+                         </div>
+                       </div>
+                     ))
+                   ) : (
+                     <div className="p-4 text-center text-gray-500 text-sm">Aucune transaction enregistrée.</div>
+                   )}
+                 </div>
+               </div>
+
+             </div>
+             <div className="bg-gray-100 px-6 py-4 flex justify-end">
+               <button 
+                onClick={() => setIsUserDetailModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+               >
+                 Fermer
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {isAddMemberModalOpen && selectedGroupForMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+             <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Users className="h-6 w-6 text-gray-700" />
+                Ajouter un membre
+              </h3>
+              <button onClick={() => setIsAddMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddMemberToGroup} className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                 <p className="text-sm text-gray-500 mb-1">Groupe Cible</p>
+                 <p className="text-lg font-bold text-gray-800">{selectedGroupForMember.name}</p>
+                 <p className="text-xs text-gray-500">{selectedGroupForMember.memberCount} membres actuels</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sélectionner un client</label>
+                <div className="relative">
+                   <select 
+                     value={selectedMemberId} 
+                     onChange={(e) => setSelectedMemberId(e.target.value)}
+                     className="block w-full pl-3 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500 text-base"
+                     required
+                   >
+                     <option value="" disabled>-- Choisir un membre --</option>
+                     {users.map(user => (
+                       <option key={user.id} value={user.id}>
+                         {user.fullName} ({user.username})
+                       </option>
+                     ))}
+                   </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddMemberModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Ajouter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Group Modal */}
+      {isEditGroupModalOpen && viewingGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Edit className="h-6 w-6 text-gray-700" />
+                Modifier le groupe: {viewingGroup.name}
+              </h3>
+              <button onClick={() => setIsEditGroupModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateGroup} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
+                <input
+                  type="text"
+                  required
+                  value={editingGroupForm.name}
+                  onChange={(e) => setEditingGroupForm({...editingGroupForm, name: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Nom du groupe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Objectif cible (FCFA)</label>
+                <input
+                  type="number"
+                  required
+                  value={editingGroupForm.targetAmount || ''}
+                  onChange={(e) => setEditingGroupForm({...editingGroupForm, targetAmount: Number(e.target.value)})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description du groupe</label>
+                <textarea
+                  rows={3}
+                  value={editingGroupForm.description}
+                  onChange={(e) => setEditingGroupForm({...editingGroupForm, description: e.target.value})}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Description du groupe"
+                ></textarea>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditGroupModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+                >
+                  Enregistrer les modifications
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Group Modal */}
+      {isConfirmDeleteGroupModalOpen && groupToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Trash2 className="h-6 w-6 text-red-700" />
+                Confirmer la suppression
+              </h3>
+              <button onClick={() => setIsConfirmDeleteGroupModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="text-center space-y-4">
+              <p className="text-gray-700 text-lg">
+                Êtes-vous sûr de vouloir supprimer le groupe <span className="font-bold text-red-600">"{groupToDelete.name}"</span> ?
+              </p>
+              <p className="text-sm text-gray-500">Cette action est irréversible.</p>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmDeleteGroupModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteGroup}
+                  className="flex-1 py-3 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                >
+                  Supprimer définitivement
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Agent Modal */}
+      {isAddAgentModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Briefcase className="h-6 w-6 text-gray-700" />
+                Ajouter un nouvel Agent
+              </h3>
+              <button onClick={() => setIsAddAgentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddAgent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nom Complet</label>
+                <input
+                  type="text"
+                  required
+                  value={newAgentForm.fullName}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, fullName: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Nom complet de l'agent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={newAgentForm.email}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, email: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                <input
+                  type="text"
+                  required
+                  value={newAgentForm.phone}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, phone: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Ex: 07 00 00 00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zone d'opération</label>
+                <input
+                  type="text"
+                  required
+                  value={newAgentForm.zone}
+                  onChange={(e) => setNewAgentForm({...newAgentForm, zone: e.target.value})}
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                  placeholder="Ex: Marché Adjamé"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddAgentModalOpen(false)}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                >
+                  Ajouter l'Agent
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Detail Modal */}
+      {isKYCDetailModalOpen && selectedUserForKYC && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-0 overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gray-800 px-6 py-6 flex justify-between items-start">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center text-gray-800 text-2xl font-bold shadow-md">
+                  {selectedUserForKYC.fullName.charAt(0)}
+                </div>
+                <div className="text-white">
+                  <h3 className="text-2xl font-bold">{selectedUserForKYC.fullName}</h3>
+                  <p className="text-gray-300 text-sm">Vérification d'identité (KYC)</p>
+                  <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold ${
+                    selectedUserForKYC.kycStatus === 'verified' ? 'bg-green-600 text-white' :
+                    selectedUserForKYC.kycStatus === 'pending' ? 'bg-yellow-600 text-white' :
+                    selectedUserForKYC.kycStatus === 'rejected' ? 'bg-red-600 text-white' :
+                    'bg-gray-600 text-white'
+                  }`}>
+                    {selectedUserForKYC.kycStatus.replace('_', ' ').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsKYCDetailModalOpen(false)}
+                className="text-gray-300 hover:text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 bg-gray-50">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Documents Section */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
+                  <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
+                    <Image className="h-4 w-4 text-gray-700" /> Documents Soumis
+                  </h4>
+                  {selectedUserKYCDocuments.length > 0 ? (
+                    <div className="space-y-4">
+                      {selectedUserKYCDocuments.map((doc) => (
+                        <div key={doc.id} className="border border-gray-200 rounded-lg p-3 flex items-center gap-3">
+                          <div className="flex-shrink-0 h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
+                            <img src={doc.documentUrl} alt={doc.type} className="object-cover w-full h-full" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 capitalize">{doc.type.replace('_', ' ')}</p>
+                            <p className="text-xs text-gray-500">Soumis le: {doc.submissionDate.split(' ')[0]}</p>
+                            <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              doc.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              doc.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {doc.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                            <Eye className="h-4 w-4" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 text-sm py-4">Aucun document soumis.</div>
+                  )}
+                </div>
+
+                {/* Review Actions */}
+                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-gray-800 font-semibold mb-4 flex items-center gap-2">
+                      <Fingerprint className="h-4 w-4 text-gray-700" /> Actions de Vérification
+                    </h4>
+                    {selectedUserForKYC.kycStatus === 'pending' ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Raison du rejet (si applicable)</label>
+                          <textarea
+                            rows={3}
+                            value={kycRejectionReason}
+                            onChange={(e) => setKycRejectionReason(e.target.value)}
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
+                            placeholder="Ex: Document illisible, informations manquantes..."
+                          ></textarea>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => handleUpdateKYCStatus('rejected')}
+                            disabled={!kycRejectionReason.trim()}
+                            className="flex-1 py-2 px-4 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <XCircle className="h-4 w-4 inline-block mr-2" /> Rejeter
+                          </button>
+                          <button
+                            onClick={() => handleUpdateKYCStatus('verified')}
+                            className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                          >
+                            <CheckCircle className="h-4 w-4 inline-block mr-2" /> Approuver
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 text-sm py-8">
+                        Ce statut KYC ne nécessite pas d'action de vérification.
+                        {selectedUserForKYC.kycStatus === 'rejected' && selectedUserKYCDocuments[0]?.rejectionReason && (
+                          <p className="mt-4 text-red-600 font-medium">Raison du rejet: {selectedUserKYCDocuments[0].rejectionReason}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
+                    <p>Dernière mise à jour: {selectedUserForKYC.kycVerifiedDate || selectedUserForKYC.kycSubmissionDate || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-100 px-6 py-4 flex justify-end">
+              <button
+                onClick={() => setIsKYCDetailModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        );
+
+      default:
+        return <div>Vue non trouvée</div>;
+    }
+  };
 
 
   return (
@@ -3554,6 +4503,13 @@ const Dashboard: React.FC = () => {
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'kyc' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
           >
             <Fingerprint className="h-5 w-5" /> Vérification KYC
+          </button>
+
+          <button 
+            onClick={() => handleNavClick('penalties')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${currentView === 'penalties' ? 'bg-gray-800 text-white shadow-md' : 'text-gray-100 hover:bg-gray-800 hover:text-white'}`}
+          >
+            <FileWarning className="h-5 w-5" /> Pénalités
           </button>
 
           <div className="border-t border-gray-800 my-2"></div> {/* Separator */}
