@@ -132,6 +132,7 @@ const Dashboard: React.FC = () => {
   const [transactionFilterType, setTransactionFilterType] = useState<string>('all');
   const [transactionFilterStatus, setTransactionFilterStatus] = useState<string>('all');
   const [transactionSearch, setTransactionSearch] = useState('');
+  const [transactionFilterTimeframe, setTransactionFilterTimeframe] = useState<string>('all'); // New state for timeframe filter
   
   // Clients Pagination & Search State
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -289,6 +290,7 @@ const Dashboard: React.FC = () => {
     setTransactionSearch('');
     setTransactionFilterType('all');
     setTransactionFilterStatus('all');
+    setTransactionFilterTimeframe('all'); // Reset timeframe filter
     setPenaltyCurrentPage(1); // For penalties
     setPenaltySearchTerm('');
     setPenaltyFilterStatus('all');
@@ -312,6 +314,7 @@ const Dashboard: React.FC = () => {
         setUsers(MockService.getUsers());
         setTransactions(MockService.getTransactions()); // Refresh transaction history
         setAdminDeposits(MockService.getAdminDeposits()); // Refresh admin deposits
+        setPenalties(MockService.getPenalties()); // Refresh penalties after potential auto-resolution
         setIsDepositModalOpen(false);
         setSelectedUserForDeposit(null);
         setDepositAmount('');
@@ -649,8 +652,22 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Helper functions for date comparison
+  const isSameDay = (d1: Date, d2: Date) => d1.toDateString() === d2.toDateString();
+  const isSameWeek = (d1: Date, d2: Date) => {
+    const startOfWeek1 = new Date(d1);
+    startOfWeek1.setDate(d1.getDate() - d1.getDay()); // Sunday as start of week
+    const startOfWeek2 = new Date(d2);
+    startOfWeek2.setDate(d2.getDate() - d2.getDay());
+    return startOfWeek1.toDateString() === startOfWeek2.toDateString();
+  };
+  const isSameMonth = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
+  const isSameYear = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear();
+
   // Transaction Filtering and Pagination Logic
-  const getPaginatedAndFilteredTransactions = (allTransactions: Transaction[], filterType: string = 'all', filterStatus: string = 'all', searchTerm: string = '') => {
+  const getPaginatedAndFilteredTransactions = (allTransactions: Transaction[], filterType: string = 'all', filterStatus: string = 'all', searchTerm: string = '', filterTimeframe: string = 'all') => {
+    const now = new Date();
+
     // 1. Apply filters
     const filtered = allTransactions.filter(tx => {
       const matchType = filterType === 'all' || tx.type === filterType;
@@ -659,7 +676,32 @@ const Dashboard: React.FC = () => {
         tx.userFullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.userId.toLowerCase().includes(searchTerm.toLowerCase()); // Include userId in search
-      return matchType && matchStatus && matchSearch;
+
+      let matchTimeframe = true;
+      if (filterTimeframe !== 'all') {
+          const txDate = new Date(tx.date.split(' ')[0]); // Assuming date format 'YYYY-MM-DD HH:MM'
+          if (isNaN(txDate.getTime())) { // Handle invalid dates
+              matchTimeframe = false;
+          } else {
+              switch (filterTimeframe) {
+                  case 'day':
+                      matchTimeframe = isSameDay(txDate, now);
+                      break;
+                  case 'week':
+                      matchTimeframe = isSameWeek(txDate, now);
+                      break;
+                  case 'month':
+                      matchTimeframe = isSameMonth(txDate, now);
+                      break;
+                  case 'year':
+                      matchTimeframe = isSameYear(txDate, now);
+                      break;
+                  default:
+                      matchTimeframe = true;
+              }
+          }
+      }
+      return matchType && matchStatus && matchSearch && matchTimeframe;
     });
 
     // 2. Paginate
@@ -738,8 +780,8 @@ const Dashboard: React.FC = () => {
 
   const renderContent = () => {
     // These need to be inside renderContent to be in scope for the pagination controls
-    const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch);
-    const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch);
+    const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch, transactionFilterTimeframe);
+    const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch, transactionFilterTimeframe);
     const { filtered: filteredPenalties, currentItems: currentPenalties, totalPages: totalPenaltyPages } = getPaginatedAndFilteredPenalties(penalties, penaltyFilterStatus, penaltySearchTerm);
 
 
@@ -2082,6 +2124,25 @@ const Dashboard: React.FC = () => {
                         <option value="failed">Échec</option>
                       </select>
                    </div>
+
+                   {/* New Timeframe Filter */}
+                   <div className="relative">
+                      <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <select 
+                        value={transactionFilterTimeframe}
+                        onChange={(e) => {
+                          setTransactionFilterTimeframe(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
+                      >
+                        <option value="all">Toutes les périodes</option>
+                        <option value="day">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                        <option value="year">Cette année</option>
+                      </select>
+                   </div>
                  </div>
                </div>
 
@@ -2303,6 +2364,25 @@ const Dashboard: React.FC = () => {
                         <option value="success">Succès</option>
                         <option value="pending">En attente</option>
                         <option value="failed">Échec</option>
+                      </select>
+                   </div>
+
+                   {/* New Timeframe Filter */}
+                   <div className="relative">
+                      <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <select 
+                        value={transactionFilterTimeframe}
+                        onChange={(e) => {
+                          setTransactionFilterTimeframe(e.target.value);
+                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
+                        }}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
+                      >
+                        <option value="all">Toutes les périodes</option>
+                        <option value="day">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                        <option value="year">Cette année</option>
                       </select>
                    </div>
                  </div>
