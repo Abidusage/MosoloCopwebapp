@@ -220,7 +220,9 @@ const Dashboard: React.FC = () => {
     if (currentView === 'groups') { // Refresh groups when viewing groups
       setGroups(MockService.getGroups());
       if (viewingGroup) { // If a group is being viewed, refresh its members and messages
-        setViewingGroupMembers(MockService.getGroupMembers(viewingGroup.id));
+        // Sort members by joinedDate for the new table
+        const sortedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+        setViewingGroupMembers(sortedMembers);
         setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
       }
     }
@@ -342,7 +344,8 @@ const Dashboard: React.FC = () => {
         
         // If we are currently viewing this group, refresh the members list too
         if (viewingGroup && viewingGroup.id === selectedGroupForMember.id) {
-           setViewingGroupMembers(MockService.getGroupMembers(selectedGroupForMember.id));
+           const sortedMembers = MockService.getGroupMembers(selectedGroupForMember.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+           setViewingGroupMembers(sortedMembers);
         }
 
         setIsAddMemberModalOpen(false);
@@ -363,7 +366,8 @@ const Dashboard: React.FC = () => {
       if (success) {
         setGroups(MockService.getGroups()); // Refresh groups to update member count
         if (viewingGroup && viewingGroup.id === groupId) {
-          setViewingGroupMembers(MockService.getGroupMembers(groupId)); // Refresh members list
+          const sortedMembers = MockService.getGroupMembers(groupId).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+          setViewingGroupMembers(sortedMembers); // Refresh members list
         }
         alert(`${userName} a été retiré du groupe.`);
       } else {
@@ -375,7 +379,9 @@ const Dashboard: React.FC = () => {
   // Handle viewing group details
   const handleViewGroup = (group: Group) => {
     setViewingGroup(group);
-    setViewingGroupMembers(MockService.getGroupMembers(group.id));
+    // Sort members by joinedDate for the new table
+    const sortedMembers = MockService.getGroupMembers(group.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+    setViewingGroupMembers(sortedMembers);
     setGroupMessages(MockService.getGroupMessages(group.id));
     setEditingGroupForm({ // Initialize edit form with current group data
       name: group.name,
@@ -1873,9 +1879,10 @@ const Dashboard: React.FC = () => {
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Adhésion</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numéro de Téléphone</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'Inscription</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quand sera payé</th> {/* New column */}
                               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                           </thead>
@@ -1892,8 +1899,11 @@ const Dashboard: React.FC = () => {
                                       </div>
                                     </div>
                                 </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phoneNumber || 'N/A'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold">{user.depositAmount.toLocaleString()} FCFA</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">À définir (logique tontine)</span>
+                                </td> {/* Placeholder for payment date */}
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   <button
                                     onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
