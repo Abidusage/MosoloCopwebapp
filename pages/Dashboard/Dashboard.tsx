@@ -1978,6 +1978,43 @@ const Dashboard: React.FC = () => {
                     </div>
                  </div>
               </div>
+
+              {/* New sections for weekly contributions */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Weekly Contributors */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-green-50/50">
+                          <h3 className="text-lg font-semibold text-green-800 flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5" /> Contributeurs de la semaine
+                          </h3>
+                      </div>
+                      <div className="p-6 text-center text-gray-500">
+                          <p className="mb-2">
+                              Cette section afficherait les membres ayant contribué cette semaine.
+                          </p>
+                          <p className="text-sm text-gray-400">
+                              Nécessite une logique de gestion des cycles de tontine et des paiements hebdomadaires.
+                          </p>
+                      </div>
+                  </div>
+
+                  {/* Weekly Non-Contributors */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-red-50/50">
+                          <h3 className="text-lg font-semibold text-red-800 flex items-center gap-2">
+                              <XCircle className="h-5 w-5" /> Non-contributeurs de la semaine
+                          </h3>
+                      </div>
+                      <div className="p-6 text-center text-gray-500">
+                          <p className="mb-2">
+                              Cette section afficherait les membres n'ayant pas encore contribué cette semaine.
+                          </p>
+                          <p className="text-sm text-gray-400">
+                              Nécessite une logique de gestion des cycles de tontine et des paiements hebdomadaires.
+                          </p>
+                      </div>
+                  </div>
+              </div>
             </div>
           );
         }
@@ -2769,264 +2806,6 @@ const Dashboard: React.FC = () => {
                    </div>
                 </div>
               )}
-            </div>
-          </div>
-        );
-
-      case 'profile':
-        return (
-          <div className="max-w-2xl mx-auto space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Mon Profil Admin</h2>
-            
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-              <div className="bg-gray-800 h-24 sm:h-32 relative">
-                <div className="absolute -bottom-10 sm:-bottom-12 left-6 sm:left-8">
-                  <div className="h-20 w-20 sm:h-24 sm:w-24 bg-white rounded-full p-1 shadow-md">
-                     {adminProfile?.profilePictureUrl ? (
-                       <img 
-                         src={adminProfile.profilePictureUrl} 
-                         alt="Admin Profile" 
-                         className="h-full w-full rounded-full object-cover" 
-                         onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/gray/white?text=Admin"; }}
-                       />
-                     ) : (
-                       <div className="h-full w-full bg-gray-200 rounded-full flex items-center justify-center">
-                          <UserCircle className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
-                       </div>
-                     )}
-                  </div>
-                </div>
-              </div>
-              <div className="pt-14 sm:pt-16 px-6 sm:px-8 pb-8">
-                {isEditProfile ? (
-                  <form onSubmit={handleUpdateProfile} className="space-y-4">
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Nom Complet</label>
-                       <input 
-                        type="text" 
-                        value={profileForm.fullName}
-                        onChange={e => setProfileForm({...profileForm, fullName: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Email</label>
-                       <input 
-                        type="email" 
-                        value={profileForm.email}
-                        onChange={e => setProfileForm({...profileForm, email: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Téléphone</label>
-                       <input 
-                        type="text" 
-                        value={profileForm.phoneNumber}
-                        onChange={e => setProfileForm({...profileForm, phoneNumber: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Adresse</label>
-                       <input 
-                        type="text" 
-                        value={profileForm.address}
-                        onChange={e => setProfileForm({...profileForm, address: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">URL Photo de Profil</label>
-                       <input 
-                        type="text" 
-                        value={profileForm.profilePictureUrl}
-                        onChange={e => setProfileForm({...profileForm, profilePictureUrl: e.target.value})}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 focus:ring-gray-500"
-                        placeholder="Ex: https://example.com/ma-photo.jpg"
-                       />
-                     </div>
-                     <div className="flex gap-4 pt-4">
-                       <button type="submit" className="bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-900 text-sm font-medium">Enregistrer</button>
-                       <button type="button" onClick={() => setIsEditProfile(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm font-medium">Annuler</button>
-                     </div>
-                  </form>
-                ) : (
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{adminProfile?.fullName}</h1>
-                    <p className="text-gray-700 font-medium text-sm">{adminProfile?.role.toUpperCase()}</p>
-                    <div className="mt-6 space-y-4">
-                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                        <UserCircle className="h-5 w-5 mr-3" />
-                        <span>@{adminProfile?.username}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                        <Mail className="h-5 w-5 mr-3" />
-                        <span>{adminProfile?.email}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                        <Phone className="h-5 w-5 mr-3" />
-                        <span>{adminProfile?.phoneNumber || 'Non renseigné'}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600 text-sm sm:text-base">
-                        <MapPin className="h-5 w-5 mr-3" />
-                        <span>{adminProfile?.address || 'Non renseigné'}</span>
-                      </div>
-                    </div>
-
-                    {/* Admin Deposits List in Profile */}
-                    <div className="mt-8 bg-gray-50 p-5 rounded-lg border border-gray-100">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <Banknote className="h-5 w-5 text-gray-700" /> Mes Dépôts (Admin)
-                      </h3>
-                      {adminDeposits.length > 0 ? (
-                        <div className="space-y-3">
-                          {adminDeposits.map((tx) => (
-                            <div key={tx.id} className="flex justify-between items-center text-sm bg-white p-3 rounded-md shadow-sm border border-gray-100">
-                              <div className="flex items-center gap-2">
-                                <ArrowUpRight className="h-4 w-4 text-green-600" />
-                                <div>
-                                  <p className="font-medium text-gray-900">Dépôt à {tx.userFullName}</p>
-                                  <p className="text-xs text-gray-500">{tx.date.split(' ')[0]}</p>
-                                </div>
-                              </div>
-                              <span className="font-bold text-green-600">+{tx.amount.toLocaleString()} FCFA</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 text-center py-4">Aucun dépôt effectué par l'admin pour le moment.</p>
-                      )}
-                      <div className="mt-4 pt-4 border-t border-gray-100 text-right">
-                        <p className="text-base font-bold text-gray-800">Total: {stats?.totalAdminDepositsAmount.toLocaleString()} FCFA</p>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => setIsEditProfile(true)}
-                      className="mt-8 w-full border border-gray-800 text-gray-800 rounded-lg py-2 hover:bg-gray-100 transition-colors text-sm font-medium"
-                    >
-                      Modifier le profil
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      
-      case 'kyc':
-        const filteredKYCSubmissions = getFilteredKYCSubmissions();
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Vérification KYC (Connaître Votre Client)</h2>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-800">Soumissions KYC</h3>
-                  <span className="text-sm text-gray-500">{filteredKYCSubmissions.length} résultats</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="relative">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Rechercher (Nom, ID)..."
-                      value={kycSearchTerm}
-                      onChange={(e) => setKycSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <select
-                      value={kycFilterStatus}
-                      onChange={(e) => setKycFilterStatus(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                    >
-                      <option value="all">Tous les statuts</option>
-                      <option value="pending">En attente</option>
-                      <option value="verified">Vérifié</option>
-                      <option value="rejected">Rejeté</option>
-                      <option value="not_submitted">Non soumis</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut KYC</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de Soumission</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de Vérification</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredKYCSubmissions.length > 0 ? (
-                      filteredKYCSubmissions.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                            <div className="text-xs text-gray-500">ID: {user.id}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {user.kycStatus === 'verified' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3" /> Vérifié
-                              </span>
-                            )}
-                            {user.kycStatus === 'pending' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                <AlertCircle className="h-3 w-3" /> En attente
-                              </span>
-                            )}
-                            {user.kycStatus === 'rejected' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <XCircle className="h-3 w-3" /> Rejeté
-                              </span>
-                            )}
-                            {user.kycStatus === 'not_submitted' && (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                <FileWarning className="h-3 w-3" /> Non soumis
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {user.kycSubmissionDate || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {user.kycVerifiedDate || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            {user.kycStatus !== 'not_submitted' && (
-                              <button
-                                onClick={() => openKYCDetailModal(user)}
-                                className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
-                                title="Voir les documents KYC"
-                              >
-                                <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
-                          Aucune soumission KYC trouvée.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
         );
