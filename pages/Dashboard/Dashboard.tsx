@@ -1822,9 +1822,9 @@ const Dashboard: React.FC = () => {
       case 'groups':
         // Detail View
         if (viewingGroup) {
-          // Filter members into two lists based on hasBenefitedFromTontine
-          const benefitedMembers = viewingGroupMembers.filter(member => member.hasBenefitedFromTontine);
-          const pendingMembers = viewingGroupMembers.filter(member => !member.hasBenefitedFromTontine);
+          // Filter transactions for current group members
+          const groupMemberIds = viewingGroupMembers.map(member => member.id);
+          const groupTransactions = transactions.filter(tx => groupMemberIds.includes(tx.userId));
 
           return (
             <div className="space-y-8 animate-in slide-in-from-right duration-300">
@@ -1937,76 +1937,11 @@ const Dashboard: React.FC = () => {
                     </div>
                  </div>
 
-                 {/* Members Table - Benefited */}
+                 {/* Combined Members Table */}
                  <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-green-50/50">
-                      <h3 className="text-lg font-semibold text-green-800 flex items-center gap-2">
-                         <CheckCircle className="h-5 w-5" /> Membres ayant bénéficié ({benefitedMembers.length})
-                      </h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                      {benefitedMembers.length > 0 ? (
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'Inscription</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut Tontine</th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {benefitedMembers.map((user) => (
-                              <tr key={user.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-3">
-                                        {user.fullName.charAt(0)}
-                                      </div>
-                                      <div>
-                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                                      </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <CheckCircle className="h-3 w-3" /> Bénéficié
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  <button
-                                    onClick={() => handleToggleTontineBeneficiary(user.id, user.fullName)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-200"
-                                    title="Marquer comme en attente"
-                                  >
-                                    <RefreshCcw className="h-3 w-3 sm:h-4 sm:w-4" /> Annuler Bénéfice
-                                  </button>
-                                  <button
-                                    onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
-                                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
-                                    title="Retirer le membre"
-                                  >
-                                    <X className="h-3 w-3 sm:h-4 sm:w-4" /> Retirer
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="p-8 text-center text-gray-500">
-                          Aucun membre n'a encore bénéficié de la tontine dans ce groupe.
-                        </div>
-                      )}
-                    </div>
-                 </div>
-
-                 {/* Members Table - Pending */}
-                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-yellow-50/50">
-                      <h3 className="text-lg font-semibold text-yellow-800 flex items-center gap-2">
-                         <AlertCircle className="h-5 w-5" /> Membres en attente de la tontine ({pendingMembers.length})
+                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                         <Users className="h-5 w-5" /> Membres du groupe & Statut Tontine ({viewingGroupMembers.length})
                       </h3>
                       <button 
                           onClick={() => openAddMemberModal(viewingGroup)}
@@ -2017,18 +1952,19 @@ const Dashboard: React.FC = () => {
                         </button>
                     </div>
                     <div className="overflow-x-auto">
-                      {pendingMembers.length > 0 ? (
+                      {viewingGroupMembers.length > 0 ? (
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'Inscription</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contribution Actuelle</th> {/* New column */}
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut Tontine</th>
                               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {pendingMembers.map((user) => (
+                            {viewingGroupMembers.map((user) => (
                               <tr key={user.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
@@ -2041,18 +1977,33 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-bold">
+                                  {/* Placeholder for current contribution. In a real app, this would be dynamic. */}
+                                  {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FCFA <span className="text-xs text-gray-500">(simulé)</span>
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    <AlertCircle className="h-3 w-3" /> En attente
-                                  </span>
+                                  {user.hasBenefitedFromTontine ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      <CheckCircle className="h-3 w-3" /> Bénéficié
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                      <AlertCircle className="h-3 w-3" /> En attente
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   <button
                                     onClick={() => handleToggleTontineBeneficiary(user.id, user.fullName)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 border border-green-200"
-                                    title="Marquer comme bénéficiaire"
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
+                                      user.hasBenefitedFromTontine 
+                                        ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-200' 
+                                        : 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                                    }`}
+                                    title={user.hasBenefitedFromTontine ? "Marquer comme en attente" : "Marquer comme bénéficiaire"}
                                   >
-                                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Marquer Bénéficiaire
+                                    {user.hasBenefitedFromTontine ? <RefreshCcw className="h-3 w-3 sm:h-4 sm:w-4" /> : <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />} 
+                                    {user.hasBenefitedFromTontine ? 'Annuler Bénéfice' : 'Marquer Bénéficiaire'}
                                   </button>
                                   <button
                                     onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
@@ -2068,11 +2019,101 @@ const Dashboard: React.FC = () => {
                         </table>
                       ) : (
                         <div className="p-8 text-center text-gray-500">
-                          Tous les membres de ce groupe ont déjà bénéficié de la tontine ou aucun membre n'est en attente.
+                          Aucun membre dans ce groupe pour le moment.
                         </div>
                       )}
                     </div>
                  </div>
+              </div>
+
+              {/* Quick Statistics for Group */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-gray-700" /> Statistiques Rapides du Groupe
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Membres Totaux</p>
+                    <p className="text-xl font-bold text-gray-800">{viewingGroup.memberCount}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-green-600">Membres Bénéficiés</p>
+                    <p className="text-xl font-bold text-green-800">{benefitedMembers.length}</p>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <p className="text-sm text-yellow-600">Membres en Attente</p>
+                    <p className="text-xl font-bold text-yellow-800">{pendingMembers.length}</p>
+                  </div>
+                </div>
+                <div className="mt-4 bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-600">Objectif Cible du Groupe</p>
+                  <p className="text-xl font-bold text-blue-800">{viewingGroup.targetAmount.toLocaleString()} FCFA</p>
+                </div>
+              </div>
+
+              {/* Group Payment History Table */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <History className="h-5 w-5" /> Historique des Paiements du Groupe
+                  </h3>
+                  <span className="text-sm text-gray-500">{groupTransactions.length} transactions</span>
+                </div>
+                <div className="overflow-x-auto">
+                  {groupTransactions.length > 0 ? (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaction</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {groupTransactions.map((tx) => (
+                          <tr key={tx.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.id}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {tx.type === 'deposit' && <span className="text-green-600">Dépôt</span>}
+                              {tx.type === 'withdrawal' && <span className="text-orange-600">Retrait</span>}
+                              {tx.type === 'loan_eligibility' && <span className="text-blue-600">Éligibilité Prêt</span>}
+                              {tx.type === 'status_change' && <span className="text-purple-600">Changement Statut</span>}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                              {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date.split(' ')[0]}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {tx.status === 'success' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  <CheckCircle className="h-3 w-3" /> Succès
+                                </span>
+                              ) : tx.status === 'pending' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  <AlertCircle className="h-3 w-3" /> En attente
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  <XCircle className="h-3 w-3" /> Échec
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">
+                      Aucune transaction enregistrée pour les membres de ce groupe.
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Placeholder for weekly contributions sections */}
