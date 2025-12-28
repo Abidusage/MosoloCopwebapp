@@ -14,6 +14,7 @@ export interface User {
   kycSubmissionDate?: string; // Date de soumission KYC
   kycVerifiedDate?: string; // Date de vérification KYC
   penalties?: Penalty[]; // Nouveau champ pour les pénalités
+  hasBenefitedFromTontine?: boolean; // Nouveau champ pour le statut de la tontine
 }
 
 export interface Group {

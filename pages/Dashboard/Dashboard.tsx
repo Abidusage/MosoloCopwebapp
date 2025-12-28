@@ -783,6 +783,24 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // New: Toggle Tontine Beneficiary Status
+  const handleToggleTontineBeneficiary = (userId: string, userFullName: string) => {
+    if (window.confirm(`Voulez-vous vraiment marquer ${userFullName} comme ayant bénéficié de la tontine ?`)) {
+      const success = MockService.toggleTontineBeneficiaryStatus(userId);
+      if (success) {
+        setUsers(MockService.getUsers()); // Refresh users to update their status
+        // Re-fetch and re-sort group members to reflect the change
+        if (viewingGroup) {
+          const updatedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+          setViewingGroupMembers(updatedMembers);
+        }
+        alert(`${userFullName} a été marqué comme bénéficiaire de la tontine.`);
+      } else {
+        alert("Erreur lors de la mise à jour du statut de bénéficiaire.");
+      }
+    }
+  };
+
 
   const renderContent = () => {
     // These need to be inside renderContent to be in scope for the pagination controls
@@ -1804,6 +1822,10 @@ const Dashboard: React.FC = () => {
       case 'groups':
         // Detail View
         if (viewingGroup) {
+          // Filter members into two lists based on hasBenefitedFromTontine
+          const benefitedMembers = viewingGroupMembers.filter(member => member.hasBenefitedFromTontine);
+          const pendingMembers = viewingGroupMembers.filter(member => !member.hasBenefitedFromTontine);
+
           return (
             <div className="space-y-8 animate-in slide-in-from-right duration-300">
               <div className="flex items-center justify-between gap-4">
@@ -1862,69 +1884,6 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                 {/* Members Table */}
-                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-gray-800">Membres du groupe</h3>
-                      <button 
-                          onClick={() => openAddMemberModal(viewingGroup)}
-                          className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                          Ajouter
-                        </button>
-                    </div>
-                    <div className="overflow-x-auto">
-                      {viewingGroupMembers.length > 0 ? (
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Numéro de Téléphone</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'Inscription</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quand sera payé</th> {/* New column */}
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {viewingGroupMembers.map((user) => (
-                              <tr key={user.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-3">
-                                        {user.fullName.charAt(0)}
-                                      </div>
-                                      <div>
-                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                                      </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phoneNumber || 'N/A'}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">À définir (logique tontine)</span>
-                                </td> {/* Placeholder for payment date */}
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  <button
-                                    onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
-                                    title="Retirer le membre"
-                                  >
-                                    <X className="h-3 w-3 sm:h-4 sm:w-4" /> Retirer
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <div className="p-8 text-center text-gray-500">
-                          Aucun membre dans ce groupe pour le moment.
-                        </div>
-                      )}
-                    </div>
-                 </div>
-
                  {/* Group Chat Section */}
                  <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[500px]">
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center gap-2 rounded-t-xl">
@@ -1977,9 +1936,146 @@ const Dashboard: React.FC = () => {
                       </form>
                     </div>
                  </div>
+
+                 {/* Members Table - Benefited */}
+                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-green-50/50">
+                      <h3 className="text-lg font-semibold text-green-800 flex items-center gap-2">
+                         <CheckCircle className="h-5 w-5" /> Membres ayant bénéficié ({benefitedMembers.length})
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {benefitedMembers.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'Inscription</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut Tontine</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {benefitedMembers.map((user) => (
+                              <tr key={user.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-3">
+                                        {user.fullName.charAt(0)}
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                                      </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3" /> Bénéficié
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <button
+                                    onClick={() => handleToggleTontineBeneficiary(user.id, user.fullName)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-200"
+                                    title="Marquer comme en attente"
+                                  >
+                                    <RefreshCcw className="h-3 w-3 sm:h-4 sm:w-4" /> Annuler Bénéfice
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
+                                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
+                                    title="Retirer le membre"
+                                  >
+                                    <X className="h-3 w-3 sm:h-4 sm:w-4" /> Retirer
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          Aucun membre n'a encore bénéficié de la tontine dans ce groupe.
+                        </div>
+                      )}
+                    </div>
+                 </div>
+
+                 {/* Members Table - Pending */}
+                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-yellow-50/50">
+                      <h3 className="text-lg font-semibold text-yellow-800 flex items-center gap-2">
+                         <AlertCircle className="h-5 w-5" /> Membres en attente de la tontine ({pendingMembers.length})
+                      </h3>
+                      <button 
+                          onClick={() => openAddMemberModal(viewingGroup)}
+                          className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Ajouter un membre
+                        </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {pendingMembers.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'Inscription</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut Tontine</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {pendingMembers.map((user) => (
+                              <tr key={user.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-3">
+                                        {user.fullName.charAt(0)}
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                                      </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    <AlertCircle className="h-3 w-3" /> En attente
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <button
+                                    onClick={() => handleToggleTontineBeneficiary(user.id, user.fullName)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 border border-green-200"
+                                    title="Marquer comme bénéficiaire"
+                                  >
+                                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Marquer Bénéficiaire
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
+                                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
+                                    title="Retirer le membre"
+                                  >
+                                    <X className="h-3 w-3 sm:h-4 sm:w-4" /> Retirer
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          Tous les membres de ce groupe ont déjà bénéficié de la tontine ou aucun membre n'est en attente.
+                        </div>
+                      )}
+                    </div>
+                 </div>
               </div>
 
-              {/* New sections for weekly contributions */}
+              {/* Placeholder for weekly contributions sections */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Weekly Contributors */}
                   <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -2105,707 +2201,6 @@ const Dashboard: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-        );
-
-      case 'transactions':
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
-            
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-               {/* Filters/Header */}
-               <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
-                 <div className="flex justify-between items-center">
-                   <h3 className="text-lg font-semibold text-gray-800">Mouvements financiers</h3>
-                   <span className="text-sm text-gray-500">{filteredTransactionsHistory.length} résultats</span>
-                 </div>
-                 
-                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                   <div className="relative">
-                      <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input 
-                        type="text" 
-                        placeholder="Rechercher (Nom, ID Transaction, ID Client)..." 
-                        value={transactionSearch}
-                        onChange={(e) => {
-                          setTransactionSearch(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on search
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
-                      />
-                   </div>
-                   
-                   <div className="relative">
-                      <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <select 
-                        value={transactionFilterType}
-                        onChange={(e) => {
-                          setTransactionFilterType(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                      >
-                        <option value="all">Tous les types</option>
-                        <option value="deposit">Dépôts</option>
-                        <option value="withdrawal">Retraits</option>
-                        <option value="loan_eligibility">Crédit / Éligibilité</option>
-                        <option value="status_change">Changement Statut</option>
-                      </select>
-                   </div>
-
-                   <div className="relative">
-                      <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <select 
-                        value={transactionFilterStatus}
-                        onChange={(e) => {
-                          setTransactionFilterStatus(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                      >
-                        <option value="all">Tous les statuts</option>
-                        <option value="success">Succès</option>
-                        <option value="pending">En attente</option> {/* Added pending status */}
-                        <option value="failed">Échec</option>
-                      </select>
-                   </div>
-
-                   {/* New Timeframe Filter */}
-                   <div className="relative">
-                      <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <select 
-                        value={transactionFilterTimeframe}
-                        onChange={(e) => {
-                          setTransactionFilterTimeframe(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                      >
-                        <option value="all">Toutes les périodes</option>
-                        <option value="day">Aujourd'hui</option>
-                        <option value="week">Cette semaine</option>
-                        <option value="month">Ce mois</option>
-                        <option value="year">Cette année</option>
-                      </select>
-                   </div>
-                 </div>
-               </div>
-
-               <div className="overflow-x-auto">
-                 <table className="min-w-full divide-y divide-gray-200">
-                   <thead className="bg-gray-50">
-                     <tr>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaction</th> {/* New */}
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Client</th> {/* New */}
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Moyen de Paiement</th> {/* New column */}
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Détails/Raison</th>
-                     </tr>
-                   </thead>
-                   <tbody className="bg-white divide-y divide-gray-200">
-                     {currentTransactionsHistory.map((tx) => (
-                       <tr key={tx.id} className="hover:bg-gray-50">
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.id}</span>
-                         </td> {/* New */}
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.userId}</span>
-                         </td> {/* New */}
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                           {tx.type === 'deposit' && (
-                             <div className="flex items-center gap-2 text-green-600">
-                               <ArrowUpRight className="h-4 w-4" />
-                               <span>Dépôt</span>
-                             </div>
-                           )}
-                           {tx.type === 'withdrawal' && (
-                             <div className="flex items-center gap-2 text-orange-600">
-                               <ArrowDownLeft className="h-4 w-4" />
-                               <span>Retrait</span>
-                             </div>
-                           )}
-                           {tx.type === 'loan_eligibility' && (
-                             <div className="flex items-center gap-2 text-blue-600">
-                               <Shield className="h-4 w-4" />
-                               <span>Éligibilité</span>
-                             </div>
-                           )}
-                           {tx.type === 'status_change' && (
-                             <div className="flex items-center gap-2 text-purple-600">
-                               <RefreshCcw className="h-4 w-4" />
-                               <span>Statut</span>
-                             </div>
-                           )}
-                         </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{tx.paymentMethod || 'N/A'}</td> {/* Display payment method */}
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                           {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
-                         </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                           {tx.status === 'success' ? (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                               <CheckCircle className="h-3 w-3" /> Succès
-                             </span>
-                           ) : tx.status === 'pending' ? (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                               <AlertCircle className="h-3 w-3" /> En attente
-                             </span>
-                           ) : (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                               <XCircle className="h-3 w-3" /> Échec
-                             </span>
-                           )}
-                         </td>
-                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
-                           {tx.reason ? (
-                             <span className={`flex items-center gap-1 ${tx.status === 'failed' ? 'text-red-500' : 'text-gray-500'}`}>
-                               {tx.status === 'failed' ? <AlertCircle className="h-3 w-3 flex-shrink-0" /> : <FileText className="h-3 w-3 flex-shrink-0" />} 
-                               {tx.reason}
-                             </span>
-                           ) : '-'}
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-               </div>
-               
-               {/* Pagination Controls for Transactions */}
-               {filteredTransactionsHistory.length > 0 && (
-                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                       <div>
-                          <p className="text-sm text-gray-700">
-                             Affichage de <span className="font-medium">{(transactionCurrentPage - 1) * transactionsPerPage + 1}</span> à <span className="font-medium">{Math.min(transactionCurrentPage * transactionsPerPage, filteredTransactionsHistory.length)}</span> sur <span className="font-medium">{filteredTransactionsHistory.length}</span> résultats
-                          </p>
-                       </div>
-                       <div>
-                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                             <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsHistoryPages)}
-                                disabled={transactionCurrentPage === 1}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Précédent</span>
-                                <ChevronLeft className="h-5 w-5" />
-                             </button>
-                             
-                             {/* Generate Page Numbers */}
-                             {Array.from({ length: totalTransactionsHistoryPages }, (_, i) => i + 1).map((number) => (
-                               <button
-                                  key={number}
-                                  onClick={() => handleTransactionPageChange(number, totalTransactionsHistoryPages)}
-                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                    transactionCurrentPage === number
-                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
-                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                  }`}
-                               >
-                                  {number}
-                               </button>
-                             ))}
-
-                             <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsHistoryPages)}
-                                disabled={transactionCurrentPage === totalTransactionsHistoryPages}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionsHistoryPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Suivant</span>
-                                <ChevronRight className="h-5 w-5" />
-                             </button>
-                          </nav>
-                       </div>
-                    </div>
-                    {/* Mobile Pagination simplified */}
-                    <div className="flex items-center justify-between w-full sm:hidden">
-                       <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsHistoryPages)}
-                          disabled={transactionCurrentPage === 1}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Précédent
-                       </button>
-                       <span className="text-sm text-gray-700">
-                          Page {transactionCurrentPage} / {totalTransactionsHistoryPages}
-                       </span>
-                       <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsHistoryPages)}
-                          disabled={transactionCurrentPage === totalTransactionsHistoryPages}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionsHistoryPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Suivant
-                       </button>
-                    </div>
-                 </div>
-               )}
-            </div>
-          </div>
-        );
-
-      case 'transaction_management':
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Gestion des Transactions</h2>
-            <p className="text-gray-500 text-sm">Validez, mettez en attente ou rejetez les transactions en attente de révision.</p>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-               {/* Filters/Header */}
-               <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
-                 <div className="flex justify-between items-center">
-                   <h3 className="text-lg font-semibold text-gray-800">Transactions à Gérer</h3>
-                   <span className="text-sm text-gray-500">{filteredTransactionsToManage.length} résultats</span>
-                 </div>
-                 
-                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                   <div className="relative">
-                      <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input 
-                        type="text" 
-                        placeholder="Rechercher (Nom, ID Transaction, ID Client)..." 
-                        value={transactionSearch}
-                        onChange={(e) => {
-                          setTransactionSearch(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on search
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
-                      />
-                   </div>
-                   
-                   <div className="relative">
-                      <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <select 
-                        value={transactionFilterType}
-                        onChange={(e) => {
-                          setTransactionFilterType(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                      >
-                        <option value="all">Tous les types</option>
-                        <option value="deposit">Dépôts</option>
-                        <option value="withdrawal">Retraits</option>
-                        <option value="loan_eligibility">Crédit / Éligibilité</option>
-                        <option value="status_change">Changement Statut</option>
-                      </select>
-                   </div>
-
-                   <div className="relative">
-                      <Zap className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <select 
-                        value={transactionFilterStatus}
-                        onChange={(e) => {
-                          setTransactionFilterStatus(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                      >
-                        <option value="all">Tous les statuts</option>
-                        <option value="success">Succès</option>
-                        <option value="pending">En attente</option>
-                        <option value="failed">Échec</option>
-                      </select>
-                   </div>
-
-                   {/* New Timeframe Filter */}
-                   <div className="relative">
-                      <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <select 
-                        value={transactionFilterTimeframe}
-                        onChange={(e) => {
-                          setTransactionFilterTimeframe(e.target.value);
-                          setTransactionCurrentPage(1); // Reset to page 1 on filter change
-                        }}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                      >
-                        <option value="all">Toutes les périodes</option>
-                        <option value="day">Aujourd'hui</option>
-                        <option value="week">Cette semaine</option>
-                        <option value="month">Ce mois</option>
-                        <option value="year">Cette année</option>
-                      </select>
-                   </div>
-                 </div>
-               </div>
-
-               <div className="overflow-x-auto">
-                 <table className="min-w-full divide-y divide-gray-200">
-                   <thead className="bg-gray-50">
-                     <tr>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaction</th> {/* New */}
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Client</th> {/* New */}
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Moyen de Paiement</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
-                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                     </tr>
-                   </thead>
-                   <tbody className="bg-white divide-y divide-gray-200">
-                     {currentTransactionsToManage.map((tx) => (
-                       <tr key={tx.id} className="hover:bg-gray-50">
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.id}</span>
-                         </td> {/* New */}
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.userId}</span>
-                         </td> {/* New */}
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                           {tx.type === 'deposit' && (
-                             <div className="flex items-center gap-2 text-green-600">
-                               <ArrowUpRight className="h-4 w-4" />
-                               <span>Dépôt</span>
-                             </div>
-                           )}
-                           {tx.type === 'withdrawal' && (
-                             <div className="flex items-center gap-2 text-orange-600">
-                               <ArrowDownLeft className="h-4 w-4" />
-                               <span>Retrait</span>
-                             </div>
-                           )}
-                           {tx.type === 'loan_eligibility' && (
-                             <div className="flex items-center gap-2 text-blue-600">
-                               <Shield className="h-4 w-4" />
-                               <span>Éligibilité</span>
-                             </div>
-                           )}
-                           {tx.type === 'status_change' && (
-                             <div className="flex items-center gap-2 text-purple-600">
-                               <RefreshCcw className="h-4 w-4" />
-                               <span>Statut</span>
-                             </div>
-                           )}
-                         </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{tx.paymentMethod || 'N/A'}</td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                           {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
-                         </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                           {tx.status === 'success' ? (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                               <CheckCircle className="h-3 w-3" /> Succès
-                             </span>
-                           ) : tx.status === 'pending' ? (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                               <AlertCircle className="h-3 w-3" /> En attente
-                             </span>
-                           ) : (
-                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                               <XCircle className="h-3 w-3" /> Échec
-                             </span>
-                           )}
-                         </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
-                           {tx.status === 'pending' && (
-                             <>
-                               <button 
-                                 onClick={() => openTransactionStatusUpdateModal(tx, 'success')}
-                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 border border-green-200"
-                                 title="Valider la transaction"
-                               >
-                                 <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Valider
-                               </button>
-                               <button 
-                                 onClick={() => openTransactionStatusUpdateModal(tx, 'failed')}
-                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
-                                 title="Rejeter la transaction"
-                               >
-                                 <XCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Rejeter
-                               </button>
-                             </>
-                           )}
-                           {tx.status !== 'pending' && (
-                             <button 
-                               onClick={() => openTransactionStatusUpdateModal(tx, 'pending')}
-                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border border-yellow-200"
-                               title="Mettre en attente"
-                             >
-                               <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" /> En attente
-                             </button>
-                           )}
-                         </td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-               </div>
-               
-               {/* Pagination Controls for Transactions */}
-               {filteredTransactionsToManage.length > 0 && (
-                 <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                       <div>
-                          <p className="text-sm text-gray-700">
-                             Affichage de <span className="font-medium">{(transactionCurrentPage - 1) * transactionsPerPage + 1}</span> à <span className="font-medium">{Math.min(transactionCurrentPage * transactionsPerPage, filteredTransactionsToManage.length)}</span> sur <span className="font-medium">{filteredTransactionsToManage.length}</span> résultats
-                          </p>
-                       </div>
-                       <div>
-                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                             <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsToManagePages)}
-                                disabled={transactionCurrentPage === 1}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Précédent</span>
-                                <ChevronLeft className="h-5 w-5" />
-                             </button>
-                             
-                             {/* Generate Page Numbers */}
-                             {Array.from({ length: totalTransactionsToManagePages }, (_, i) => i + 1).map((number) => (
-                               <button
-                                  key={number}
-                                  onClick={() => handleTransactionPageChange(number, totalTransactionsToManagePages)}
-                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                    transactionCurrentPage === number
-                                      ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
-                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                  }`}
-                               >
-                                  {number}
-                               </button>
-                             ))}
-
-                             <button
-                                onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsToManagePages)}
-                                disabled={transactionCurrentPage === totalTransactionsToManagePages}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${transactionCurrentPage === totalTransactionsToManagePages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                             >
-                                <span className="sr-only">Suivant</span>
-                                <ChevronRight className="h-5 w-5" />
-                             </button>
-                          </nav>
-                       </div>
-                    </div>
-                    {/* Mobile Pagination simplified */}
-                    <div className="flex items-center justify-between w-full sm:hidden">
-                       <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage - 1, totalTransactionsToManagePages)}
-                          disabled={transactionCurrentPage === 1}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Précédent
-                       </button>
-                       <span className="text-sm text-gray-700">
-                          Page {transactionCurrentPage} / {totalTransactionsToManagePages}
-                       </span>
-                       <button
-                          onClick={() => handleTransactionPageChange(transactionCurrentPage + 1, totalTransactionsToManagePages)}
-                          disabled={transactionCurrentPage === totalTransactionsToManagePages}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${transactionCurrentPage === totalTransactionsToManagePages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                       >
-                          Suivant
-                       </button>
-                    </div>
-                 </div>
-               )}
-            </div>
-          </div>
-        );
-
-      case 'penalties':
-        return (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-gray-800">Gestion des Pénalités</h2>
-            <p className="text-gray-500 text-sm">Suivez et gérez les pénalités des clients pour non-paiement de tontine ou non-remboursement de crédit.</p>
-
-            {/* The "Add Penalty Form" is removed from here */}
-
-            {/* Penalties List */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-6 py-6 border-b border-gray-100 flex flex-col gap-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-800">Liste des Pénalités</h3>
-                  <span className="text-sm text-gray-500">{filteredPenalties.length} résultats</span>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="relative">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Rechercher (Nom, ID, Raison)..." 
-                      value={penaltySearchTerm}
-                      onChange={(e) => {
-                        setPenaltySearchTerm(e.target.value);
-                        setPenaltyCurrentPage(1); // Reset to page 1 on search
-                      }}
-                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent" 
-                    />
-                  </div>
-                  
-                  <div className="relative">
-                    <Filter className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <select 
-                      value={penaltyFilterStatus}
-                      onChange={(e) => {
-                        setPenaltyFilterStatus(e.target.value);
-                        setPenaltyCurrentPage(1); // Reset to page 1 on filter change
-                      }}
-                      className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent appearance-none bg-white"
-                    >
-                      <option value="all">Tous les statuts</option>
-                      <option value="active">Active</option>
-                      <option value="resolved">Résolue</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pénalité</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client (Nom & ID)</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raison</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentPenalties.length > 0 ? (
-                      currentPenalties.map((penalty) => (
-                        <tr key={penalty.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{penalty.id}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{penalty.userFullName}</div>
-                            <div className="text-xs text-gray-500">ID: {penalty.userId}</div>
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{penalty.reason}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-600">{penalty.amount.toLocaleString()} FCFA</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{penalty.date}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {penalty.status === 'active' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <AlertCircle className="h-3 w-3" /> Active
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3" /> Résolue
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
-                            {penalty.status === 'active' && (
-                              <button 
-                                onClick={() => handleResolvePenalty(penalty.id, penalty.userFullName)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200 border border-green-200"
-                                title="Marquer comme résolue"
-                              >
-                                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" /> Résoudre
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => {
-                                const user = users.find(u => u.id === penalty.userId);
-                                if (user) {
-                                  openUserDetailModal(user);
-                                } else {
-                                  alert("Client non trouvé.");
-                                }
-                              }}
-                              className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-200 transition-colors shadow-sm text-xs sm:text-sm font-medium border border-gray-200"
-                              title="Voir les détails du client"
-                            >
-                              <Eye className="h-3 w-3 sm:h-4 sm:w-4" /> Voir Client
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="px-6 py-10 text-center text-gray-500">
-                          Aucune pénalité trouvée.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              
-              {/* Pagination Controls for Penalties */}
-              {filteredPenalties.length > 0 && (
-                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                      <div>
-                         <p className="text-sm text-gray-700">
-                            Affichage de <span className="font-medium">{(penaltyCurrentPage - 1) * penaltiesPerPage + 1}</span> à <span className="font-medium">{Math.min(penaltyCurrentPage * penaltiesPerPage, filteredPenalties.length)}</span> sur <span className="font-medium">{filteredPenalties.length}</span> résultats
-                         </p>
-                      </div>
-                      <div>
-                         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            <button
-                               onClick={() => handlePenaltyPageChange(penaltyCurrentPage - 1, totalPenaltyPages)}
-                               disabled={penaltyCurrentPage === 1}
-                               className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${penaltyCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                            >
-                               <span className="sr-only">Précédent</span>
-                               <ChevronLeft className="h-5 w-5" />
-                            </button>
-                            
-                            {/* Generate Page Numbers */}
-                            {Array.from({ length: totalPenaltyPages }, (_, i) => i + 1).map((number) => (
-                              <button
-                                 key={number}
-                                 onClick={() => handlePenaltyPageChange(number, totalPenaltyPages)}
-                                 className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                   penaltyCurrentPage === number
-                                     ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
-                                     : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                 }`}
-                              >
-                                 {number}
-                              </button>
-                            ))}
-
-                            <button
-                               onClick={() => handlePenaltyPageChange(penaltyCurrentPage + 1, totalPenaltyPages)}
-                               disabled={penaltyCurrentPage === totalPenaltyPages}
-                               className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${penaltyCurrentPage === totalPenaltyPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                            >
-                               <span className="sr-only">Suivant</span>
-                               <ChevronRight className="h-5 w-5" />
-                            </button>
-                         </nav>
-                      </div>
-                   </div>
-                   {/* Mobile Pagination simplified */}
-                   <div className="flex items-center justify-between w-full sm:hidden">
-                      <button
-                         onClick={() => handlePenaltyPageChange(penaltyCurrentPage - 1, totalPenaltyPages)}
-                         disabled={penaltyCurrentPage === 1}
-                         className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${penaltyCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                         Précédent
-                      </button>
-                      <span className="text-sm text-gray-700">
-                         Page {penaltyCurrentPage} / {totalPenaltyPages}
-                      </span>
-                      <button
-                         onClick={() => handlePenaltyPageChange(penaltyCurrentPage + 1, totalPenaltyPages)}
-                         disabled={penaltyCurrentPage === totalPenaltyPages}
-                         className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${penaltyCurrentPage === totalPenaltyPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                         Suivant
-                      </button>
-                   </div>
-                </div>
-              )}
             </div>
           </div>
         );

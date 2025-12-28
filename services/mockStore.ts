@@ -16,7 +16,8 @@ let users: User[] = [
     kycStatus: 'verified',
     kycSubmissionDate: '2023-10-05',
     kycVerifiedDate: '2023-10-06',
-    penalties: []
+    penalties: [],
+    hasBenefitedFromTontine: false // Initialisé à false
   },
   { 
     id: 'US9382Y2', 
@@ -33,7 +34,8 @@ let users: User[] = [
     kycSubmissionDate: '2024-03-25',
     penalties: [
       { id: 'PEN-001', userId: 'US9382Y2', userFullName: 'Marie Koné', reason: 'Non-paiement tontine (cycle Fév)', amount: 5000, date: '2024-02-28', status: 'active' }
-    ]
+    ],
+    hasBenefitedFromTontine: true // Exemple : Marie a déjà bénéficié
   },
   { 
     id: 'US1129Z3', 
@@ -47,7 +49,8 @@ let users: User[] = [
     status: 'active',
     loanEligible: true,
     kycStatus: 'not_submitted',
-    penalties: []
+    penalties: [],
+    hasBenefitedFromTontine: false
   },
   // Données supplémentaires pour la pagination
   { 
@@ -66,7 +69,8 @@ let users: User[] = [
     kycVerifiedDate: '2024-03-21',
     penalties: [
       { id: 'PEN-002', userId: 'US4455A4', userFullName: 'Awa Sanogo', reason: 'Retard remboursement micro-crédit', amount: 10000, date: '2024-03-15', status: 'active' }
-    ]
+    ],
+    hasBenefitedFromTontine: false
   },
   { 
     id: 'US5566B5', 
@@ -80,7 +84,8 @@ let users: User[] = [
     status: 'active',
     loanEligible: false,
     kycStatus: 'not_submitted',
-    penalties: []
+    penalties: [],
+    hasBenefitedFromTontine: false
   },
   { 
     id: 'US6677C6', 
@@ -96,7 +101,8 @@ let users: User[] = [
     kycStatus: 'verified',
     kycSubmissionDate: '2024-03-02',
     kycVerifiedDate: '2024-03-03',
-    penalties: []
+    penalties: [],
+    hasBenefitedFromTontine: false
   },
   { 
     id: 'US7788D7', 
@@ -111,7 +117,8 @@ let users: User[] = [
     loanEligible: true,
     kycStatus: 'pending',
     kycSubmissionDate: '2024-03-28',
-    penalties: []
+    penalties: [],
+    hasBenefitedFromTontine: false
   },
 ];
 
@@ -274,7 +281,7 @@ export const MockService = {
   getUserTransactions: (userId: string) => {
     return transactions.filter(t => t.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
   },
-  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus' | 'status' | 'penalties'>) => {
+  addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus' | 'status' | 'penalties' | 'hasBenefitedFromTontine'>) => {
     // Generate 8 character ID uppercase
     const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
     
@@ -288,7 +295,8 @@ export const MockService = {
       phoneNumber: 'Non renseigné',
       loanEligible: false,
       kycStatus: 'not_submitted', // Default KYC status for new users
-      penalties: [] // New users start with no penalties
+      penalties: [], // New users start with no penalties
+      hasBenefitedFromTontine: false // Default for new users
     };
     users = [...users, newUser];
     return newUser;
@@ -419,6 +427,16 @@ export const MockService = {
     return groups.length < initialLength;
   },
 
+  // New: Toggle tontine beneficiary status
+  toggleTontineBeneficiaryStatus: (userId: string) => {
+    const userIndex = users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      users[userIndex].hasBenefitedFromTontine = !users[userIndex].hasBenefitedFromTontine;
+      return true;
+    }
+    return false;
+  },
+
   // Chat Logic
   getGroupMessages: (groupId: string) => {
     return messages.filter(m => m.groupId === groupId).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
@@ -480,7 +498,7 @@ export const MockService = {
             reason: `Pénalité résolue automatiquement: ${p.reason}`,
             paymentMethod: 'N/A'
           };
-          transactions = [penaltyResolutionTx, ...transactions];
+          transactions = [...transactions, penaltyResolutionTx]; // Add to transactions
         });
       }
       // --- END NEW LOGIC ---
