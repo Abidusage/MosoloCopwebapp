@@ -2818,11 +2818,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Temporary Debug Indicator */}
-      <div className="fixed top-4 right-4 bg-gray-800 text-white text-xs px-3 py-1 rounded-full z-[9999]">
-        Current View: {currentView}
-      </div>
-
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div 
