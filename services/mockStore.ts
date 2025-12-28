@@ -638,8 +638,8 @@ export const MockService = {
 
   // KYC Logic
   getKYCSubmissions: () => {
-    // Return users who have submitted KYC (status is not 'not_submitted')
-    return users.filter(u => u.kycStatus !== 'not_submitted');
+    // Return ALL users, filtering will be done in the component
+    return [...users];
   },
 
   getKYCDocumentsForUser: (userId: string) => {
