@@ -94,12 +94,9 @@ const Dashboard: React.FC = () => {
   const [isConfirmDeleteGroupModalOpen, setIsConfirmDeleteGroupModalOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
 
-  // Group Members Pagination, Search & Sort
+  // Group Members Pagination
   const [groupMembersCurrentPage, setGroupMembersCurrentPage] = useState(1);
   const [groupMembersPerPage] = useState(5);
-  const [groupMemberSearchTerm, setGroupMemberSearchTerm] = useState('');
-  const [groupMemberSortKey, setGroupMemberSortKey] = useState<keyof User>('fullName'); // Default sort by full name
-  const [groupMemberSortDirection, setGroupMemberSortDirection] = useState<'asc' | 'desc'>('asc');
 
 
   // Form States
@@ -313,9 +310,6 @@ const Dashboard: React.FC = () => {
     setPenaltySearchTerm('');
     setPenaltyFilterStatus('all');
     setGroupMembersCurrentPage(1); // Reset pagination for group members
-    setGroupMemberSearchTerm(''); // Reset group member search
-    setGroupMemberSortKey('fullName'); // Reset group member sort
-    setGroupMemberSortDirection('asc'); // Reset group member sort direction
   };
 
   const openDepositModal = (user: User) => {
@@ -394,9 +388,6 @@ const Dashboard: React.FC = () => {
       targetAmount: group.targetAmount
     });
     setGroupMembersCurrentPage(1); // Reset pagination for group members when viewing a new group
-    setGroupMemberSearchTerm(''); // Reset search term for group members
-    setGroupMemberSortKey('fullName'); // Reset sort key
-    setGroupMemberSortDirection('asc'); // Reset sort direction
   };
 
   const handleBackToGroups = () => {
@@ -801,49 +792,14 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Function to get paginated group members with search and sort
-  const getPaginatedGroupMembers = (allMembers: User[], currentPage: number, itemsPerPage: number, searchTerm: string, sortKey: keyof User, sortDirection: 'asc' | 'desc') => {
-    // 1. Filter
-    const filtered = allMembers.filter(member =>
-        member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.id.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // 2. Sort
-    const sorted = [...filtered].sort((a, b) => {
-        const aValue = a[sortKey];
-        const bValue = b[sortKey];
-
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-            return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-        }
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-            return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-        }
-        // Fallback for other types or if values are not comparable
-        return 0;
-    });
-
-    // 3. Paginate
+  // Function to get paginated group members
+  const getPaginatedGroupMembers = (allMembers: User[], currentPage: number, itemsPerPage: number) => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = sorted.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(sorted.length / itemsPerPage);
-
-    return { filtered: sorted, currentItems, totalPages };
+    const currentItems = allMembers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(allMembers.length / itemsPerPage);
+    return { currentItems, totalPages };
   };
-
-  // Handle sort click for group members
-  const handleSortGroupMembers = (key: keyof User) => {
-      if (groupMemberSortKey === key) {
-          setGroupMemberSortDirection(groupMemberSortDirection === 'asc' ? 'desc' : 'asc');
-      } else {
-          setGroupMemberSortKey(key);
-          setGroupMemberSortDirection('asc');
-      }
-  };
-
 
   const renderContent = () => {
     // These need to be inside renderContent to be in scope for the pagination controls
@@ -851,8 +807,8 @@ const Dashboard: React.FC = () => {
     const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch, transactionFilterTimeframe);
     const { filtered: filteredPenalties, currentItems: currentPenalties, totalPages: totalPenaltyPages } = getPaginatedAndFilteredPenalties(penalties, penaltyFilterStatus, penaltySearchTerm);
 
-    // Group members pagination, search and sort
-    const { currentItems: paginatedGroupMembers, totalPages: totalGroupMembersPages } = getPaginatedGroupMembers(viewingGroupMembers, groupMembersCurrentPage, groupMembersPerPage, groupMemberSearchTerm, groupMemberSortKey, groupMemberSortDirection);
+    // Group members pagination
+    const { currentItems: paginatedGroupMembers, totalPages: totalGroupMembersPages } = getPaginatedGroupMembers(viewingGroupMembers, groupMembersCurrentPage, groupMembersPerPage);
 
 
     switch(currentView) {
@@ -1868,18 +1824,6 @@ const Dashboard: React.FC = () => {
       case 'groups':
         // Detail View
         if (viewingGroup) {
-          // Filter transactions for current group members
-          const groupMemberIds = viewingGroupMembers.map(member => member.id);
-          const groupTransactions = transactions.filter(tx => groupMemberIds.includes(tx.userId));
-
-          // Determine next and last beneficiaries
-          const pendingMembers = viewingGroupMembers.filter(member => !member.hasBenefitedFromTontine);
-          const sortedPendingMembers = [...pendingMembers].sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
-          
-          const nextBeneficiary = sortedPendingMembers.length > 0 ? sortedPendingMembers[0] : null;
-          const lastBeneficiary = sortedPendingMembers.length > 0 ? sortedPendingMembers[sortedPendingMembers.length - 1] : null;
-
-
           return (
             <div className="space-y-8 animate-in slide-in-from-right duration-300">
               <div className="flex items-center justify-between gap-4">
@@ -1997,48 +1941,25 @@ const Dashboard: React.FC = () => {
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                          <Users className="h-5 w-5" /> Membres du groupe ({viewingGroupMembers.length})
                       </h3>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="relative">
-                          <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                          <input 
-                              type="text" 
-                              placeholder="Rechercher un membre..." 
-                              value={groupMemberSearchTerm}
-                              onChange={(e) => {
-                                setGroupMemberSearchTerm(e.target.value);
-                                setGroupMembersCurrentPage(1); // Reset to page 1 on search
-                              }}
-                              className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-gray-500" 
-                          />
-                        </div>
-                        <button 
-                            onClick={() => openAddMemberModal(viewingGroup)}
-                            className="flex items-center justify-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
-                          >
-                            <UserPlus className="h-4 w-4" />
-                            Ajouter un membre
-                          </button>
-                      </div>
+                      <button 
+                          onClick={() => openAddMemberModal(viewingGroup)}
+                          className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Ajouter un membre
+                        </button>
                     </div>
                     <div className="overflow-x-auto">
                       {paginatedGroupMembers.length > 0 ? (
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th 
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                onClick={() => handleSortGroupMembers('fullName')}
-                              >
-                                Nom du Client {groupMemberSortKey === 'fullName' && (groupMemberSortDirection === 'asc' ? '▲' : '▼')}
-                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom du Client</th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                              <th 
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                onClick={() => handleSortGroupMembers('joinedDate')}
-                              >
-                                Date d'ajout {groupMemberSortKey === 'joinedDate' && (groupMemberSortDirection === 'asc' ? '▲' : '▼')}
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut Tontine</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'ajout</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière Contribution</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant Total du Groupe</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Bénéfice Tontine</th>
                               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                           </thead>
@@ -2051,10 +1972,7 @@ const Dashboard: React.FC = () => {
                                         {user.fullName.charAt(0)}
                                       </div>
                                       <div>
-                                        <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                                          {user.fullName}
-                                          {user.hasBenefitedFromTontine && <CheckCircle className="h-4 w-4 text-green-500" title="A déjà bénéficié de la tontine" />}
-                                        </div>
+                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
                                       </div>
                                     </div>
                                 </td>
@@ -2062,16 +1980,15 @@ const Dashboard: React.FC = () => {
                                   <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{user.id}</span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  {user.hasBenefitedFromTontine ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      <CheckCircle className="h-3 w-3" /> Bénéficié
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                      <AlertCircle className="h-3 w-3" /> En attente
-                                    </span>
-                                  )}
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {/* Mock last contribution date */}
+                                  {new Date().toISOString().split('T')[0]}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                  {viewingGroup?.targetAmount.toLocaleString()} FCFA
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {user.hasBenefitedFromTontine ? '2024-05-15' : 'N/A'} {/* Mock benefit date */}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   <button
@@ -2173,111 +2090,6 @@ const Dashboard: React.FC = () => {
                       </div>
                     )}
                  </div>
-              </div>
-
-              {/* Next and Last Beneficiary Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <ArrowRight className="h-5 w-5 text-blue-600" /> Prochain Bénéficiaire
-                  </h3>
-                  {nextBeneficiary ? (
-                    <div className="flex items-center gap-4 bg-blue-50 p-4 rounded-lg">
-                      <div className="h-12 w-12 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold">
-                        {nextBeneficiary.fullName.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-blue-800">{nextBeneficiary.fullName}</p>
-                        <p className="text-sm text-blue-600">Ajouté le: {nextBeneficiary.joinedDate}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">Tous les membres ont déjà bénéficié ou aucun membre en attente.</p>
-                  )}
-                </div>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <ArrowLeft className="h-5 w-5 text-purple-600" /> Dernier Bénéficiaire
-                  </h3>
-                  {lastBeneficiary ? (
-                    <div className="flex items-center gap-4 bg-purple-50 p-4 rounded-lg">
-                      <div className="h-12 w-12 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold">
-                        {lastBeneficiary.fullName.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-purple-800">{lastBeneficiary.fullName}</p>
-                        <p className="text-sm text-purple-600">Ajouté le: {lastBeneficiary.joinedDate}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">Aucun membre en attente pour déterminer le dernier bénéficiaire.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Group Payment History Table */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <History className="h-5 w-5" /> Historique des Paiements du Groupe
-                  </h3>
-                  <span className="text-sm text-gray-500">{groupTransactions.length} transactions</span>
-                </div>
-                <div className="overflow-x-auto">
-                  {groupTransactions.length > 0 ? (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Transaction</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {groupTransactions.map((tx) => (
-                          <tr key={tx.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{tx.id}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              {tx.type === 'deposit' && <span className="text-green-600">Dépôt</span>}
-                              {tx.type === 'withdrawal' && <span className="text-orange-600">Retrait</span>}
-                              {tx.type === 'loan_eligibility' && <span className="text-blue-600">Éligibilité Prêt</span>}
-                              {tx.type === 'status_change' && <span className="text-purple-600">Changement Statut</span>}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                              {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date.split(' ')[0]}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              {tx.status === 'success' ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  <CheckCircle className="h-3 w-3" /> Succès
-                                </span>
-                              ) : tx.status === 'pending' ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  <AlertCircle className="h-3 w-3" /> En attente
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  <XCircle className="h-3 w-3" /> Échec
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <div className="p-8 text-center text-gray-500">
-                      Aucune transaction enregistrée pour les membres de ce groupe.
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           );
