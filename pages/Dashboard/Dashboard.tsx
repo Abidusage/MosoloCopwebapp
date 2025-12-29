@@ -2119,7 +2119,17 @@ const Dashboard: React.FC = () => {
                                   )}
                                 </div>
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                              <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleGroupMemberSort('id')}
+                              >
+                                <div className="flex items-center gap-1">
+                                  ID
+                                  {groupMemberSortKey === 'id' && (
+                                    groupMemberSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                                  )}
+                                </div>
+                              </th>
                               <th 
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                 onClick={() => handleGroupMemberSort('joinedDate')}
@@ -2131,7 +2141,8 @@ const Dashboard: React.FC = () => {
                                   )}
                                 </div>
                               </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contribution Actuelle</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière Contribution</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant Total du Groupe</th>
                               <th 
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                 onClick={() => handleGroupMemberSort('hasBenefitedFromTontine')}
@@ -2166,9 +2177,12 @@ const Dashboard: React.FC = () => {
                                   <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{user.id}</span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {/* Mock last contribution date */}
+                                  {new Date().toISOString().split('T')[0]}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                  {/* Placeholder for current contribution. In a real app, this would be dynamic. */}
-                                  {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FCFA <span className="text-xs text-gray-500">(simulé)</span>
+                                  {viewingGroup?.targetAmount.toLocaleString()} FCFA
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                   {user.hasBenefitedFromTontine ? (
