@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -175,17 +175,30 @@ const Dashboard: React.FC = () => {
   const [penaltyCurrentPage, setPenaltyCurrentPage] = useState(1);
   const [penaltiesPerPage] = useState(10);
 
+  // Helper function to refresh all relevant data
+  const refreshAllRelevantData = useCallback(() => {
+    setUsers(MockService.getUsers());
+    setGroups(MockService.getGroups());
+    setTransactions(MockService.getTransactions());
+    setAgents(MockService.getAgents());
+    setPenalties(MockService.getPenalties());
+    setStats(MockService.getGlobalStats());
+    setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
+    setKycSubmissions(MockService.getKYCSubmissions());
+    setAdminDeposits(MockService.getAdminDeposits());
+    // If a group is being viewed, refresh its specific data
+    if (viewingGroup) {
+        const sortedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+        setViewingGroupMembers(sortedMembers);
+        setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
+    }
+  }, [viewingGroup]); // Only re-create if viewingGroup changes
 
   useEffect(() => {
     // Load initial data
     const currentAdminProfile = MockService.getAdminProfile();
-    setUsers(MockService.getUsers());
-    setGroups(MockService.getGroups());
-    setTransactions(MockService.getTransactions());
     setAdminProfile(currentAdminProfile);
     setSettings(MockService.getSystemSettings());
-    setAgents(MockService.getAgents());
-    setPenalties(MockService.getPenalties()); // Fetch penalties
     setProfileForm({
       fullName: currentAdminProfile.fullName,
       email: currentAdminProfile.email,
@@ -193,43 +206,38 @@ const Dashboard: React.FC = () => {
       address: currentAdminProfile.address,
       profilePictureUrl: currentAdminProfile.profilePictureUrl
     });
-    setStats(MockService.getGlobalStats());
-    setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
-    setKycSubmissions(MockService.getKYCSubmissions());
-    setAdminDeposits(MockService.getAdminDeposits()); // Fetch admin deposits
-  }, []);
+    refreshAllRelevantData(); // Initial load of all dynamic data
+  }, [refreshAllRelevantData]); // Depend on refreshAllRelevantData
 
   useEffect(() => {
-    // Refresh stats when transactions or users change
-    if(currentView === 'statistics' || currentView === 'overview') {
-      setStats(MockService.getGlobalStats());
-      setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
+    // This useEffect now only reacts to currentView and viewingGroup changes
+    // and performs specific actions, but doesn't re-fetch ALL data.
+    // Data modifications will call refreshAllRelevantData directly.
+
+    // When currentView changes, ensure relevant data for that view is fresh
+    // (though refreshAllRelevantData covers most of this, this is for specific view logic)
+    if (currentView === 'statistics' || currentView === 'overview') {
+        setStats(MockService.getGlobalStats());
+        setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
+    } else if (currentView === 'kyc') {
+        setKycSubmissions(MockService.getKYCSubmissions());
+    } else if (currentView === 'profile') {
+        setAdminDeposits(MockService.getAdminDeposits());
+    } else if (currentView === 'agents') {
+        setAgents(MockService.getAgents());
+    } else if (currentView === 'transaction_management' || currentView === 'transactions') {
+        setTransactions(MockService.getTransactions());
+    } else if (currentView === 'groups') {
+        setGroups(MockService.getGroups()); // Refresh groups list
+        if (viewingGroup) {
+            const sortedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+            setViewingGroupMembers(sortedMembers);
+            setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
+        }
+    } else if (currentView === 'penalties') {
+        setPenalties(MockService.getPenalties());
     }
-    if (currentView === 'kyc') {
-      setKycSubmissions(MockService.getKYCSubmissions());
-    }
-    if (currentView === 'profile') { // Refresh admin deposits when viewing profile
-      setAdminDeposits(MockService.getAdminDeposits());
-    }
-    if (currentView === 'agents') { // Refresh agents list when viewing agents
-      setAgents(MockService.getAgents());
-    }
-    if (currentView === 'transaction_management' || currentView === 'transactions') { // Refresh transactions for management view
-      setTransactions(MockService.getTransactions());
-    }
-    if (currentView === 'groups') { // Refresh groups when viewing groups
-      setGroups(MockService.getGroups());
-      if (viewingGroup) { // If a group is being viewed, refresh its members and messages
-        // Sort members by joinedDate for the new table
-        const sortedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
-        setViewingGroupMembers(sortedMembers);
-        setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
-      }
-    }
-    if (currentView === 'penalties') { // Refresh penalties when viewing penalties
-      setPenalties(MockService.getPenalties());
-    }
-  }, [currentView, transactions, users, agents, viewingGroup]); // Added penalties to dependency array
+  }, [currentView, viewingGroup]); // Dependencies are now just currentView and viewingGroup
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -243,8 +251,8 @@ const Dashboard: React.FC = () => {
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if(newUser.username && newUser.fullName) {
-      const created = MockService.addUser(newUser);
-      setUsers([...users, created]);
+      MockService.addUser(newUser);
+      refreshAllRelevantData(); // Refresh all relevant data
       setNewUser({ username: '', password: '', fullName: '', depositAmount: 0 });
       alert('Client créé avec succès!');
     }
@@ -253,8 +261,8 @@ const Dashboard: React.FC = () => {
   const handleCreateGroup = (e: React.FormEvent) => {
     e.preventDefault();
     if(newGroup.name) {
-      const created = MockService.addGroup(newGroup);
-      setGroups([...groups, created]);
+      MockService.addGroup(newGroup);
+      refreshAllRelevantData(); // Refresh all relevant data
       setNewGroup({ name: '', description: '', targetAmount: 0 });
       alert('Groupe créé avec succès!');
     }
@@ -312,11 +320,7 @@ const Dashboard: React.FC = () => {
     if (selectedUserForDeposit && amount > 0) {
       const success = MockService.makeDeposit(selectedUserForDeposit.id, amount, depositNote, depositPaymentMethod);
       if (success) {
-        // Refresh Data
-        setUsers(MockService.getUsers());
-        setTransactions(MockService.getTransactions()); // Refresh transaction history
-        setAdminDeposits(MockService.getAdminDeposits()); // Refresh admin deposits
-        setPenalties(MockService.getPenalties()); // Refresh penalties after potential auto-resolution
+        refreshAllRelevantData(); // Refresh all relevant data
         setIsDepositModalOpen(false);
         setSelectedUserForDeposit(null);
         setDepositAmount('');
@@ -340,14 +344,7 @@ const Dashboard: React.FC = () => {
     if (selectedGroupForMember && selectedMemberId) {
       const success = MockService.addMemberToGroup(selectedGroupForMember.id, selectedMemberId);
       if (success) {
-        setGroups(MockService.getGroups()); // Refresh groups to see updated count
-        
-        // If we are currently viewing this group, refresh the members list too
-        if (viewingGroup && viewingGroup.id === selectedGroupForMember.id) {
-           const sortedMembers = MockService.getGroupMembers(selectedGroupForMember.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
-           setViewingGroupMembers(sortedMembers);
-        }
-
+        refreshAllRelevantData(); // Refresh all relevant data
         setIsAddMemberModalOpen(false);
         setSelectedGroupForMember(null);
         setSelectedMemberId('');
@@ -364,11 +361,7 @@ const Dashboard: React.FC = () => {
     if (window.confirm(`Voulez-vous vraiment retirer ${userName} de ce groupe ?`)) {
       const success = MockService.removeMemberFromGroup(groupId, userId);
       if (success) {
-        setGroups(MockService.getGroups()); // Refresh groups to update member count
-        if (viewingGroup && viewingGroup.id === groupId) {
-          const sortedMembers = MockService.getGroupMembers(groupId).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
-          setViewingGroupMembers(sortedMembers); // Refresh members list
-        }
+        refreshAllRelevantData(); // Refresh all relevant data
         alert(`${userName} a été retiré du groupe.`);
       } else {
         alert("Erreur lors du retrait du membre.");
@@ -412,8 +405,9 @@ const Dashboard: React.FC = () => {
     if (viewingGroup && editingGroupForm.name && editingGroupForm.targetAmount) {
       const success = MockService.updateGroup(viewingGroup.id, editingGroupForm);
       if (success) {
-        setGroups(MockService.getGroups()); // Refresh groups list
-        setViewingGroup({ ...viewingGroup, ...editingGroupForm } as Group); // Update current viewing group
+        refreshAllRelevantData(); // Refresh all relevant data
+        // Update viewingGroup state directly to reflect changes immediately without full re-render of all groups
+        setViewingGroup({ ...viewingGroup, ...editingGroupForm } as Group);
         setIsEditGroupModalOpen(false);
         alert('Groupe mis à jour avec succès !');
       } else {
@@ -433,7 +427,7 @@ const Dashboard: React.FC = () => {
     if (groupToDelete) {
       const success = MockService.deleteGroup(groupToDelete.id);
       if (success) {
-        setGroups(MockService.getGroups()); // Refresh groups list
+        refreshAllRelevantData(); // Refresh all relevant data
         handleBackToGroups(); // Go back to the main groups list
         setIsConfirmDeleteGroupModalOpen(false);
         setGroupToDelete(null);
@@ -459,8 +453,8 @@ const Dashboard: React.FC = () => {
   const handleAddAgent = (e: React.FormEvent) => {
     e.preventDefault();
     if (newAgentForm.fullName && newAgentForm.email && newAgentForm.phone && newAgentForm.zone) {
-      const createdAgent = MockService.addAgent(newAgentForm);
-      setAgents([...agents, createdAgent]);
+      MockService.addAgent(newAgentForm);
+      refreshAllRelevantData(); // Refresh all relevant data
       setNewAgentForm({ fullName: '', email: '', phone: '', zone: '' });
       setIsAddAgentModalOpen(false);
       alert('Agent ajouté avec succès !');
@@ -474,7 +468,7 @@ const Dashboard: React.FC = () => {
     if (window.confirm(`Voulez-vous vraiment ${newStatus === 'inactive' ? 'suspendre' : 'activer'} l'agent ${agent.fullName} ?`)) {
       const success = MockService.toggleAgentStatus(agent.id);
       if (success) {
-        setAgents(MockService.getAgents()); // Refresh agents list
+        refreshAllRelevantData(); // Refresh all relevant data
         alert(`Statut de l'agent ${agent.fullName} mis à jour à "${newStatus}".`);
       } else {
         alert("Erreur lors de la mise à jour du statut de l'agent.");
@@ -527,10 +521,7 @@ const Dashboard: React.FC = () => {
   const toggleUserLoanEligibility = (user: User) => {
     if(window.confirm(`Voulez-vous ${user.loanEligible ? 'retirer' : 'accorder'} l'éligibilité au prêt pour ${user.fullName} ?`)) {
       MockService.toggleLoanEligibility(user.id);
-      setUsers(MockService.getUsers());
-      setTransactions(MockService.getTransactions()); // Refresh transaction history
-      // Refresh stats if we are on stats page (though we are likely on users page)
-      if (currentView === 'statistics') setStats(MockService.getGlobalStats());
+      refreshAllRelevantData(); // Refresh all relevant data
     }
   };
 
@@ -539,8 +530,7 @@ const Dashboard: React.FC = () => {
     if (window.confirm(`Voulez-vous vraiment ${newStatus === 'suspended' ? 'suspendre' : 'activer'} le compte de ${user.fullName} ?`)) {
       const success = MockService.toggleUserStatus(user.id);
       if (success) {
-        setUsers(MockService.getUsers()); // Refresh users list
-        setTransactions(MockService.getTransactions()); // Refresh transaction history
+        refreshAllRelevantData(); // Refresh all relevant data
         alert(`Statut du client ${user.fullName} mis à jour à "${newStatus}".`);
       } else {
         alert("Erreur lors de la mise à jour du statut du client.");
@@ -597,8 +587,7 @@ const Dashboard: React.FC = () => {
       const reason = status === 'rejected' ? kycRejectionReason : undefined;
       const success = MockService.updateKYCStatus(selectedUserForKYC.id, status, reason);
       if (success) {
-        setUsers(MockService.getUsers()); // Refresh users to update KYC status
-        setKycSubmissions(MockService.getKYCSubmissions()); // Refresh KYC list
+        refreshAllRelevantData(); // Refresh all relevant data
         setIsKYCDetailModalOpen(false);
         alert(`Statut KYC de ${selectedUserForKYC.fullName} mis à jour à "${status}".`);
       } else {
@@ -646,7 +635,7 @@ const Dashboard: React.FC = () => {
         transactionStatusReason.trim() === '' ? undefined : transactionStatusReason
       );
       if (success) {
-        setTransactions(MockService.getTransactions()); // Refresh transactions list
+        refreshAllRelevantData(); // Refresh all relevant data
         setIsTransactionStatusModalOpen(false);
         setSelectedTransactionForStatusUpdate(null);
         setNewTransactionStatus('');
@@ -732,7 +721,7 @@ const Dashboard: React.FC = () => {
     if (newPenaltyForm.userId && newPenaltyForm.reason && newPenaltyForm.amount > 0) {
       const addedPenalty = MockService.addPenalty(newPenaltyForm);
       if (addedPenalty) {
-        setPenalties(MockService.getPenalties()); // Refresh penalties list
+        refreshAllRelevantData(); // Refresh all relevant data
         setNewPenaltyForm({ userId: '', reason: '', amount: 0 });
         setIsAddPenaltyModalOpen(false);
         alert('Pénalité ajoutée avec succès !');
@@ -748,7 +737,7 @@ const Dashboard: React.FC = () => {
     if (window.confirm(`Voulez-vous vraiment résoudre la pénalité ${penaltyId} pour ${userFullName} ?`)) {
       const success = MockService.resolvePenalty(penaltyId, adminProfile?.fullName || 'Admin');
       if (success) {
-        setPenalties(MockService.getPenalties()); // Refresh penalties list
+        refreshAllRelevantData(); // Refresh all relevant data
         alert(`Pénalité ${penaltyId} pour ${userFullName} résolue avec succès !`);
       } else {
         alert('Erreur lors de la résolution de la pénalité.');
@@ -788,12 +777,7 @@ const Dashboard: React.FC = () => {
     if (window.confirm(`Voulez-vous vraiment marquer ${userFullName} comme ayant bénéficié de la tontine ?`)) {
       const success = MockService.toggleTontineBeneficiaryStatus(userId);
       if (success) {
-        setUsers(MockService.getUsers()); // Refresh users to update their status
-        // Re-fetch and re-sort group members to reflect the change
-        if (viewingGroup) {
-          const updatedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
-          setViewingGroupMembers(updatedMembers);
-        }
+        refreshAllRelevantData(); // Refresh all relevant data
         alert(`${userFullName} a été marqué comme bénéficiaire de la tontine.`);
       } else {
         alert("Erreur lors de la mise à jour du statut de bénéficiaire.");
@@ -1825,6 +1809,10 @@ const Dashboard: React.FC = () => {
           // Filter transactions for current group members
           const groupMemberIds = viewingGroupMembers.map(member => member.id);
           const groupTransactions = transactions.filter(tx => groupMemberIds.includes(tx.userId));
+
+          // Define benefitedMembers and pendingMembers here
+          const benefitedMembers = viewingGroupMembers.filter(member => member.hasBenefitedFromTontine);
+          const pendingMembers = viewingGroupMembers.filter(member => !member.hasBenefitedFromTontine);
 
           return (
             <div className="space-y-8 animate-in slide-in-from-right duration-300">
