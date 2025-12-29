@@ -104,6 +104,10 @@ const Dashboard: React.FC = () => {
   const [groupMemberSortKey, setGroupMemberSortKey] = useState<keyof User | null>('joinedDate');
   const [groupMemberSortDirection, setGroupMemberSortDirection] = useState<'asc' | 'desc'>('asc');
 
+  // Group List Sorting
+  const [groupListSortKey, setGroupListSortKey] = useState<keyof Group | null>('createdAt');
+  const [groupListSortDirection, setGroupListSortDirection] = useState<'asc' | 'desc'>('desc');
+
 
   // Form States
   const [newUser, setNewUser] = useState({ username: '', password: '', fullName: '', depositAmount: 0 });
@@ -355,6 +359,8 @@ const Dashboard: React.FC = () => {
     setGroupMemberSearchTerm(''); // Reset group member search
     setGroupMemberSortKey('joinedDate'); // Reset group member sort
     setGroupMemberSortDirection('asc'); // Reset group member sort direction
+    setGroupListSortKey('createdAt'); // Reset group list sort
+    setGroupListSortDirection('desc'); // Reset group list sort direction
   };
 
   const openDepositModal = (user: User) => {
@@ -904,6 +910,24 @@ const Dashboard: React.FC = () => {
     setGroupMembersCurrentPage(1); // Reset to first page on sort change
   };
 
+  // Function to sort the main groups list
+  const getSortedGroups = () => {
+    if (!groupListSortKey) return groups;
+
+    return [...groups].sort((a, b) => {
+      const aValue = a[groupListSortKey];
+      const bValue = b[groupListSortKey];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return groupListSortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return groupListSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      return 0;
+    });
+  };
+
 
   const renderContent = () => {
     // These need to be inside renderContent to be in scope for the pagination controls
@@ -922,6 +946,8 @@ const Dashboard: React.FC = () => {
     const nextBeneficiary = nonBenefitedMembers.length > 0 ? nonBenefitedMembers[0] : null;
     const secondBeneficiary = nonBenefitedMembers.length > 1 ? nonBenefitedMembers[1] : null;
     const lastBeneficiary = nonBenefitedMembers.length > 0 ? nonBenefitedMembers[nonBenefitedMembers.length - 1] : null;
+
+    const sortedGroups = getSortedGroups();
 
 
     switch(currentView) {
@@ -2359,12 +2385,32 @@ const Dashboard: React.FC = () => {
 
             {/* Groups List */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
+              <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h3 className="text-lg font-semibold text-gray-800">Groupes Actifs</h3>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="sort-groups" className="text-sm text-gray-600">Trier par:</label>
+                  <select
+                    id="sort-groups"
+                    value={groupListSortKey || ''}
+                    onChange={(e) => setGroupListSortKey(e.target.value as keyof Group)}
+                    className="p-2 border rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    <option value="createdAt">Date de création</option>
+                    <option value="name">Nom</option>
+                    <option value="memberCount">Membres</option>
+                    <option value="targetAmount">Montant Cible</option>
+                  </select>
+                  <button
+                    onClick={() => setGroupListSortDirection(groupListSortDirection === 'asc' ? 'desc' : 'asc')}
+                    className="p-2 border rounded-md bg-white text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    {groupListSortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                {groups.length > 0 ? (
-                  groups.map((group) => (
+                {sortedGroups.length > 0 ? (
+                  sortedGroups.map((group) => (
                     <div key={group.id} className="bg-gray-50 rounded-xl p-6 shadow-sm border border-gray-200 flex flex-col hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="p-3 bg-gray-200 rounded-lg">
