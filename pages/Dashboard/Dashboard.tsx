@@ -94,6 +94,10 @@ const Dashboard: React.FC = () => {
   const [isConfirmDeleteGroupModalOpen, setIsConfirmDeleteGroupModalOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
 
+  // Group Members Pagination
+  const [groupMembersCurrentPage, setGroupMembersCurrentPage] = useState(1);
+  const [groupMembersPerPage] = useState(5);
+
 
   // Form States
   const [newUser, setNewUser] = useState({ username: '', password: '', fullName: '', depositAmount: 0 });
@@ -233,6 +237,7 @@ const Dashboard: React.FC = () => {
             const sortedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
             setViewingGroupMembers(sortedMembers);
             setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
+            setGroupMembersCurrentPage(1); // Reset pagination for group members
         }
     } else if (currentView === 'penalties') {
         setPenalties(MockService.getPenalties());
@@ -304,6 +309,7 @@ const Dashboard: React.FC = () => {
     setPenaltyCurrentPage(1); // For penalties
     setPenaltySearchTerm('');
     setPenaltyFilterStatus('all');
+    setGroupMembersCurrentPage(1); // Reset pagination for group members
   };
 
   const openDepositModal = (user: User) => {
@@ -381,6 +387,7 @@ const Dashboard: React.FC = () => {
       description: group.description,
       targetAmount: group.targetAmount
     });
+    setGroupMembersCurrentPage(1); // Reset pagination for group members when viewing a new group
   };
 
   const handleBackToGroups = () => {
@@ -785,12 +792,23 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Function to get paginated group members
+  const getPaginatedGroupMembers = (allMembers: User[], currentPage: number, itemsPerPage: number) => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = allMembers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(allMembers.length / itemsPerPage);
+    return { currentItems, totalPages };
+  };
 
   const renderContent = () => {
     // These need to be inside renderContent to be in scope for the pagination controls
     const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch, transactionFilterTimeframe);
     const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch, transactionFilterTimeframe);
     const { filtered: filteredPenalties, currentItems: currentPenalties, totalPages: totalPenaltyPages } = getPaginatedAndFilteredPenalties(penalties, penaltyFilterStatus, penaltySearchTerm);
+
+    // Group members pagination
+    const { currentItems: paginatedGroupMembers, totalPages: totalGroupMembersPages } = getPaginatedGroupMembers(viewingGroupMembers, groupMembersCurrentPage, groupMembersPerPage);
 
 
     switch(currentView) {
@@ -1806,14 +1824,6 @@ const Dashboard: React.FC = () => {
       case 'groups':
         // Detail View
         if (viewingGroup) {
-          // Filter transactions for current group members
-          const groupMemberIds = viewingGroupMembers.map(member => member.id);
-          const groupTransactions = transactions.filter(tx => groupMemberIds.includes(tx.userId));
-
-          // Define benefitedMembers and pendingMembers here
-          const benefitedMembers = viewingGroupMembers.filter(member => member.hasBenefitedFromTontine);
-          const pendingMembers = viewingGroupMembers.filter(member => !member.hasBenefitedFromTontine);
-
           return (
             <div className="space-y-8 animate-in slide-in-from-right duration-300">
               <div className="flex items-center justify-between gap-4">
@@ -1923,6 +1933,162 @@ const Dashboard: React.FC = () => {
                         </button>
                       </form>
                     </div>
+                 </div>
+
+                 {/* Group Members Table */}
+                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                         <Users className="h-5 w-5" /> Membres du groupe ({viewingGroupMembers.length})
+                      </h3>
+                      <button 
+                          onClick={() => openAddMemberModal(viewingGroup)}
+                          className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Ajouter un membre
+                        </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                      {paginatedGroupMembers.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom du Client</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'ajout</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière Contribution</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant Total du Groupe</th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Bénéfice Tontine</th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {paginatedGroupMembers.map((user) => (
+                              <tr key={user.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold mr-3">
+                                        {user.fullName.charAt(0)}
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                                      </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{user.id}</span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {/* Mock last contribution date */}
+                                  {new Date().toISOString().split('T')[0]}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                  {viewingGroup?.targetAmount.toLocaleString()} FCFA
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {user.hasBenefitedFromTontine ? '2024-05-15' : 'N/A'} {/* Mock benefit date */}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                  <button
+                                    onClick={() => handleToggleTontineBeneficiary(user.id, user.fullName)}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium ${
+                                      user.hasBenefitedFromTontine 
+                                        ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-200' 
+                                        : 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                                    }`}
+                                    title={user.hasBenefitedFromTontine ? "Marquer comme en attente" : "Marquer comme bénéficiaire"}
+                                  >
+                                    {user.hasBenefitedFromTontine ? <RefreshCcw className="h-3 w-3 sm:h-4 sm:w-4" /> : <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />} 
+                                    {user.hasBenefitedFromTontine ? 'Annuler Bénéfice' : 'Marquer Bénéficiaire'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveMemberFromGroup(viewingGroup.id, user.id, user.fullName)}
+                                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors shadow-sm text-xs sm:text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
+                                    title="Retirer le membre"
+                                  >
+                                    <X className="h-3 w-3 sm:h-4 sm:w-4" /> Retirer
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="p-8 text-center text-gray-500">
+                          Aucun membre dans ce groupe pour le moment.
+                        </div>
+                      )}
+                    </div>
+                    {/* Pagination Controls for Group Members */}
+                    {viewingGroupMembers.length > 0 && (
+                      <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm text-gray-700">
+                                  Affichage de <span className="font-medium">{(groupMembersCurrentPage - 1) * groupMembersPerPage + 1}</span> à <span className="font-medium">{Math.min(groupMembersCurrentPage * groupMembersPerPage, viewingGroupMembers.length)}</span> sur <span className="font-medium">{viewingGroupMembers.length}</span> membres
+                                </p>
+                            </div>
+                            <div>
+                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                  <button
+                                      onClick={() => setGroupMembersCurrentPage(groupMembersCurrentPage - 1)}
+                                      disabled={groupMembersCurrentPage === 1}
+                                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${groupMembersCurrentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                                  >
+                                      <span className="sr-only">Précédent</span>
+                                      <ChevronLeft className="h-5 w-5" />
+                                  </button>
+                                  
+                                  {/* Generate Page Numbers */}
+                                  {Array.from({ length: totalGroupMembersPages }, (_, i) => i + 1).map((number) => (
+                                      <button
+                                        key={number}
+                                        onClick={() => setGroupMembersCurrentPage(number)}
+                                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                          groupMembersCurrentPage === number
+                                            ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
+                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                          {number}
+                                      </button>
+                                  ))}
+
+                                  <button
+                                      onClick={() => setGroupMembersCurrentPage(groupMembersCurrentPage + 1)}
+                                      disabled={groupMembersCurrentPage === totalGroupMembersPages}
+                                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${groupMembersCurrentPage === totalGroupMembersPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
+                                  >
+                                      <span className="sr-only">Suivant</span>
+                                      <ChevronRight className="h-5 w-5" />
+                                  </button>
+                                </nav>
+                            </div>
+                          </div>
+                          {/* Mobile Pagination simplified */}
+                          <div className="flex items-center justify-between w-full sm:hidden">
+                            <button
+                                onClick={() => setGroupMembersCurrentPage(groupMembersCurrentPage - 1)}
+                                disabled={groupMembersCurrentPage === 1}
+                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${groupMembersCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                Précédent
+                            </button>
+                            <span className="text-sm text-gray-700">
+                                Page {groupMembersCurrentPage} / {totalGroupMembersPages}
+                            </span>
+                            <button
+                                onClick={() => setGroupMembersCurrentPage(groupMembersCurrentPage + 1)}
+                                disabled={groupMembersCurrentPage === totalGroupMembersPages}
+                                className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${groupMembersCurrentPage === totalGroupMembersPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                Suivant
+                            </button>
+                          </div>
+                      </div>
+                    )}
                  </div>
               </div>
             </div>
