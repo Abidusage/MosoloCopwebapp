@@ -54,7 +54,10 @@ import {
   FileWarning, // Added for penalties icon
   KeyRound,
   Edit,
-  Trash2
+  Trash2,
+  Award, // Icon for tontine beneficiary
+  ArrowDown, // Icon for sort direction
+  ArrowUp
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, TransactionStatus, Penalty } from '../../types';
@@ -94,9 +97,12 @@ const Dashboard: React.FC = () => {
   const [isConfirmDeleteGroupModalOpen, setIsConfirmDeleteGroupModalOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
 
-  // Group Members Pagination
+  // Group Members Pagination & Search/Sort
   const [groupMembersCurrentPage, setGroupMembersCurrentPage] = useState(1);
   const [groupMembersPerPage] = useState(5);
+  const [groupMemberSearchTerm, setGroupMemberSearchTerm] = useState('');
+  const [groupMemberSortKey, setGroupMemberSortKey] = useState<keyof User | null>('joinedDate');
+  const [groupMemberSortDirection, setGroupMemberSortDirection] = useState<'asc' | 'desc'>('asc');
 
 
   // Form States
@@ -192,11 +198,29 @@ const Dashboard: React.FC = () => {
     setAdminDeposits(MockService.getAdminDeposits());
     // If a group is being viewed, refresh its specific data
     if (viewingGroup) {
-        const sortedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+        // Re-fetch and re-sort members for the current group
+        const currentGroupMembers = MockService.getGroupMembers(viewingGroup.id);
+        const sortedMembers = [...currentGroupMembers].sort((a, b) => {
+            if (groupMemberSortKey) {
+                const aValue = a[groupMemberSortKey];
+                const bValue = b[groupMemberSortKey];
+
+                if (typeof aValue === 'string' && typeof bValue === 'string') {
+                    return groupMemberSortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                }
+                if (typeof aValue === 'number' && typeof bValue === 'number') {
+                    return groupMemberSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+                }
+                if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+                    return groupMemberSortDirection === 'asc' ? (aValue === bValue ? 0 : aValue ? 1 : -1) : (aValue === bValue ? 0 : aValue ? -1 : 1);
+                }
+            }
+            return 0; // Default no sort
+        });
         setViewingGroupMembers(sortedMembers);
         setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
     }
-  }, [viewingGroup]); // Only re-create if viewingGroup changes
+  }, [viewingGroup, groupMemberSortKey, groupMemberSortDirection]); // Depend on viewingGroup and sort states
 
   useEffect(() => {
     // Load initial data
@@ -234,7 +258,25 @@ const Dashboard: React.FC = () => {
     } else if (currentView === 'groups') {
         setGroups(MockService.getGroups()); // Refresh groups list
         if (viewingGroup) {
-            const sortedMembers = MockService.getGroupMembers(viewingGroup.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+            // Re-fetch and re-sort members for the current group
+            const currentGroupMembers = MockService.getGroupMembers(viewingGroup.id);
+            const sortedMembers = [...currentGroupMembers].sort((a, b) => {
+                if (groupMemberSortKey) {
+                    const aValue = a[groupMemberSortKey];
+                    const bValue = b[groupMemberSortKey];
+
+                    if (typeof aValue === 'string' && typeof bValue === 'string') {
+                        return groupMemberSortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                    }
+                    if (typeof aValue === 'number' && typeof bValue === 'number') {
+                        return groupMemberSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+                    }
+                    if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+                        return groupMemberSortDirection === 'asc' ? (aValue === bValue ? 0 : aValue ? 1 : -1) : (aValue === bValue ? 0 : aValue ? -1 : 1);
+                    }
+                }
+                return 0; // Default no sort
+            });
             setViewingGroupMembers(sortedMembers);
             setGroupMessages(MockService.getGroupMessages(viewingGroup.id));
             setGroupMembersCurrentPage(1); // Reset pagination for group members
@@ -242,7 +284,7 @@ const Dashboard: React.FC = () => {
     } else if (currentView === 'penalties') {
         setPenalties(MockService.getPenalties());
     }
-  }, [currentView, viewingGroup]); // Dependencies are now just currentView and viewingGroup
+  }, [currentView, viewingGroup, groupMemberSortKey, groupMemberSortDirection]); // Dependencies are now just currentView and viewingGroup
 
   // Scroll to bottom of chat when messages change
   useEffect(() => {
@@ -310,6 +352,9 @@ const Dashboard: React.FC = () => {
     setPenaltySearchTerm('');
     setPenaltyFilterStatus('all');
     setGroupMembersCurrentPage(1); // Reset pagination for group members
+    setGroupMemberSearchTerm(''); // Reset group member search
+    setGroupMemberSortKey('joinedDate'); // Reset group member sort
+    setGroupMemberSortDirection('asc'); // Reset group member sort direction
   };
 
   const openDepositModal = (user: User) => {
@@ -378,8 +423,25 @@ const Dashboard: React.FC = () => {
   // Handle viewing group details
   const handleViewGroup = (group: Group) => {
     setViewingGroup(group);
-    // Sort members by joinedDate for the new table
-    const sortedMembers = MockService.getGroupMembers(group.id).sort((a, b) => a.joinedDate.localeCompare(b.joinedDate));
+    // Re-fetch and re-sort members for the current group
+    const currentGroupMembers = MockService.getGroupMembers(group.id);
+    const sortedMembers = [...currentGroupMembers].sort((a, b) => {
+        if (groupMemberSortKey) {
+            const aValue = a[groupMemberSortKey];
+            const bValue = b[groupMemberSortKey];
+
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                return groupMemberSortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+            }
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return groupMemberSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+            }
+            if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+                return groupMemberSortDirection === 'asc' ? (aValue === bValue ? 0 : aValue ? 1 : -1) : (aValue === bValue ? 0 : aValue ? -1 : 1);
+            }
+        }
+        return 0; // Default no sort
+    });
     setViewingGroupMembers(sortedMembers);
     setGroupMessages(MockService.getGroupMessages(group.id));
     setEditingGroupForm({ // Initialize edit form with current group data
@@ -388,6 +450,9 @@ const Dashboard: React.FC = () => {
       targetAmount: group.targetAmount
     });
     setGroupMembersCurrentPage(1); // Reset pagination for group members when viewing a new group
+    setGroupMemberSearchTerm(''); // Reset search term
+    setGroupMemberSortKey('joinedDate'); // Reset sort key
+    setGroupMemberSortDirection('asc'); // Reset sort direction
   };
 
   const handleBackToGroups = () => {
@@ -792,14 +857,53 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Function to get paginated group members
-  const getPaginatedGroupMembers = (allMembers: User[], currentPage: number, itemsPerPage: number) => {
+  // Function to get paginated and filtered group members
+  const getPaginatedAndFilteredGroupMembers = (allMembers: User[], currentPage: number, itemsPerPage: number, searchTerm: string, sortKey: keyof User | null, sortDirection: 'asc' | 'desc') => {
+    // 1. Filter
+    const filtered = allMembers.filter(member => 
+      member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // 2. Sort
+    const sorted = [...filtered].sort((a, b) => {
+      if (!sortKey) return 0;
+
+      const aValue = a[sortKey];
+      const bValue = b[sortKey];
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+          // For booleans, true comes after false in ascending order
+          return sortDirection === 'asc' ? (aValue === bValue ? 0 : aValue ? 1 : -1) : (aValue === bValue ? 0 : aValue ? -1 : 1);
+      }
+      return 0;
+    });
+
+    // 3. Paginate
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = allMembers.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(allMembers.length / itemsPerPage);
-    return { currentItems, totalPages };
+    const currentItems = sorted.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filtered.length / itemsPerPage); // Use filtered.length for total pages
+
+    return { currentItems, totalPages, filteredLength: filtered.length };
   };
+
+  const handleGroupMemberSort = (key: keyof User) => {
+    if (groupMemberSortKey === key) {
+      setGroupMemberSortDirection(groupMemberSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setGroupMemberSortKey(key);
+      setGroupMemberSortDirection('asc');
+    }
+    setGroupMembersCurrentPage(1); // Reset to first page on sort change
+  };
+
 
   const renderContent = () => {
     // These need to be inside renderContent to be in scope for the pagination controls
@@ -807,8 +911,17 @@ const Dashboard: React.FC = () => {
     const { filtered: filteredTransactionsToManage, currentItems: currentTransactionsToManage, totalPages: totalTransactionsToManagePages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch, transactionFilterTimeframe);
     const { filtered: filteredPenalties, currentItems: currentPenalties, totalPages: totalPenaltyPages } = getPaginatedAndFilteredPenalties(penalties, penaltyFilterStatus, penaltySearchTerm);
 
-    // Group members pagination
-    const { currentItems: paginatedGroupMembers, totalPages: totalGroupMembersPages } = getPaginatedGroupMembers(viewingGroupMembers, groupMembersCurrentPage, groupMembersPerPage);
+    // Group members pagination, search, and sort
+    const { currentItems: paginatedGroupMembers, totalPages: totalGroupMembersPages, filteredLength: filteredGroupMembersLength } = getPaginatedAndFilteredGroupMembers(viewingGroupMembers, groupMembersCurrentPage, groupMembersPerPage, groupMemberSearchTerm, groupMemberSortKey, groupMemberSortDirection);
+
+    // Logic for Next and Last Beneficiary
+    const nonBenefitedMembers = [...viewingGroupMembers]
+        .filter(member => !member.hasBenefitedFromTontine)
+        .sort((a, b) => a.joinedDate.localeCompare(b.joinedDate)); // Order by join date for consistency
+
+    const nextBeneficiary = nonBenefitedMembers.length > 0 ? nonBenefitedMembers[0] : null;
+    const secondBeneficiary = nonBenefitedMembers.length > 1 ? nonBenefitedMembers[1] : null;
+    const lastBeneficiary = nonBenefitedMembers.length > 0 ? nonBenefitedMembers[nonBenefitedMembers.length - 1] : null;
 
 
     switch(currentView) {
@@ -1939,27 +2052,71 @@ const Dashboard: React.FC = () => {
                  <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50/50">
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                         <Users className="h-5 w-5" /> Membres du groupe ({viewingGroupMembers.length})
+                         <Users className="h-5 w-5" /> Membres du groupe ({filteredGroupMembersLength})
                       </h3>
-                      <button 
-                          onClick={() => openAddMemberModal(viewingGroup)}
-                          className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                          Ajouter un membre
-                        </button>
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <div className="relative w-full sm:w-auto">
+                          <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <input 
+                              type="text" 
+                              placeholder="Rechercher un membre..." 
+                              value={groupMemberSearchTerm}
+                              onChange={(e) => {
+                                setGroupMemberSearchTerm(e.target.value);
+                                setGroupMembersCurrentPage(1); // Reset to page 1 on search
+                              }}
+                              className="w-full sm:w-auto pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-gray-500" 
+                          />
+                        </div>
+                        <button 
+                            onClick={() => openAddMemberModal(viewingGroup)}
+                            className="flex items-center justify-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                            Ajouter un membre
+                          </button>
+                      </div>
                     </div>
                     <div className="overflow-x-auto">
                       {paginatedGroupMembers.length > 0 ? (
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom du Client</th>
+                              <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleGroupMemberSort('fullName')}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Nom du Client
+                                  {groupMemberSortKey === 'fullName' && (
+                                    groupMemberSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                                  )}
+                                </div>
+                              </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'ajout</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dernière Contribution</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant Total du Groupe</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Bénéfice Tontine</th>
+                              <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleGroupMemberSort('joinedDate')}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Date d'ajout
+                                  {groupMemberSortKey === 'joinedDate' && (
+                                    groupMemberSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                                  )}
+                                </div>
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contribution Actuelle</th>
+                              <th 
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onClick={() => handleGroupMemberSort('hasBenefitedFromTontine')}
+                              >
+                                <div className="flex items-center gap-1">
+                                  Statut Tontine
+                                  {groupMemberSortKey === 'hasBenefitedFromTontine' && (
+                                    groupMemberSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                                  )}
+                                </div>
+                              </th>
                               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                           </thead>
@@ -1972,7 +2129,10 @@ const Dashboard: React.FC = () => {
                                         {user.fullName.charAt(0)}
                                       </div>
                                       <div>
-                                        <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                                        <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                          {user.fullName}
+                                          {user.hasBenefitedFromTontine && <Award className="h-4 w-4 text-yellow-500" title="A bénéficié de la tontine" />}
+                                        </div>
                                       </div>
                                     </div>
                                 </td>
@@ -1980,15 +2140,20 @@ const Dashboard: React.FC = () => {
                                   <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs font-semibold text-gray-600">{user.id}</span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {/* Mock last contribution date */}
-                                  {new Date().toISOString().split('T')[0]}
-                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                  {viewingGroup?.targetAmount.toLocaleString()} FCFA
+                                  {/* Placeholder for current contribution. In a real app, this would be dynamic. */}
+                                  {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FCFA <span className="text-xs text-gray-500">(simulé)</span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {user.hasBenefitedFromTontine ? '2024-05-15' : 'N/A'} {/* Mock benefit date */}
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  {user.hasBenefitedFromTontine ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      <CheckCircle className="h-3 w-3" /> Bénéficié
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                      <AlertCircle className="h-3 w-3" /> En attente
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                   <button
@@ -2017,17 +2182,17 @@ const Dashboard: React.FC = () => {
                         </table>
                       ) : (
                         <div className="p-8 text-center text-gray-500">
-                          Aucun membre dans ce groupe pour le moment.
+                          Aucun membre trouvé pour cette recherche ou ce groupe.
                         </div>
                       )}
                     </div>
                     {/* Pagination Controls for Group Members */}
-                    {viewingGroupMembers.length > 0 && (
+                    {filteredGroupMembersLength > 0 && (
                       <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
                           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-sm text-gray-700">
-                                  Affichage de <span className="font-medium">{(groupMembersCurrentPage - 1) * groupMembersPerPage + 1}</span> à <span className="font-medium">{Math.min(groupMembersCurrentPage * groupMembersPerPage, viewingGroupMembers.length)}</span> sur <span className="font-medium">{viewingGroupMembers.length}</span> membres
+                                  Affichage de <span className="font-medium">{(groupMembersCurrentPage - 1) * groupMembersPerPage + 1}</span> à <span className="font-medium">{Math.min(groupMembersCurrentPage * groupMembersPerPage, filteredGroupMembersLength)}</span> sur <span className="font-medium">{filteredGroupMembersLength}</span> membres
                                 </p>
                             </div>
                             <div>
@@ -2090,6 +2255,56 @@ const Dashboard: React.FC = () => {
                       </div>
                     )}
                  </div>
+              </div>
+
+              {/* Tontine Cycle Overview */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <History className="h-5 w-5 text-gray-700" /> Historique du Cycle de Tontine
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <p className="text-sm text-blue-600 font-medium mb-1">Prochain Bénéficiaire</p>
+                    {nextBeneficiary ? (
+                      <p className="text-xl font-bold text-blue-800">{nextBeneficiary.fullName}</p>
+                    ) : (
+                      <p className="text-lg text-gray-600">Tous les membres ont bénéficié.</p>
+                    )}
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <p className="text-sm text-purple-600 font-medium mb-1">Deuxième Bénéficiaire</p>
+                    {secondBeneficiary ? (
+                      <p className="text-xl font-bold text-purple-800">{secondBeneficiary.fullName}</p>
+                    ) : (
+                      <p className="text-lg text-gray-600">Pas de deuxième bénéficiaire en attente.</p>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-500 font-medium mb-1">Ordre des Bénéficiaires (basé sur la date d'ajout)</p>
+                  {viewingGroupMembers.length > 0 ? (
+                    <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                      {viewingGroupMembers
+                        .sort((a, b) => a.joinedDate.localeCompare(b.joinedDate))
+                        .map((member, index) => (
+                          <li key={member.id} className="flex items-center gap-2">
+                            <span className="font-medium">{index + 1}. {member.fullName}</span>
+                            {member.hasBenefitedFromTontine ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3" /> Bénéficié
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <AlertCircle className="h-3 w-3" /> En attente
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                    </ol>
+                  ) : (
+                    <p className="text-gray-600">Aucun membre dans ce groupe pour définir l'ordre.</p>
+                  )}
+                </div>
               </div>
             </div>
           );
