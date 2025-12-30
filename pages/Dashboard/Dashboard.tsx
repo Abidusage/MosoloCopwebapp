@@ -108,6 +108,10 @@ const Dashboard: React.FC = () => {
   const [groupListSortKey, setGroupListSortKey] = useState<keyof Group | null>('createdAt');
   const [groupListSortDirection, setGroupListSortDirection] = useState<'asc' | 'desc'>('desc');
 
+  // Group Contributions Table Sorting (New)
+  const [groupContributionSortKey, setGroupContributionSortKey] = useState<keyof Transaction | null>('date');
+  const [groupContributionSortDirection, setGroupContributionSortDirection] = useState<'asc' | 'desc'>('desc');
+
 
   // Form States
   const [newUser, setNewUser] = useState({ username: '', password: '', fullName: '', depositAmount: 0 });
@@ -361,6 +365,8 @@ const Dashboard: React.FC = () => {
     setGroupMemberSortDirection('asc'); // Reset group member sort direction
     setGroupListSortKey('createdAt'); // Reset group list sort
     setGroupListSortDirection('desc'); // Reset group list sort direction
+    setGroupContributionSortKey('date'); // Reset group contribution sort
+    setGroupContributionSortDirection('desc'); // Reset group contribution sort direction
   };
 
   const openDepositModal = (user: User) => {
@@ -926,6 +932,16 @@ const Dashboard: React.FC = () => {
       }
       return 0;
     });
+  };
+
+  // Function to sort group contribution transactions (New)
+  const handleGroupContributionSort = (key: keyof Transaction) => {
+    if (groupContributionSortKey === key) {
+      setGroupContributionSortDirection(groupContributionSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setGroupContributionSortKey(key);
+      setGroupContributionSortDirection('asc');
+    }
   };
 
 
@@ -1963,6 +1979,36 @@ const Dashboard: React.FC = () => {
       case 'groups':
         // Detail View
         if (viewingGroup) {
+          // 1. Get deposit transactions for current group members
+          const groupMemberDepositTransactions = transactions
+            .filter(tx => 
+              tx.type === 'deposit' && 
+              viewingGroupMembers.some(member => member.id === tx.userId)
+            )
+            .sort((a, b) => {
+              if (!groupContributionSortKey) return 0;
+
+              const aValue = a[groupContributionSortKey];
+              const bValue = b[groupContributionSortKey];
+
+              if (typeof aValue === 'string' && typeof bValue === 'string') {
+                  return groupContributionSortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+              }
+              if (typeof aValue === 'number' && typeof bValue === 'number') {
+                  return groupContributionSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+              }
+              return 0;
+            });
+
+          // 2. Calculate contribution statistics
+          const totalGroupDeposits = groupMemberDepositTransactions
+            .filter(tx => tx.status === 'success')
+            .reduce((sum, tx) => sum + tx.amount, 0);
+          const successfulDepositsCount = groupMemberDepositTransactions.filter(tx => tx.status === 'success').length;
+          const pendingDepositsCount = groupMemberDepositTransactions.filter(tx => tx.status === 'pending').length;
+          const failedDepositsCount = groupMemberDepositTransactions.filter(tx => tx.status === 'failed').length;
+
+
           return (
             <div className="space-y-8 animate-in slide-in-from-right duration-300">
               <div className="flex items-center justify-between gap-4">
@@ -2330,6 +2376,128 @@ const Dashboard: React.FC = () => {
                   ) : (
                     <p className="text-gray-600">Aucun membre dans ce groupe pour définir l'ordre.</p>
                   )}
+                </div>
+              </div>
+
+              {/* New: Contributions Section */}
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <Banknote className="h-6 w-6 text-gray-700" /> Suivi des Contributions
+                </h3>
+
+                {/* Contribution Statistics Table */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-gray-700" /> Statistiques des Contributions
+                    </h4>
+                  </div>
+                  <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-blue-600 font-medium mb-1">Total Dépôts du Groupe</p>
+                      <p className="text-xl font-bold text-blue-800">{totalGroupDeposits.toLocaleString()} FCFA</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <p className="text-sm text-green-600 font-medium mb-1">Dépôts Réussis</p>
+                      <p className="text-xl font-bold text-green-800">{successfulDepositsCount}</p>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <p className="text-sm text-yellow-600 font-medium mb-1">Dépôts en Attente</p>
+                      <p className="text-xl font-bold text-yellow-800">{pendingDepositsCount}</p>
+                    </div>
+                    <div className="bg-red-50 p-4 rounded-lg">
+                      <p className="text-sm text-red-600 font-medium mb-1">Dépôts Échoués</p>
+                      <p className="text-xl font-bold text-red-800">{failedDepositsCount}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Daily Contributions Table */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <History className="h-5 w-5 text-gray-700" /> Historique des Contributions Journalières
+                    </h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    {groupMemberDepositTransactions.length > 0 ? (
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th 
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                              onClick={() => handleGroupContributionSort('userFullName')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Client
+                                {groupContributionSortKey === 'userFullName' && (
+                                  groupContributionSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                                )}
+                              </div>
+                            </th>
+                            <th 
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                              onClick={() => handleGroupContributionSort('date')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Date
+                                {groupContributionSortKey === 'date' && (
+                                  groupContributionSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                                )}
+                              </div>
+                            </th>
+                            <th 
+                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                              onClick={() => handleGroupContributionSort('amount')}
+                            >
+                              <div className="flex items-center gap-1">
+                                Montant Contribué
+                                {groupContributionSortKey === 'amount' && (
+                                  groupContributionSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                                )}
+                              </div>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde Total Client</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {groupMemberDepositTransactions.map((tx) => {
+                            const member = users.find(u => u.id === tx.userId);
+                            return (
+                              <tr key={tx.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date.split(' ')[0]}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{tx.amount.toLocaleString()} FCFA</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                  {tx.status === 'success' ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      <CheckCircle className="h-3 w-3" /> Payé
+                                    </span>
+                                  ) : tx.status === 'pending' ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                      <AlertCircle className="h-3 w-3" /> En attente
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                      <XCircle className="h-3 w-3" /> Échoué
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                  {member ? member.depositAmount.toLocaleString() : 'N/A'} FCFA
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-8 text-center text-gray-500">
+                        Aucune contribution enregistrée pour les membres de ce groupe.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
