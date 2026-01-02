@@ -102,7 +102,7 @@ const Users: React.FC = () => {
                 setDepositAmount('');
                 setDepositNote('');
                 setDepositPaymentMethod('Orange Money');
-                alert(`Dépôt de ${amount.toLocaleString()} FCFA effectué pour ${selectedUserForDeposit.fullName}`);
+                alert(`Dépôt de ${amount.toLocaleString()} FC effectué pour ${selectedUserForDeposit.fullName}`);
             }
         } else {
             alert("Veuillez entrer un montant valide.");
@@ -198,7 +198,7 @@ const Users: React.FC = () => {
                     />
                     <input
                         type="number"
-                        placeholder="Dépôt initial (FCFA)"
+                        placeholder="Dépôt initial (FC)"
                         className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                         value={newUser.depositAmount || ''}
                         onChange={e => setNewUser({ ...newUser, depositAmount: Number(e.target.value) })}
@@ -236,7 +236,7 @@ const Users: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom Complet</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'inscription</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FCFA)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FC)</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -401,7 +401,7 @@ const Users: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Montant (FC)</label>
                                 <div className="relative">
                                     <input
                                         type="number"
@@ -412,7 +412,7 @@ const Users: React.FC = () => {
                                         required
                                         autoFocus
                                     />
-                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">FCFA</span>
+                                    <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">FC</span>
                                 </div>
                             </div>
 
@@ -474,7 +474,7 @@ const Users: React.FC = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
                                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                     <p className="text-sm text-gray-500 mb-1">Solde Actuel</p>
-                                    <p className="text-2xl font-bold text-gray-900">{selectedUserForDetail.depositAmount.toLocaleString()} FCFA</p>
+                                    <p className="text-2xl font-bold text-gray-900">{selectedUserForDetail.depositAmount.toLocaleString()} FC</p>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                     <p className="text-sm text-gray-500 mb-1">Date d'inscription</p>
@@ -516,7 +516,7 @@ const Users: React.FC = () => {
                                                         {tx.type === 'loan_eligibility' ? 'Éligibilité Crédit' : tx.type === 'deposit' ? 'Dépôt' : 'Retrait'}
                                                     </td>
                                                     <td className={`px-4 py-3 text-sm font-bold text-right whitespace-nowrap ${tx.type === 'deposit' ? 'text-green-600' : 'text-gray-900'}`}>
-                                                        {tx.amount > 0 ? `${tx.amount.toLocaleString()} FCFA` : '-'}
+                                                        {tx.amount > 0 ? `${tx.amount.toLocaleString()} FC` : '-'}
                                                     </td>
                                                     <td className="px-4 py-3 text-center whitespace-nowrap">
                                                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tx.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'

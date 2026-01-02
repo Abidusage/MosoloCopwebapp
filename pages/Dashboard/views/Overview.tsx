@@ -68,7 +68,7 @@ const Overview: React.FC = () => {
                     </div>
                     <div>
                         <p className="text-sm text-gray-500 font-medium">Solde Total</p>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></p>
                     </div>
                 </div>
 
@@ -99,7 +99,7 @@ const Overview: React.FC = () => {
                     </div>
                     <div>
                         <p className="text-sm text-gray-500 font-medium">Dépôts Admin</p>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalAdminDepositsAmount.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalAdminDepositsAmount.toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></p>
                     </div>
                 </div>
 
@@ -145,7 +145,7 @@ const Overview: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className={`text-sm font-bold ${tx.status === 'failed' ? 'text-gray-400 line-through' : (tx.type === 'deposit' ? 'text-green-600' : 'text-gray-900')}`}>
-                                        {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                                        {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FC`}
                                     </p>
                                     <span className={`text-[10px] ${tx.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                                         {tx.status === 'success' ? 'Validé' : 'Échoué'}
@@ -176,7 +176,7 @@ const Overview: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm font-bold text-gray-900">{user.depositAmount.toLocaleString()} FCFA</p>
+                                    <p className="text-sm font-bold text-gray-900">{user.depositAmount.toLocaleString()} FC</p>
                                     <p className="text-xs text-green-600">Solde initial</p>
                                 </div>
                             </div>

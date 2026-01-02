@@ -93,7 +93,7 @@ const Agents: React.FC = () => {
                                 {filteredSubmissions.map((submission) => (
                                     <tr key={submission.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{submission.agentName}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">{submission.amount.toLocaleString()} FCFA</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">{submission.amount.toLocaleString()} FC</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <div className="flex items-center gap-1">
                                                 <Clock className="h-3 w-3" /> {submission.date}

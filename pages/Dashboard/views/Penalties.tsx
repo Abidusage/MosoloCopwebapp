@@ -121,7 +121,7 @@ const Penalties: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{penalty.date}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{penalty.userFullName}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{penalty.reason}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-red-600">{penalty.amount.toLocaleString()} FCFA</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-red-600">{penalty.amount.toLocaleString()} FC</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             {penalty.status === 'paid' ? (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -177,7 +177,7 @@ const Penalties: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Montant (FC)</label>
                                 <input
                                     type="number"
                                     value={newPenalty.amount || ''}

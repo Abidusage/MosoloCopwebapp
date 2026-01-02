@@ -186,7 +186,7 @@ const Transactions: React.FC = () => {
                                         </td>
                                         <td className={`px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : 'text-gray-900'
                                             }`}>
-                                            {tx.amount > 0 ? `${tx.amount.toLocaleString()} FCFA` : '-'}
+                                            {tx.amount > 0 ? `${tx.amount.toLocaleString()} FC` : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             {tx.status === 'success' ? (
@@ -266,7 +266,7 @@ const Transactions: React.FC = () => {
                                     }`}>
                                     {selectedTransaction.status === 'success' ? <CheckCircle className="h-8 w-8" /> : <XCircle className="h-8 w-8" />}
                                 </div>
-                                <p className="text-2xl font-bold text-gray-900">{selectedTransaction.amount.toLocaleString()} FCFA</p>
+                                <p className="text-2xl font-bold text-gray-900">{selectedTransaction.amount.toLocaleString()} FC</p>
                                 <p className="text-sm text-gray-500 capitalize">{selectedTransaction.type}</p>
                             </div>
 

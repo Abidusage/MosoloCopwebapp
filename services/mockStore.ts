@@ -166,7 +166,7 @@ let systemSettings: SystemSettings = {
   supportEmail: 'support@mosolocoop.com',
   supportPhone: '+225 01 02 03 04',
   maintenanceMode: false,
-  defaultCurrency: 'FCFA',
+  defaultCurrency: 'FC',
   loanInterestRate: 5.5,
   tontineCommission: 1.0,
   agentCommission: 2.5,

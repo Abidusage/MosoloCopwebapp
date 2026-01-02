@@ -22,12 +22,12 @@ const Settings: React.FC = () => {
     });
 
     useEffect(() => {
-        setSettings(MockService.getSettings());
+        setSettings(MockService.getSystemSettings());
     }, []);
 
     const handleUpdateSettings = (e: React.FormEvent) => {
         e.preventDefault();
-        MockService.updateSettings(settings);
+        MockService.updateSystemSettings(settings);
         alert('Paramètres mis à jour avec succès');
     };
 
@@ -45,7 +45,7 @@ const Settings: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Frais Mensuels par Groupe (FCFA)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Frais Mensuels par Groupe (FC)</label>
                                 <input
                                     type="number"
                                     value={settings.monthlyFee}
@@ -71,7 +71,7 @@ const Settings: React.FC = () => {
                                         onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
                                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 outline-none appearance-none bg-white"
                                     >
-                                        <option value="XAF">XAF (FCFA)</option>
+                                        <option value="CDF">CDF (FC)</option>
                                         <option value="EUR">EUR (€)</option>
                                         <option value="USD">USD ($)</option>
                                     </select>

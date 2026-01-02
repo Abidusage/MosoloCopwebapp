@@ -387,7 +387,7 @@ const Groups: React.FC = () => {
                             <DollarSign className="h-5 w-5 text-gray-700" />
                             <span className="text-gray-500 text-sm font-medium">Objectif Cible</span>
                         </div>
-                        <p className="text-xl font-bold text-gray-900">{viewingGroup.targetAmount.toLocaleString()} FCFA</p>
+                        <p className="text-xl font-bold text-gray-900">{viewingGroup.targetAmount.toLocaleString()} FC</p>
                     </div>
                 </div>
 
@@ -533,7 +533,7 @@ const Groups: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FCFA <span className="text-xs text-gray-500">(simulé)</span>
+                                                {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FC <span className="text-xs text-gray-500">(simulé)</span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                 {user.hasBenefitedFromTontine ? (
@@ -631,7 +631,7 @@ const Groups: React.FC = () => {
                     </h3>
                     <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-blue-600 font-medium mb-1">Total Dépôts du Groupe</p>
-                        <p className="text-xl font-bold text-blue-800">{totalGroupDeposits.toLocaleString()} FCFA</p>
+                        <p className="text-xl font-bold text-blue-800">{totalGroupDeposits.toLocaleString()} FC</p>
                     </div>
                 </div>
 
@@ -646,7 +646,7 @@ const Groups: React.FC = () => {
                                     <input className="w-full p-2 border rounded" value={editingGroupForm.name} onChange={e => setEditingGroupForm({ ...editingGroupForm, name: e.target.value })} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Cible (FCFA)</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Cible (FC)</label>
                                     <input className="w-full p-2 border rounded" type="number" value={editingGroupForm.targetAmount} onChange={e => setEditingGroupForm({ ...editingGroupForm, targetAmount: parseFloat(e.target.value) })} />
                                 </div>
                                 <div className="flex justify-end gap-2">
@@ -704,7 +704,7 @@ const Groups: React.FC = () => {
                         />
                     </div>
                     <div className="md:col-span-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Montant Cible (FCFA)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Montant Cible (FC)</label>
                         <input
                             type="number"
                             value={newGroup.targetAmount || ''}

@@ -395,7 +395,7 @@ const Dashboard: React.FC = () => {
         setDepositAmount('');
         setDepositNote('');
         setDepositPaymentMethod('Orange Money');
-        alert(`Dépôt de ${amount.toLocaleString()} FCFA effectué pour ${selectedUserForDeposit.fullName}`);
+        alert(`Dépôt de ${amount.toLocaleString()} FC effectué pour ${selectedUserForDeposit.fullName}`);
       }
     } else {
       alert("Veuillez entrer un montant valide.");
@@ -1006,7 +1006,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Solde Total</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{MockService.getTotalDeposits().toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></p>
                 </div>
               </div>
 
@@ -1037,7 +1037,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Dépôts Admin</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalAdminDepositsAmount.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalAdminDepositsAmount.toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></p>
                 </div>
               </div>
 
@@ -1083,7 +1083,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <p className={`text-sm font-bold ${tx.status === 'failed' ? 'text-gray-400 line-through' : (tx.type === 'deposit' ? 'text-green-600' : 'text-gray-900')}`}>
-                          {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FCFA`}
+                          {tx.type === 'loan_eligibility' || tx.type === 'status_change' ? '-' : `${tx.amount.toLocaleString()} FC`}
                         </p>
                         <span className={`text-[10px] ${tx.status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                           {tx.status === 'success' ? 'Validé' : 'Échoué'}
@@ -1114,7 +1114,7 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-gray-900">{user.depositAmount.toLocaleString()} FCFA</p>
+                        <p className="text-sm font-bold text-gray-900">{user.depositAmount.toLocaleString()} FC</p>
                         <p className="text-xs text-green-600">Solde initial</p>
                       </div>
                     </div>
@@ -1186,7 +1186,7 @@ const Dashboard: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {sub.amount ? (
-                                <span className="text-sm font-bold text-gray-800">{sub.amount.toLocaleString()} FCFA</span>
+                                <span className="text-sm font-bold text-gray-800">{sub.amount.toLocaleString()} FC</span>
                               ) : (
                                 <span className="text-sm text-gray-400">-</span>
                               )}
@@ -1381,7 +1381,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm text-gray-500 font-medium">Total Bénéfice</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalProfit.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalProfit.toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></h3>
                     </div>
                     <div className="bg-green-100 p-2 rounded-lg">
                       <TrendingUp className="h-6 w-6 text-green-600" />
@@ -1394,7 +1394,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm text-gray-500 font-medium">Commissions Tontine</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalTontineCommission.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalTontineCommission.toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></h3>
                     </div>
                     <div className="bg-orange-100 p-2 rounded-lg">
                       <Banknote className="h-6 w-6 text-orange-600" />
@@ -1407,7 +1407,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm text-gray-500 font-medium">Intérêts de Prêt</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalLoanInterest.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalLoanInterest.toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></h3>
                     </div>
                     <div className="bg-purple-100 p-2 rounded-lg">
                       <CreditCard className="h-6 w-6 text-purple-600" />
@@ -1420,7 +1420,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-sm text-gray-500 font-medium">Frais de Retrait</p>
-                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalWithdrawalFees.toLocaleString()} <span className="text-sm font-normal text-gray-500">FCFA</span></h3>
+                      <h3 className="text-2xl font-bold text-gray-800 mt-1">{stats.totalWithdrawalFees.toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></h3>
                     </div>
                     <div className="bg-red-100 p-2 rounded-lg">
                       <DollarSign className="h-6 w-6 text-red-600" />
@@ -1447,11 +1447,11 @@ const Dashboard: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <p className="text-sm text-blue-600 font-medium mb-1">Via Agents Terrain</p>
-                        <p className="text-xl font-bold text-blue-800">{stats.totalCollectedByAgents.toLocaleString()} FCFA</p>
+                        <p className="text-xl font-bold text-blue-800">{stats.totalCollectedByAgents.toLocaleString()} FC</p>
                       </div>
                       <div className="bg-green-50 p-4 rounded-lg">
                         <p className="text-sm text-green-600 font-medium mb-1">Dépôts Directs</p>
-                        <p className="text-xl font-bold text-green-800">{(stats.totalDepositsValue - stats.totalCollectedByAgents).toLocaleString()} FCFA</p>
+                        <p className="text-xl font-bold text-green-800">{(stats.totalDepositsValue - stats.totalCollectedByAgents).toLocaleString()} FC</p>
                       </div>
                     </div>
 
@@ -1459,7 +1459,7 @@ const Dashboard: React.FC = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span className="font-medium text-gray-700">Volume Global Dépôts</span>
-                        <span className="font-bold text-green-600">{stats.totalDepositsValue.toLocaleString()} FCFA</span>
+                        <span className="font-bold text-green-600">{stats.totalDepositsValue.toLocaleString()} FC</span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
                         <div className="bg-green-500 h-4 rounded-full" style={{ width: '85%' }}></div>
@@ -1470,7 +1470,7 @@ const Dashboard: React.FC = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span className="font-medium text-gray-700">Volume Global Retraits</span>
-                        <span className="font-bold text-orange-600">{stats.totalWithdrawalsValue.toLocaleString()} FCFA</span>
+                        <span className="font-bold text-orange-600">{stats.totalWithdrawalsValue.toLocaleString()} FC</span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
                         <div className="bg-orange-500 h-4 rounded-full" style={{ width: '35%' }}></div>
@@ -1631,7 +1631,7 @@ const Dashboard: React.FC = () => {
                         onChange={(e) => setSettings({ ...settings, defaultCurrency: e.target.value })}
                         className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-gray-500 focus:border-gray-500"
                       >
-                        <option value="FCFA">FCFA (XOF)</option>
+                        <option value="CDF">CDF (FC)</option>
                         <option value="EUR">Euro (€)</option>
                         <option value="USD">Dollar ($)</option>
                       </select>
@@ -1773,7 +1773,7 @@ const Dashboard: React.FC = () => {
                 />
                 <input
                   type="number"
-                  placeholder="Dépôt initial (FCFA)"
+                  placeholder="Dépôt initial (FC)"
                   className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                   value={newUser.depositAmount || ''}
                   onChange={e => setNewUser({ ...newUser, depositAmount: Number(e.target.value) })}
@@ -1811,7 +1811,7 @@ const Dashboard: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom Complet</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th> {/* New column for status */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'inscription</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FCFA)</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde (FC)</th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -2056,7 +2056,7 @@ const Dashboard: React.FC = () => {
                     <DollarSign className="h-5 w-5 text-gray-700" />
                     <span className="text-gray-500 text-sm font-medium">Objectif Cible</span>
                   </div>
-                  <p className="text-xl font-bold text-gray-900">{viewingGroup.targetAmount.toLocaleString()} FCFA</p>
+                  <p className="text-xl font-bold text-gray-900">{viewingGroup.targetAmount.toLocaleString()} FC</p>
                 </div>
               </div>
 
@@ -2213,7 +2213,7 @@ const Dashboard: React.FC = () => {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                 {/* Placeholder for current contribution. In a real app, this would be dynamic. */}
-                                {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FCFA <span className="text-xs text-gray-500">(simulé)</span>
+                                {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FC <span className="text-xs text-gray-500">(simulé)</span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 {user.hasBenefitedFromTontine ? (
@@ -2392,7 +2392,7 @@ const Dashboard: React.FC = () => {
                   <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="text-sm text-blue-600 font-medium mb-1">Total Dépôts du Groupe</p>
-                      <p className="text-xl font-bold text-blue-800">{totalGroupDeposits.toLocaleString()} FCFA</p>
+                      <p className="text-xl font-bold text-blue-800">{totalGroupDeposits.toLocaleString()} FC</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                       <p className="text-sm text-green-600 font-medium mb-1">Dépôts Réussis</p>
@@ -2465,7 +2465,7 @@ const Dashboard: React.FC = () => {
                               <tr key={tx.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date.split(' ')[0]}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{tx.amount.toLocaleString()} FCFA</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{tx.amount.toLocaleString()} FC</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                   {tx.status === 'success' ? (
                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -2482,7 +2482,7 @@ const Dashboard: React.FC = () => {
                                   )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                  {member ? member.depositAmount.toLocaleString() : 'N/A'} FCFA
+                                  {member ? member.depositAmount.toLocaleString() : 'N/A'} FC
                                 </td>
                               </tr>
                             );
@@ -2529,7 +2529,7 @@ const Dashboard: React.FC = () => {
                 />
                 <input
                   type="number"
-                  placeholder="Objectif cible (FCFA)"
+                  placeholder="Objectif cible (FC)"
                   className="p-3 border rounded-lg focus:ring-2 focus:ring-gray-500 outline-none w-full"
                   value={newGroup.targetAmount || ''}
                   onChange={e => setNewGroup({ ...newGroup, targetAmount: Number(e.target.value) })}

@@ -140,18 +140,18 @@ const Landing: React.FC = () => {
               />
             </div>
             <p className="mt-2 text-sm">© 2024 Mosolocoop Inc. Tous droits réservés.</p>
-           <p className="mt-1 text-xs text-gray-500">
-  Développé par{" "}
-  <a 
-    href="https://abidusage.github.io/kabidusageportofolio/" 
-    target="_blank" 
-    rel="noopener noreferrer" 
-    className="font-semibold text-gray-300 hover:text-white transition-colors"
-  >
-    Sage Kabidu
-  </a> 
-  • Backend & Frontend Engineer
-</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Développé par{" "}
+              <a
+                href="https://abidusage.github.io/kabidusageportofolio/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-gray-300 hover:text-white transition-colors"
+              >
+                Sage Kabidu
+              </a>
+              • Backend & Frontend Engineer
+            </p>
 
           </div>
 
