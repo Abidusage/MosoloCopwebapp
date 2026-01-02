@@ -7,7 +7,7 @@ const Landing: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="relative bg-gray-900 text-white overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80')] bg-cover bg-center opacity-10"></div>
@@ -55,7 +55,7 @@ const Landing: React.FC = () => {
                 Vos fonds sont protégés par des protocoles de sécurité bancaire. La transparence est au cœur de toutes nos opérations de tontine.
               </p>
             </div>
-            
+
             <div className="bg-gray-50 rounded-2xl p-6 sm:p-8 hover:shadow-xl transition-shadow border border-gray-100">
               <div className="bg-gray-200 w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center mb-6">
                 <Users className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
@@ -85,14 +85,14 @@ const Landing: React.FC = () => {
           <div className="lg:text-center mb-10 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900">Nos Services Financiers</h2>
           </div>
-          
+
           <div className="flex flex-col md:flex-row justify-center gap-6 sm:gap-8">
             <div className="flex-1 bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 mb-4">
-                 <div className="p-3 bg-gray-200 rounded-lg">
-                    <Banknote className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
-                 </div>
-                 <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Tontine Rotative</h3>
+                <div className="p-3 bg-gray-200 rounded-lg">
+                  <Banknote className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Tontine Rotative</h3>
               </div>
               <p className="text-gray-600 mb-6 text-sm sm:text-base">
                 Participez à des cycles d'épargne où chaque membre bénéficie de la cagnotte à tour de rôle. Idéal pour les gros achats planifiés.
@@ -105,10 +105,10 @@ const Landing: React.FC = () => {
 
             <div className="flex-1 bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-4 mb-4">
-                 <div className="p-3 bg-gray-200 rounded-lg">
-                    <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
-                 </div>
-                 <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Épargne Projet</h3>
+                <div className="p-3 bg-gray-200 rounded-lg">
+                  <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-gray-700" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Épargne Projet</h3>
               </div>
               <p className="text-gray-600 mb-6 text-sm sm:text-base">
                 Mettez de l'argent de côté à votre rythme pour un objectif précis. Votre argent travaille pour vous pendant qu'il dort.
@@ -125,27 +125,45 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <footer id="contact" className="bg-gray-900 text-gray-400 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+
+          {/* Logo + Copyright */}
           <div className="text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-              <img 
-                src="/logo.png" 
-                alt="Mosolocoop" 
-                className="h-10 w-auto object-contain bg-white rounded-md p-0.5"
+              <img
+                src="/logo.png"
+                alt="Mosolocoop"
+                className="h-10 w-auto object-contain bg-white rounded-full p-0.5 shadow-md"
                 onError={(e) => {
-                  e.currentTarget.onerror = null; 
+                  e.currentTarget.onerror = null;
                   e.currentTarget.src = "https://placehold.co/150x50/white/black?text=MosoloCoop";
                 }}
               />
             </div>
             <p className="mt-2 text-sm">© 2024 Mosolocoop Inc. Tous droits réservés.</p>
+           <p className="mt-1 text-xs text-gray-500">
+  Développé par{" "}
+  <a 
+    href="https://abidusage.github.io/kabidusageportofolio/" 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    className="font-semibold text-gray-300 hover:text-white transition-colors"
+  >
+    Sage Kabidu
+  </a> 
+  • Backend & Frontend Engineer
+</p>
+
           </div>
+
+          {/* Liens */}
           <div className="flex flex-wrap justify-center gap-6 text-sm">
-             <a href="#" className="hover:text-white transition-colors">Confidentialité</a>
-             <a href="#" className="hover:text-white transition-colors">Conditions</a>
-             <a href="#" className="hover:text-white transition-colors">Support</a>
+            <a href="#" className="hover:text-white transition-colors">Confidentialité</a>
+            <a href="#" className="hover:text-white transition-colors">Conditions</a>
+            <a href="#" className="hover:text-white transition-colors">Support</a>
           </div>
         </div>
       </footer>
+
     </div>
   );
 };
