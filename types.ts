@@ -132,3 +132,13 @@ export interface Penalty {
 }
 
 export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc' | 'transaction_management' | 'penalties';
+
+export interface KycRequest {
+  id: string;
+  userId: string;
+  fullName: string;
+  date: string;
+  documentType: string;
+  status: 'pending' | 'approved' | 'rejected';
+  documentUrl: string;
+}

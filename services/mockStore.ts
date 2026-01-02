@@ -1,12 +1,12 @@
-import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, Penalty } from '../types';
+import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, Penalty, KycRequest } from '../types';
 
 // Initial Mock Data - IDs updated to 8 characters
 let users: User[] = [
-  { 
-    id: 'US8492X1', 
-    username: 'jean_d', 
-    fullName: 'Jean Dupont', 
-    depositAmount: 150000, 
+  {
+    id: 'US8492X1',
+    username: 'jean_d',
+    fullName: 'Jean Dupont',
+    depositAmount: 150000,
     joinedDate: '2023-10-01',
     email: 'jean.dupont@example.com',
     phoneNumber: '+225 07 01 02 03',
@@ -19,11 +19,11 @@ let users: User[] = [
     penalties: [],
     hasBenefitedFromTontine: false // Initialisé à false
   },
-  { 
-    id: 'US9382Y2', 
-    username: 'marie_k', 
-    fullName: 'Marie Koné', 
-    depositAmount: 75000, 
+  {
+    id: 'US9382Y2',
+    username: 'marie_k',
+    fullName: 'Marie Koné',
+    depositAmount: 75000,
     joinedDate: '2023-11-15',
     email: 'marie.kone@example.com',
     phoneNumber: '+225 05 04 05 06',
@@ -37,11 +37,11 @@ let users: User[] = [
     ],
     hasBenefitedFromTontine: true // Exemple : Marie a déjà bénéficié
   },
-  { 
-    id: 'US1129Z3', 
-    username: 'paul_b', 
-    fullName: 'Paul Biya', 
-    depositAmount: 300000, 
+  {
+    id: 'US1129Z3',
+    username: 'paul_b',
+    fullName: 'Paul Biya',
+    depositAmount: 300000,
     joinedDate: '2024-01-20',
     email: 'paul.biya@example.com',
     phoneNumber: '+237 6 99 99 99',
@@ -53,11 +53,11 @@ let users: User[] = [
     hasBenefitedFromTontine: false
   },
   // Données supplémentaires pour la pagination
-  { 
-    id: 'US4455A4', 
-    username: 'awa_s', 
-    fullName: 'Awa Sanogo', 
-    depositAmount: 45000, 
+  {
+    id: 'US4455A4',
+    username: 'awa_s',
+    fullName: 'Awa Sanogo',
+    depositAmount: 45000,
     joinedDate: '2024-02-05',
     email: 'awa.sanogo@example.com',
     phoneNumber: '+225 01 02 03 04',
@@ -72,11 +72,11 @@ let users: User[] = [
     ],
     hasBenefitedFromTontine: false
   },
-  { 
-    id: 'US5566B5', 
-    username: 'moussa_t', 
-    fullName: 'Moussa Traoré', 
-    depositAmount: 12000, 
+  {
+    id: 'US5566B5',
+    username: 'moussa_t',
+    fullName: 'Moussa Traoré',
+    depositAmount: 12000,
     joinedDate: '2024-02-12',
     email: 'moussa.t@example.com',
     phoneNumber: '+225 07 08 09 10',
@@ -87,11 +87,11 @@ let users: User[] = [
     penalties: [],
     hasBenefitedFromTontine: false
   },
-  { 
-    id: 'US6677C6', 
-    fullName: 'Fatou Diallo', 
-    username: 'fatou_d', 
-    depositAmount: 250000, 
+  {
+    id: 'US6677C6',
+    fullName: 'Fatou Diallo',
+    username: 'fatou_d',
+    depositAmount: 250000,
     joinedDate: '2024-03-01',
     email: 'fatou.d@example.com',
     phoneNumber: '+221 77 11 22 33',
@@ -104,11 +104,11 @@ let users: User[] = [
     penalties: [],
     hasBenefitedFromTontine: false
   },
-  { 
-    id: 'US7788D7', 
-    username: 'kofi_a', 
-    fullName: 'Kofi Annan', 
-    depositAmount: 500000, 
+  {
+    id: 'US7788D7',
+    username: 'kofi_a',
+    fullName: 'Kofi Annan',
+    depositAmount: 500000,
     joinedDate: '2024-03-10',
     email: 'kofi.a@example.com',
     phoneNumber: '+233 24 55 66 77',
@@ -184,44 +184,44 @@ let agents: Agent[] = [
 
 // Données Mock Soumissions Terrain
 let fieldSubmissions: FieldSubmission[] = [
-  { 
-    id: 'SUB-101', 
-    agentId: 'AGT-01', 
-    agentName: 'Michel Yapo', 
-    clientName: 'Mme. Awa Bakayoko', 
-    clientPhone: '01 02 03 04', 
-    type: 'new_registration', 
-    amount: 5000, 
-    location: 'Abobo Gare', 
-    submissionDate: '2024-03-20 10:15', 
-    status: 'pending', 
-    notes: 'Cliente intéressée par la tontine journalière.' 
+  {
+    id: 'SUB-101',
+    agentId: 'AGT-01',
+    agentName: 'Michel Yapo',
+    clientName: 'Mme. Awa Bakayoko',
+    clientPhone: '01 02 03 04',
+    type: 'new_registration',
+    amount: 5000,
+    location: 'Abobo Gare',
+    submissionDate: '2024-03-20 10:15',
+    status: 'pending',
+    notes: 'Cliente intéressée par la tontine journalière.'
   },
-  { 
-    id: 'SUB-102', 
-    agentId: 'AGT-01', 
-    agentName: 'Michel Yapo', 
-    clientName: 'M. Kofi N\'Guessan', 
-    clientPhone: '05 06 07 08', 
-    type: 'daily_collection', 
-    amount: 15000, 
-    location: 'Abobo Marché', 
-    submissionDate: '2024-03-20 11:30', 
-    status: 'approved', 
-    notes: 'Versement complet semaine 3.' 
+  {
+    id: 'SUB-102',
+    agentId: 'AGT-01',
+    agentName: 'Michel Yapo',
+    clientName: 'M. Kofi N\'Guessan',
+    clientPhone: '05 06 07 08',
+    type: 'daily_collection',
+    amount: 15000,
+    location: 'Abobo Marché',
+    submissionDate: '2024-03-20 11:30',
+    status: 'approved',
+    notes: 'Versement complet semaine 3.'
   },
-  { 
-    id: 'SUB-103', 
-    agentId: 'AGT-02', 
-    agentName: 'Sarah Touré', 
-    clientName: 'Boutique Zongo', 
-    clientPhone: '07 08 09 10', 
-    type: 'loan_request', 
-    amount: 500000, 
-    location: 'Riviera 2', 
-    submissionDate: '2024-03-19 16:45', 
-    status: 'pending', 
-    notes: 'Besoin pour stock Ramadan. Documents photo joints.' 
+  {
+    id: 'SUB-103',
+    agentId: 'AGT-02',
+    agentName: 'Sarah Touré',
+    clientName: 'Boutique Zongo',
+    clientPhone: '07 08 09 10',
+    type: 'loan_request',
+    amount: 500000,
+    location: 'Riviera 2',
+    submissionDate: '2024-03-19 16:45',
+    status: 'pending',
+    notes: 'Besoin pour stock Ramadan. Documents photo joints.'
   }
 ];
 
@@ -284,7 +284,7 @@ export const MockService = {
   addUser: (user: Omit<User, 'id' | 'joinedDate' | 'kycStatus' | 'status' | 'penalties' | 'hasBenefitedFromTontine'>) => {
     // Generate 8 character ID uppercase
     const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
-    
+
     const newUser: User = {
       ...user,
       id: randomId,
@@ -301,13 +301,13 @@ export const MockService = {
     users = [...users, newUser];
     return newUser;
   },
-  
+
   toggleLoanEligibility: (userId: string) => {
     const userIndex = users.findIndex(u => u.id === userId);
     if (userIndex !== -1) {
       const currentStatus = !!users[userIndex].loanEligible;
       users[userIndex].loanEligible = !currentStatus;
-      
+
       // Log history
       const newTransaction: Transaction = {
         id: `TRX-${Date.now()}`,
@@ -359,10 +359,10 @@ export const MockService = {
     }
     return false;
   },
-  
+
   // Group Logic
   getGroups: () => [...groups],
-  
+
   getGroupMembers: (groupId: string) => {
     const group = groups.find(g => g.id === groupId);
     if (!group || !group.memberIds) return [];
@@ -381,7 +381,7 @@ export const MockService = {
     groups = [...groups, newGroup];
     return newGroup;
   },
-  
+
   addMemberToGroup: (groupId: string, userId: string) => {
     const group = groups.find(g => g.id === groupId);
     if (group) {
@@ -458,13 +458,13 @@ export const MockService = {
 
   // Transaction Logic
   getTransactions: () => [...transactions],
-  
+
   makeDeposit: (userId: string, amount: number, note?: string, paymentMethod: string = 'Inconnu') => {
     const user = users.find(u => u.id === userId);
     if (user) {
       // Update Balance
       user.depositAmount += amount;
-      
+
       // Create Transaction Record
       const newTransaction: Transaction = {
         id: `TRX-${Date.now()}`,
@@ -522,13 +522,13 @@ export const MockService = {
   getTotalDeposits: () => {
     return users.reduce((sum, user) => sum + user.depositAmount, 0);
   },
-  
+
   getPendingSubmissionsCount: () => {
     return fieldSubmissions.filter(s => s.status === 'pending').length;
   },
 
   getAdminDeposits: () => {
-    return transactions.filter(tx => 
+    return transactions.filter(tx =>
       tx.type === 'deposit' && tx.reason === 'Dépôt manuel admin'
     ).sort((a, b) => b.date.localeCompare(a.date));
   },
@@ -538,20 +538,20 @@ export const MockService = {
     const totalGroups = groups.length;
     const eligibleUsersCount = users.filter(u => u.loanEligible).length;
     const pendingKYCCount = users.filter(u => u.kycStatus === 'pending').length;
-    
+
     // Financials
     const totalDepositsValue = transactions
       .filter(t => t.type === 'deposit' && t.status === 'success')
       .reduce((sum, t) => sum + t.amount, 0);
-      
+
     const totalWithdrawalsValue = transactions
       .filter(t => t.type === 'withdrawal' && t.status === 'success')
       .reduce((sum, t) => sum + t.amount, 0);
-      
+
     const totalTransactions = transactions.length;
     const successTransactions = transactions.filter(t => t.status === 'success').length;
     const successRate = totalTransactions > 0 ? Math.round((successTransactions / totalTransactions) * 100) : 0;
-    
+
     // Agent Stats
     const totalCollectedByAgents = fieldSubmissions
       .filter(s => s.status === 'approved' && s.amount)
@@ -561,7 +561,7 @@ export const MockService = {
     const topDepositors = [...users]
       .sort((a, b) => b.depositAmount - a.depositAmount)
       .slice(0, 3);
-      
+
     // Mock Growth Data (Last 6 months)
     const months = ['Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar'];
     const growthData = months.map((month, index) => ({
@@ -669,7 +669,7 @@ export const MockService = {
     if (userIndex !== -1) {
       users[userIndex].kycStatus = newStatus;
       users[userIndex].kycVerifiedDate = newStatus === 'verified' ? new Date().toISOString().split('T')[0] : undefined;
-      
+
       // Update associated KYC documents if any
       kycDocuments = kycDocuments.map(doc => {
         if (doc.userId === userId && doc.status === 'pending') { // Only update pending documents
@@ -688,15 +688,64 @@ export const MockService = {
     return false;
   },
 
+  // Adapter methods for KYC.tsx
+  getKycRequests: (): KycRequest[] => {
+    return kycDocuments.map(doc => {
+      const user = users.find(u => u.id === doc.userId);
+      return {
+        id: doc.id,
+        userId: doc.userId,
+        fullName: user ? user.fullName : 'Inconnu',
+        date: doc.submissionDate,
+        documentType: doc.type,
+        status: doc.status,
+        documentUrl: doc.documentUrl
+      };
+    }).sort((a, b) => b.date.localeCompare(a.date));
+  },
+
+  approveKycRequest: (docId: string) => {
+    const docIndex = kycDocuments.findIndex(d => d.id === docId);
+    if (docIndex !== -1) {
+      const doc = kycDocuments[docIndex];
+      // Update doc status
+      kycDocuments[docIndex].status = 'approved';
+      kycDocuments[docIndex].reviewDate = new Date().toISOString();
+      kycDocuments[docIndex].reviewerId = adminProfile.username;
+
+      // Update user status if this was the required doc
+      // For simplicity in mock, if any doc is approved, we verify the user
+      // But let's check updateKYCStatus logic -> it updates all docs. 
+      // Ideally we call updateKYCStatus.
+      return MockService.updateKYCStatus(doc.userId, 'verified');
+    }
+    return false;
+  },
+
+  rejectKycRequest: (docId: string, reason: string) => {
+    const docIndex = kycDocuments.findIndex(d => d.id === docId);
+    if (docIndex !== -1) {
+      const doc = kycDocuments[docIndex];
+      // Update doc status
+      kycDocuments[docIndex].status = 'rejected';
+      kycDocuments[docIndex].reviewDate = new Date().toISOString();
+      kycDocuments[docIndex].reviewerId = adminProfile.username;
+      kycDocuments[docIndex].rejectionReason = reason;
+
+      return MockService.updateKYCStatus(doc.userId, 'rejected', reason);
+    }
+    return false;
+  },
+
   // Penalty Logic (New)
   getPenalties: () => [...penalties],
-  
+
   getUserPenalties: (userId: string) => {
     return penalties.filter(p => p.userId === userId).sort((a, b) => b.date.localeCompare(a.date));
   },
 
   getUsersWithActivePenalties: () => {
-    const usersWithPenalties = users.filter(user => 
+    const usersWithPenalties = users.filter(user =>
       penalties.some(p => p.userId === user.id && p.status === 'active')
     );
     // Attach active penalties to the user object for easier display

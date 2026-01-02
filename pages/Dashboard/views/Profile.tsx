@@ -106,13 +106,13 @@ const Profile: React.FC = () => {
                                         className="w-full p-2 border rounded-md"
                                     />
                                 </div>
-                                <div className="opacity-50 pointer-events-none">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email (Non modifiable)</label>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                     <input
                                         type="email"
                                         value={editForm.email || ''}
-                                        readOnly
-                                        className="w-full p-2 border rounded-md bg-gray-100"
+                                        onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                        className="w-full p-2 border rounded-md"
                                     />
                                 </div>
                                 <div>
@@ -121,6 +121,15 @@ const Profile: React.FC = () => {
                                         type="tel"
                                         value={editForm.phone || ''}
                                         onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                                        className="w-full p-2 border rounded-md"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.address || ''}
+                                        onChange={e => setEditForm({ ...editForm, address: e.target.value })}
                                         className="w-full p-2 border rounded-md"
                                     />
                                 </div>
@@ -158,6 +167,15 @@ const Profile: React.FC = () => {
                                     <div>
                                         <p className="text-xs text-gray-500 uppercase tracking-wide">Téléphone</p>
                                         <p className="font-medium text-gray-900">{profile.phone || "Non renseigné"}</p>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-gray-50 rounded-lg flex items-center gap-4 md:col-span-2">
+                                    <div className="p-2 bg-white rounded-md shadow-sm">
+                                        <Shield className="h-5 w-5 text-gray-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 uppercase tracking-wide">Adresse</p>
+                                        <p className="font-medium text-gray-900">{profile.address || "Non renseigné"}</p>
                                     </div>
                                 </div>
                             </div>

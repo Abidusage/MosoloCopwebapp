@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, ArrowLeft } from 'lucide-react';
+import logo from '../assets/logo.svg'; // ✅ Import du logo SVG
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -10,11 +11,10 @@ const Login: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login - accepting any password for demo if username is provided
     if (username && password) {
       navigate('/dashboard');
     } else {
-      setError('Veuillez entrer un nom d\'utilisateur et un mot de passe.');
+      setError("Veuillez entrer un nom d'utilisateur et un mot de passe.");
     }
   };
 
@@ -22,22 +22,25 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-gray-100">
         <div>
-          <Link to="/" className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
+          >
             <ArrowLeft className="h-4 w-4 mr-1" /> Retour à l'accueil
           </Link>
           <div className="flex justify-center mb-4">
-             <img 
-                src="/logo.png" 
-                alt="Mosolocoop" 
-                className="h-24 w-auto object-contain rounded-lg shadow-sm"
-                onError={(e) => {
-                  e.currentTarget.onerror = null; 
-                  e.currentTarget.src = "https://placehold.co/200x200?text=Logo";
-                }}
-             />
+            <img
+              src={logo} // ✅ Utilisation du logo SVG
+              alt="Mosolocoop"
+              className="h-24 w-auto object-contain rounded-lg shadow-sm"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "https://placehold.co/200x200?text=Logo";
+              }}
+            />
           </div>
           <h2 className="mt-2 text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
-            Connexion Admin
+            Connexion
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Accédez à votre espace de gestion Mosolocoop
@@ -46,7 +49,9 @@ const Login: React.FC = () => {
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="username" className="sr-only">Nom d'utilisateur</label>
+              <label htmlFor="username" className="sr-only">
+                Nom d'utilisateur
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <User className="h-5 w-5 text-gray-400" />
@@ -64,7 +69,9 @@ const Login: React.FC = () => {
               </div>
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">Mot de passe</label>
+              <label htmlFor="password" className="sr-only">
+                Mot de passe
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" />
@@ -97,9 +104,9 @@ const Login: React.FC = () => {
               Se connecter
             </button>
           </div>
-          <div className="text-center text-xs text-gray-400">
-             (Demo: Admin / Admin)
-          </div>
+          {/* <div className="text-center text-xs text-gray-400">
+            (Demo: Admin / Admin)
+          </div> */}
         </form>
       </div>
     </div>

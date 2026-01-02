@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn, Menu, X } from 'lucide-react';
-import logo from '../assets/logo.png'; // Assure-toi que ce fichier existe bien
+import logo from '../assets/logo.svg'; // Remplace le fichier PNG par le SVG
 
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -10,7 +10,7 @@ const Navbar: React.FC = () => {
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
-          
+
           {/* Logo Mosolo */}
           <div className="flex items-center gap-3 z-50">
             <Link to="/" className="flex items-center">
