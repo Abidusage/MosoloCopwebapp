@@ -132,7 +132,7 @@ export interface Penalty {
   resolvedBy?: string; // Admin qui a résolu
 }
 
-export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'transactions' | 'statistics' | 'settings' | 'agents' | 'kyc' | 'transaction_management' | 'penalties';
+export type DashboardView = 'overview' | 'users' | 'groups' | 'profile' | 'statistics' | 'settings' | 'agents' | 'kyc' | 'transaction_management' | 'penalties';
 
 export interface KycRequest {
   id: string;

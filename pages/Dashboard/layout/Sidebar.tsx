@@ -39,7 +39,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileMenuOpen, setIsMobileMenuOpen
 
     const transactionItems = [
         { path: 'transaction_management', icon: Zap, label: "Gestion Transactions" },
-        { path: 'transactions', icon: History, label: "Historique Complet" },
     ];
 
     const systemItems = [
