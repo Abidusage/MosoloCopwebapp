@@ -19,7 +19,7 @@ const Statistics: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Total Entrées</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalDepositsAmount.toLocaleString()} FCFA</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalDepositsAmount.toLocaleString()} FC</h3>
                         </div>
                         <div className="p-2 bg-green-100 rounded-lg">
                             <ArrowUpRight className="h-6 w-6 text-green-600" />
@@ -34,7 +34,7 @@ const Statistics: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Total Sorties</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalWithdrawalsAmount.toLocaleString()} FCFA</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalWithdrawalsAmount.toLocaleString()} FC</h3>
                         </div>
                         <div className="p-2 bg-red-100 rounded-lg">
                             <ArrowDownLeft className="h-6 w-6 text-red-600" />
@@ -47,13 +47,25 @@ const Statistics: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Frais Collectés</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{(stats?.totalDepositsAmount * 0.02).toLocaleString()} FCFA</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{(stats?.totalDepositsAmount * 0.02).toLocaleString()} FC</h3>
                         </div>
                         <div className="p-2 bg-blue-100 rounded-lg">
                             <DollarSign className="h-6 w-6 text-blue-600" />
                         </div>
                     </div>
                     <p className="text-xs text-gray-500">Estimations (2%)</p>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <p className="text-sm text-gray-500 font-medium">Pénalités Non-Paiement</p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalPenaltiesAmount.toLocaleString()} FC</h3>
+                        </div>
+                        <div className="p-2 bg-red-100 rounded-lg">
+                            <ArrowDownLeft className="h-6 w-6 text-red-600" />
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-500">Montant total des pénalités actives</p>
                 </div>
             </div>
 

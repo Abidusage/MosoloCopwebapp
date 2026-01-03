@@ -54,7 +54,7 @@ const Settings: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Pénalité Retard Paiement (%)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Pénalité Retard Paiement (FC)</label>
                                 <input
                                     type="number"
                                     value={settings.missedPaymentPenalty}

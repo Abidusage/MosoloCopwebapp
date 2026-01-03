@@ -1,4 +1,4 @@
-import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, Penalty, KycRequest } from '../types';
+import { User, Group, AdminProfile, Transaction, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, Penalty, KycRequest, DepositSubmission } from '../types';
 
 // Initial Mock Data - IDs updated to 8 characters
 let users: User[] = [
@@ -602,6 +602,7 @@ export const MockService = {
       totalWithdrawalFees,
       totalProfit,
       activePenaltiesCount, // New stat
+      totalPenaltiesAmount: penalties.filter(p => p.status === 'active').reduce((acc, p) => acc + p.amount, 0), // Requested new stat
     };
   },
 
@@ -776,6 +777,48 @@ export const MockService = {
       penalties[penaltyIndex].status = 'resolved';
       penalties[penaltyIndex].resolvedDate = new Date().toISOString().split('T')[0];
       penalties[penaltyIndex].resolvedBy = resolvedByAdmin;
+      return true;
+    }
+    return false;
+  },
+
+  payPenalty: (penaltyId: string) => {
+    // Alias for resolvePenalty with a system user
+    return MockService.resolvePenalty(penaltyId, 'Admin (Maniel)');
+  },
+
+  // Agent Validation Logic
+  getPendingSubmissions: (): DepositSubmission[] => {
+    // Mapping fieldSubmissions to DepositSubmission
+    return fieldSubmissions
+      .filter(s => s.status === 'pending' && s.amount !== undefined)
+      .map(s => ({
+        id: s.id,
+        agentName: s.agentName,
+        amount: s.amount!,
+        date: s.submissionDate,
+        status: 'pending'
+      }));
+  },
+
+  validateSubmission: (submissionId: string) => {
+    const subIndex = fieldSubmissions.findIndex(s => s.id === submissionId);
+    if (subIndex !== -1) {
+      fieldSubmissions[subIndex].status = 'approved';
+      // Also make the actual deposit
+      // We need a userId - fieldSubmissions currently has clientName/Phone but not linked userId.
+      // For mock purposes, find user by name or create one? Or just log it.
+      // Simplified: assume we just validate the submission status.
+      return true;
+    }
+    return false;
+  },
+
+  rejectSubmission: (submissionId: string, reason: string) => {
+    const subIndex = fieldSubmissions.findIndex(s => s.id === submissionId);
+    if (subIndex !== -1) {
+      fieldSubmissions[subIndex].status = 'rejected';
+      fieldSubmissions[subIndex].notes = reason;
       return true;
     }
     return false;

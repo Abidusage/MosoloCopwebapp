@@ -61,6 +61,9 @@ import {
 } from 'lucide-react';
 import { MockService } from '../../services/mockStore';
 import { User, Group, AdminProfile, Transaction, DashboardView, Message, SystemSettings, Agent, FieldSubmission, KYCDocument, TransactionStatus, Penalty } from '../../types';
+import ContributionsTable from '../../components/ContributionsTable';
+// Use the cleaned pagination component (existing malformed file kept intact but not used)
+import PaginationControls from '../../components/PaginationControlsClean';
 
 // Import Views
 import KYC from './views/KYC';
@@ -114,9 +117,7 @@ const Dashboard: React.FC = () => {
   const [groupListSortKey, setGroupListSortKey] = useState<keyof Group | null>('createdAt');
   const [groupListSortDirection, setGroupListSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Group Contributions Table Sorting (New)
-  const [groupContributionSortKey, setGroupContributionSortKey] = useState<keyof Transaction | null>('date');
-  const [groupContributionSortDirection, setGroupContributionSortDirection] = useState<'asc' | 'desc'>('desc');
+  // Contributions table/state is handled by shared ContributionsTable component
 
 
   // Form States
@@ -369,10 +370,8 @@ const Dashboard: React.FC = () => {
     setGroupMemberSearchTerm(''); // Reset group member search
     setGroupMemberSortKey('joinedDate'); // Reset group member sort
     setGroupMemberSortDirection('asc'); // Reset group member sort direction
-    setGroupListSortKey('createdAt'); // Reset group list sort
-    setGroupListSortDirection('desc'); // Reset group list sort direction
-    setGroupContributionSortKey('date'); // Reset group contribution sort
-    setGroupContributionSortDirection('desc'); // Reset group contribution sort direction
+  setGroupListSortKey('createdAt'); // Reset group list sort
+  setGroupListSortDirection('desc'); // Reset group list sort direction
   };
 
   const openDepositModal = (user: User) => {
@@ -940,17 +939,7 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  // Function to sort group contribution transactions (New)
-  const handleGroupContributionSort = (key: keyof Transaction) => {
-    if (groupContributionSortKey === key) {
-      setGroupContributionSortDirection(groupContributionSortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setGroupContributionSortKey(key);
-      setGroupContributionSortDirection('asc');
-    }
-  };
-
-
+  // Contribution sorting/controls are handled by the shared ContributionsTable component
   const renderContent = () => {
     // These need to be inside renderContent to be in scope for the pagination controls
     const { filtered: filteredTransactionsHistory, currentItems: currentTransactionsHistory, totalPages: totalTransactionsHistoryPages } = getPaginatedAndFilteredTransactions(transactions, transactionFilterType, transactionFilterStatus, transactionSearch, transactionFilterTimeframe);
@@ -1907,70 +1896,7 @@ const Dashboard: React.FC = () => {
 
               {/* Pagination Controls */}
               {filteredUsers.length > 0 && (
-                <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Affichage de <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredUsers.length)}</span> sur <span className="font-medium">{filteredUsers.length}</span> résultats
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <button
-                          onClick={() => handleUserPageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                        >
-                          <span className="sr-only">Précédent</span>
-                          <ChevronLeft className="h-5 w-5" />
-                        </button>
-
-                        {/* Generate Page Numbers */}
-                        {Array.from({ length: totalUserPages }, (_, i) => i + 1).map((number) => (
-                          <button
-                            key={number}
-                            onClick={() => handleUserPageChange(number)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number
-                              ? 'z-10 bg-gray-100 border-gray-500 text-gray-700'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                              }`}
-                          >
-                            {number}
-                          </button>
-                        ))}
-
-                        <button
-                          onClick={() => handleUserPageChange(currentPage + 1)}
-                          disabled={currentPage === totalUserPages}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalUserPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'}`}
-                        >
-                          <span className="sr-only">Suivant</span>
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
-                  {/* Mobile Pagination simplified */}
-                  <div className="flex items-center justify-between w-full sm:hidden">
-                    <button
-                      onClick={() => handleUserPageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      Précédent
-                    </button>
-                    <span className="text-sm text-gray-700">
-                      Page {currentPage} / {totalUserPages}
-                    </span>
-                    <button
-                      onClick={() => handleUserPageChange(currentPage + 1)}
-                      disabled={currentPage === totalUserPages}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage === totalUserPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      Suivant
-                    </button>
-                  </div>
-                </div>
+                <PaginationControls currentPage={currentPage} perPage={itemsPerPage} totalItems={filteredUsers.length} onPageChange={handleUserPageChange} />
               )}
             </div>
           </div>
@@ -1984,21 +1910,7 @@ const Dashboard: React.FC = () => {
             .filter(tx =>
               tx.type === 'deposit' &&
               viewingGroupMembers.some(member => member.id === tx.userId)
-            )
-            .sort((a, b) => {
-              if (!groupContributionSortKey) return 0;
-
-              const aValue = a[groupContributionSortKey];
-              const bValue = b[groupContributionSortKey];
-
-              if (typeof aValue === 'string' && typeof bValue === 'string') {
-                return groupContributionSortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-              }
-              if (typeof aValue === 'number' && typeof bValue === 'number') {
-                return groupContributionSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-              }
-              return 0;
-            });
+            );
 
           // 2. Calculate contribution statistics
           const totalGroupDeposits = groupMemberDepositTransactions
@@ -2348,6 +2260,7 @@ const Dashboard: React.FC = () => {
                       <p className="text-lg text-gray-600">Pas de deuxième bénéficiaire en attente.</p>
                     )}
                   </div>
+                  {/* Contribution pagination handled by ContributionsTable component */}
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-500 font-medium mb-1">Ordre des Bénéficiaires (basé sur la date d'ajout)</p>
@@ -2376,127 +2289,8 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* New: Contributions Section */}
-              <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                  <Banknote className="h-6 w-6 text-gray-700" /> Suivi des Contributions
-                </h3>
-
-                {/* Contribution Statistics Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5 text-gray-700" /> Statistiques des Contributions
-                    </h4>
-                  </div>
-                  <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <p className="text-sm text-blue-600 font-medium mb-1">Total Dépôts du Groupe</p>
-                      <p className="text-xl font-bold text-blue-800">{totalGroupDeposits.toLocaleString()} FC</p>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <p className="text-sm text-green-600 font-medium mb-1">Dépôts Réussis</p>
-                      <p className="text-xl font-bold text-green-800">{successfulDepositsCount}</p>
-                    </div>
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <p className="text-sm text-yellow-600 font-medium mb-1">Dépôts en Attente</p>
-                      <p className="text-xl font-bold text-yellow-800">{pendingDepositsCount}</p>
-                    </div>
-                    <div className="bg-red-50 p-4 rounded-lg">
-                      <p className="text-sm text-red-600 font-medium mb-1">Dépôts Échoués</p>
-                      <p className="text-xl font-bold text-red-800">{failedDepositsCount}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Daily Contributions Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h4 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                      <History className="h-5 w-5 text-gray-700" /> Historique des Contributions Journalières
-                    </h4>
-                  </div>
-                  <div className="overflow-x-auto">
-                    {groupMemberDepositTransactions.length > 0 ? (
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleGroupContributionSort('userFullName')}
-                            >
-                              <div className="flex items-center gap-1">
-                                Client
-                                {groupContributionSortKey === 'userFullName' && (
-                                  groupContributionSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                                )}
-                              </div>
-                            </th>
-                            <th
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleGroupContributionSort('date')}
-                            >
-                              <div className="flex items-center gap-1">
-                                Date
-                                {groupContributionSortKey === 'date' && (
-                                  groupContributionSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                                )}
-                              </div>
-                            </th>
-                            <th
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                              onClick={() => handleGroupContributionSort('amount')}
-                            >
-                              <div className="flex items-center gap-1">
-                                Montant Contribué
-                                {groupContributionSortKey === 'amount' && (
-                                  groupContributionSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-                                )}
-                              </div>
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solde Total Client</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {groupMemberDepositTransactions.map((tx) => {
-                            const member = users.find(u => u.id === tx.userId);
-                            return (
-                              <tr key={tx.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tx.userFullName}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tx.date.split(' ')[0]}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{tx.amount.toLocaleString()} FC</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  {tx.status === 'success' ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      <CheckCircle className="h-3 w-3" /> Payé
-                                    </span>
-                                  ) : tx.status === 'pending' ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                      <AlertCircle className="h-3 w-3" /> En attente
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                      <XCircle className="h-3 w-3" /> Échoué
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                  {member ? member.depositAmount.toLocaleString() : 'N/A'} FC
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="p-8 text-center text-gray-500">
-                        Aucune contribution enregistrée pour les membres de ce groupe.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Contributions handled by shared component */}
+              <ContributionsTable transactions={groupMemberDepositTransactions} title="Suivi des Contributions" showStats />
             </div>
           );
         }
@@ -2590,7 +2384,7 @@ const Dashboard: React.FC = () => {
                       <div className="flex justify-between items-center border-t border-gray-100 pt-4">
                         <div>
                           <p className="text-xs text-gray-500">Objectif</p>
-                          <p className="text-base font-bold text-gray-800">{group.targetAmount.toLocaleString()} FCFA</p>
+                          <p className="text-base font-bold text-gray-800">{group.targetAmount.toLocaleString()} FC</p>
                         </div>
                         <button
                           onClick={() => handleViewGroup(group)}
@@ -2662,7 +2456,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FCFA)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Montant à déposer (FC)</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <DollarSign className="h-5 w-5 text-gray-400" />
@@ -2817,7 +2611,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex flex-col h-full justify-center pb-4">
                     <span className="text-gray-500 text-sm mb-1">Solde Actuel</span>
                     <span className="text-3xl font-bold text-gray-800 tracking-tight">
-                      {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FCFA</span>
+                      {selectedUserForDetail.depositAmount.toLocaleString()} <span className="text-lg text-gray-600">FC</span>
                     </span>
                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between text-sm">
                       <span className="text-gray-500">Membre depuis</span>
@@ -2852,7 +2646,7 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <p className={`text-sm font-bold ${tx.type === 'deposit' ? 'text-green-600' : tx.type === 'loan_eligibility' ? 'text-gray-600' : 'text-orange-600'}`}>
-                            {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FCFA'}
+                            {tx.type === 'loan_eligibility' ? 'Admin' : (tx.type === 'deposit' ? '+' : '-') + tx.amount.toLocaleString() + ' FC'}
                           </p>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {tx.status === 'success' ? 'Succès' : 'Échec'}
@@ -2966,7 +2760,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Objectif cible (FCFA)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Objectif cible (FC)</label>
                 <input
                   type="number"
                   required
@@ -3390,7 +3184,7 @@ const Dashboard: React.FC = () => {
                 <p className="text-sm text-gray-500 mb-1">Transaction ID</p>
                 <p className="text-lg font-bold text-gray-800">{selectedTransactionForStatusUpdate.id}</p>
                 <p className="text-xs text-gray-500">Client: {selectedTransactionForStatusUpdate.userFullName}</p>
-                <p className="text-xs text-gray-500">Montant: {selectedTransactionForStatusUpdate.amount.toLocaleString()} FCFA</p>
+                <p className="text-xs text-gray-500">Montant: {selectedTransactionForStatusUpdate.amount.toLocaleString()} FC</p>
               </div>
 
               <div>

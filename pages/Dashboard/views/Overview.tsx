@@ -103,6 +103,17 @@ const Overview: React.FC = () => {
                     </div>
                 </div>
 
+                {/* New KPI Card for Total Penalties */}
+                <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <div className="p-3 sm:p-4 bg-red-100 rounded-lg">
+                        <ArrowDownLeft className="h-6 w-6 sm:h-8 sm:w-8 text-red-700" />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 font-medium">Pénalités Non-Paiement</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totalPenaltiesAmount?.toLocaleString()} <span className="text-sm font-normal text-gray-500">FC</span></p>
+                    </div>
+                </div>
+
                 {/* Alert / Pending Card */}
                 <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/dashboard/agents')}>
                     <div className="p-3 sm:p-4 bg-yellow-100 rounded-lg relative">

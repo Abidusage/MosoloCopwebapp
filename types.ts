@@ -75,6 +75,7 @@ export interface SystemSettings {
   minPasswordLength: number;
   enableTwoFactor: boolean;
   emailNotifications: boolean;
+  missedPaymentPenalty: number; // Montant fixe (FC) pour non-paiement
 }
 
 // Nouveaux types pour les Agents/Partenaires
@@ -141,4 +142,12 @@ export interface KycRequest {
   documentType: string;
   status: 'pending' | 'approved' | 'rejected';
   documentUrl: string;
+}
+
+export interface DepositSubmission {
+  id: string;
+  agentName: string;
+  amount: number;
+  date: string;
+  status: 'pending' | 'validated' | 'rejected';
 }

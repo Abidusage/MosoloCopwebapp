@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, ArrowLeft } from 'lucide-react';
-import logo from '../assets/logo.svg'; // ✅ Import du logo SVG
+import logo from '../assets/logo.svg';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');

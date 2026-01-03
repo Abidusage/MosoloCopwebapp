@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { MockService } from '../../../services/mockStore';
 import { User, Group, Transaction, Message } from '../../../types';
+import ContributionsTable from '../../../components/ContributionsTable';
 
 const Groups: React.FC = () => {
     const [groups, setGroups] = useState<Group[]>([]);
@@ -66,6 +67,8 @@ const Groups: React.FC = () => {
     const [groupMembersCurrentPage, setGroupMembersCurrentPage] = useState(1);
     const [groupMembersPerPage] = useState(5);
     const [groupMemberSearchTerm, setGroupMemberSearchTerm] = useState('');
+
+    // Contribution History handled by shared component
 
 
     const refreshGroups = () => {
@@ -502,7 +505,7 @@ const Groups: React.FC = () => {
                                                 )}
                                             </div>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contribution Actuelle</th>
+                                        {/* Colonne 'Contribution Actuelle' supprimée */}
                                         <th
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                             onClick={() => handleGroupMemberSort('hasBenefitedFromTontine')}
@@ -532,9 +535,7 @@ const Groups: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.joinedDate}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                {user.depositAmount > 0 ? (user.depositAmount / viewingGroup.memberCount).toLocaleString() : '0'} FC <span className="text-xs text-gray-500">(simulé)</span>
-                                            </td>
+                                            {/* Colonne 'Contribution Actuelle' supprimée */}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                 {user.hasBenefitedFromTontine ? (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -625,61 +626,58 @@ const Groups: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="space-y-6">
-                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <Banknote className="h-6 w-6 text-gray-700" /> Suivi des Contributions
-                    </h3>
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="text-sm text-blue-600 font-medium mb-1">Total Dépôts du Groupe</p>
-                        <p className="text-xl font-bold text-blue-800">{totalGroupDeposits.toLocaleString()} FC</p>
-                    </div>
-                </div>
+                    <ContributionsTable transactions={groupMemberDepositTransactions} title="Historique des Contributions Journalières" showStats />
+
 
                 {/* Edit Group Modal */}
-                {isEditGroupModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 p-6">
-                            <h3 className="text-lg font-bold mb-4">Modifier le Groupe</h3>
-                            <form onSubmit={handleUpdateGroup} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
-                                    <input className="w-full p-2 border rounded" value={editingGroupForm.name} onChange={e => setEditingGroupForm({ ...editingGroupForm, name: e.target.value })} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Cible (FC)</label>
-                                    <input className="w-full p-2 border rounded" type="number" value={editingGroupForm.targetAmount} onChange={e => setEditingGroupForm({ ...editingGroupForm, targetAmount: parseFloat(e.target.value) })} />
-                                </div>
-                                <div className="flex justify-end gap-2">
-                                    <button type="button" onClick={() => setIsEditGroupModalOpen(false)} className="px-4 py-2 text-gray-600">Annuler</button>
-                                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Enregistrer</button>
-                                </div>
-                            </form>
+                {
+                    isEditGroupModalOpen && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 p-6">
+                                <h3 className="text-lg font-bold mb-4">Modifier le Groupe</h3>
+                                <form onSubmit={handleUpdateGroup} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nom du groupe</label>
+                                        <input className="w-full p-2 border rounded" value={editingGroupForm.name} onChange={e => setEditingGroupForm({ ...editingGroupForm, name: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Cible (FC)</label>
+                                        <input className="w-full p-2 border rounded" type="number" value={editingGroupForm.targetAmount} onChange={e => setEditingGroupForm({ ...editingGroupForm, targetAmount: parseFloat(e.target.value) })} />
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={() => setIsEditGroupModalOpen(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Enregistrer</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
                 {/* Add Member Modal */}
-                {isAddMemberModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 p-6">
-                            <h3 className="text-lg font-bold mb-4">Ajouter un membre</h3>
-                            <form onSubmit={handleAddMemberToGroup} className="space-y-4">
-                                <input
-                                    className="w-full p-2 border rounded"
-                                    placeholder="ID ou Nom du client..."
-                                    value={selectedMemberId} // Note: simplified to just ID input for now, ideally a search select
-                                    onChange={e => setSelectedMemberId(e.target.value)}
-                                />
-                                <p className="text-xs text-gray-500">Entrez l'ID du client à ajouter.</p>
-                                <div className="flex justify-end gap-2">
-                                    <button type="button" onClick={() => setIsAddMemberModalOpen(false)} className="px-4 py-2 text-gray-600">Annuler</button>
-                                    <button type="submit" className="px-4 py-2 bg-gray-800 text-white rounded">Ajouter</button>
-                                </div>
-                            </form>
+                {
+                    isAddMemberModalOpen && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 p-6">
+                                <h3 className="text-lg font-bold mb-4">Ajouter un membre</h3>
+                                <form onSubmit={handleAddMemberToGroup} className="space-y-4">
+                                    <input
+                                        className="w-full p-2 border rounded"
+                                        placeholder="ID ou Nom du client..."
+                                        value={selectedMemberId} // Note: simplified to just ID input for now, ideally a search select
+                                        onChange={e => setSelectedMemberId(e.target.value)}
+                                    />
+                                    <p className="text-xs text-gray-500">Entrez l'ID du client à ajouter.</p>
+                                    <div className="flex justify-end gap-2">
+                                        <button type="button" onClick={() => setIsAddMemberModalOpen(false)} className="px-4 py-2 text-gray-600">Annuler</button>
+                                        <button type="submit" className="px-4 py-2 bg-gray-800 text-white rounded">Ajouter</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+            </div >
         );
     }
 
