@@ -13,10 +13,15 @@ import {
     ArrowDownLeft,
     UserPlus,
     Plus,
-    Wallet
+    Wallet,
+    Search,
+    CheckCircle,
+    X,
+    Check
 } from 'lucide-react';
 import { MockService } from '../../../services/mockStore';
 import { User, Group, Transaction, AdminProfile } from '../../../types';
+import MemberSelector from '../../../components/MemberSelector';
 
 const Overview: React.FC = () => {
     const navigate = useNavigate();
@@ -27,14 +32,63 @@ const Overview: React.FC = () => {
     const [pendingSubmissionsCount, setPendingSubmissionsCount] = useState(0);
     const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
 
-    useEffect(() => {
+    // Quick Deposit Modal State
+    const [isQuickDepositModalOpen, setIsQuickDepositModalOpen] = useState(false);
+    const [modalSearchTerm, setModalSearchTerm] = useState('');
+    const [selectedUserId, setSelectedUserId] = useState('');
+    const [depositAmount, setDepositAmount] = useState<string>('');
+    const [depositNote, setDepositNote] = useState<string>('');
+    const [depositPaymentMethod, setDepositPaymentMethod] = useState<string>('Orange Money');
+    const [selectedGroupId, setSelectedGroupId] = useState('');
+
+    const refreshData = () => {
         setStats(MockService.getGlobalStats());
         setUsers(MockService.getUsers());
         setGroups(MockService.getGroups());
         setTransactions(MockService.getTransactions());
         setPendingSubmissionsCount(MockService.getPendingSubmissionsCount());
         setAdminProfile(MockService.getAdminProfile());
+    };
+
+    useEffect(() => {
+        refreshData();
     }, []);
+
+    const handleOpenQuickDeposit = () => {
+        setModalSearchTerm('');
+        setSelectedUserId('');
+        setDepositAmount('');
+        setDepositNote('');
+        setDepositPaymentMethod('Orange Money');
+        setIsQuickDepositModalOpen(true);
+    };
+
+    const handleQuickDepositSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const amount = Number(depositAmount);
+        if (selectedUserId && amount > 0) {
+            const success = MockService.makeDeposit(selectedUserId, amount, depositNote, depositPaymentMethod);
+            if (success) {
+                refreshData();
+                setIsQuickDepositModalOpen(false);
+                alert("Dépôt effectué avec succès !");
+            }
+        }
+    };
+
+    const handleAddMemberToGroupQuick = (userId: string) => {
+        if (!selectedGroupId) {
+            alert("Veuillez sélectionner un groupe.");
+            return;
+        }
+        const success = MockService.addMemberToGroup(selectedGroupId, userId);
+        if (success) {
+            refreshData();
+            alert("Membre ajouté au groupe avec succès !");
+        } else {
+            alert("Ce client est déjà membre de ce groupe ou une erreur est survenue.");
+        }
+    };
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -52,7 +106,7 @@ const Overview: React.FC = () => {
                         <Plus className="h-4 w-4" /> Nouveau Client
                     </button>
                     <button
-                        onClick={() => navigate('/dashboard/users')}
+                        onClick={handleOpenQuickDeposit}
                         className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors shadow-sm"
                     >
                         <Wallet className="h-4 w-4" /> Dépôt Rapide
@@ -128,6 +182,43 @@ const Overview: React.FC = () => {
                             {pendingSubmissionsCount}
                             <span className="text-xs font-normal text-yellow-700 bg-yellow-50 px-2 py-0.5 rounded-full">Actions requises</span>
                         </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Quick Group Add Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 overflow-visible">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="space-y-1">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <UserPlus className="h-5 w-5 text-indigo-600" /> Ajout Rapide au Groupe
+                        </h3>
+                        <p className="text-sm text-gray-500">Cherchez un client pour l'ajouter instantanément à un groupe.</p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl">
+                        <div className="flex-1 relative">
+                            <select
+                                value={selectedGroupId}
+                                onChange={(e) => setSelectedGroupId(e.target.value)}
+                                className="w-full pl-4 pr-10 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50/50 hover:bg-white transition-all shadow-sm font-medium appearance-none"
+                            >
+                                <option value="">Choisir un groupe...</option>
+                                {groups.map(g => (
+                                    <option key={g.id} value={g.id}>{g.name}</option>
+                                ))}
+                            </select>
+                            <Layers className="h-4 w-4 absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        <div className="flex-[1.5] relative group">
+                            <MemberSelector
+                                users={users}
+                                onSelect={handleAddMemberToGroupQuick}
+                                allowImmediateSelect={true}
+                                placeholder="Chercher un client (nom ou ID)..."
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

@@ -20,6 +20,10 @@ const Profile: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState<Partial<AdminProfile>>({});
 
+    // Password Change State
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
+
     useEffect(() => {
         const data = MockService.getAdminProfile();
         setProfile(data);
@@ -37,6 +41,25 @@ const Profile: React.FC = () => {
             } else {
                 alert("Erreur lors de la mise à jour");
             }
+        }
+    };
+
+    const handleUpdatePassword = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            alert("Les nouveaux mots de passe ne correspondent pas");
+            return;
+        }
+
+        // In a real app, you'd send this to the server
+        // For mock, we'll just simulate success
+        const success = MockService.updateAdminPassword(passwordForm.oldPassword, passwordForm.newPassword);
+        if (success) {
+            alert("Mot de passe mis à jour avec succès");
+            setIsChangingPassword(false);
+            setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+        } else {
+            alert("L'ancien mot de passe est incorrect");
         }
     };
 
@@ -188,13 +211,80 @@ const Profile: React.FC = () => {
                             <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-100">
                                 <div>
                                     <p className="text-yellow-800 font-medium">Mot de passe</p>
-                                    <p className="text-sm text-yellow-600 mt-1">Dernière modification : Il y a 3 mois</p>
+                                    <p className="text-sm text-yellow-600 mt-1">Dernière modification : Il y a quelques instants</p>
                                 </div>
-                                <button className="text-sm font-medium text-yellow-700 bg-yellow-100 px-3 py-1.5 rounded hover:bg-yellow-200 transition-colors">
+                                <button
+                                    onClick={() => setIsChangingPassword(true)}
+                                    className="text-sm font-medium text-yellow-700 bg-yellow-100 px-3 py-1.5 rounded hover:bg-yellow-200 transition-colors"
+                                >
                                     Modifier
                                 </button>
                             </div>
                         </div>
+
+                        {/* Password Change Modal */}
+                        {isChangingPassword && (
+                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in duration-200 overflow-hidden">
+                                    <div className="bg-gray-800 p-6 text-white flex justify-between items-center">
+                                        <h3 className="text-xl font-bold flex items-center gap-2">
+                                            <KeyRound className="h-6 w-6" /> Modifier le mot de passe
+                                        </h3>
+                                        <button onClick={() => setIsChangingPassword(false)} className="hover:rotate-90 transition-transform">
+                                            <Check className="h-6 w-6 hidden" /> {/* Hidden Check to keep Lucide imports clean if needed, but we have X below */}
+                                            <span className="text-2xl">&times;</span>
+                                        </button>
+                                    </div>
+                                    <form onSubmit={handleUpdatePassword} className="p-6 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Ancien mot de passe</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={passwordForm.oldPassword}
+                                                onChange={e => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                                                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-gray-800 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Nouveau mot de passe</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={passwordForm.newPassword}
+                                                onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-gray-800 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Confirmer le nouveau mot de passe</label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={passwordForm.confirmPassword}
+                                                onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                                                className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-gray-800 outline-none"
+                                            />
+                                        </div>
+                                        <div className="pt-2 flex gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsChangingPassword(false)}
+                                                className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                                            >
+                                                Annuler
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="flex-1 bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-gray-900 transition-colors shadow-lg shadow-gray-200"
+                                            >
+                                                Mettre à jour
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="pt-2 text-xs text-center text-gray-400">
                             Dernière connexion : {profile.lastLogin}

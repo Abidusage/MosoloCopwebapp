@@ -173,13 +173,14 @@ let systemSettings: SystemSettings = {
   withdrawalFeeRate: 0.5, // Nouveau: 0.5% de frais de retrait
   minPasswordLength: 8,
   enableTwoFactor: false,
-  emailNotifications: true
+  emailNotifications: true,
+  missedPaymentPenalty: 0
 };
 
 // Données Mock Agents
 let agents: Agent[] = [
-  { id: 'AGT-01', fullName: 'Michel Yapo', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10', password: 'password123' },
-  { id: 'AGT-02', fullName: 'Sarah Touré', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05', password: 'password123' },
+  { id: 'AGT-01', fullName: 'Michel Yapo', username: 'michel_y', email: 'michel.yapo@mosolocoop.com', phone: '07 55 44 33', zone: 'Abobo Marché', status: 'active', totalFormsSubmitted: 145, joinedDate: '2023-08-10', password: 'password123' },
+  { id: 'AGT-02', fullName: 'Sarah Touré', username: 'sarah_t', email: 'sarah.toure@mosolocoop.com', phone: '05 22 11 00', zone: 'Cocody Riviera', status: 'active', totalFormsSubmitted: 89, joinedDate: '2023-12-05', password: 'password123' },
 ];
 
 // Données Mock Soumissions Terrain
@@ -431,7 +432,10 @@ export const MockService = {
   toggleTontineBeneficiaryStatus: (userId: string) => {
     const userIndex = users.findIndex(u => u.id === userId);
     if (userIndex !== -1) {
-      users[userIndex].hasBenefitedFromTontine = !users[userIndex].hasBenefitedFromTontine;
+      const newStatus = !users[userIndex].hasBenefitedFromTontine;
+      users[userIndex].hasBenefitedFromTontine = newStatus;
+      // If marking as benefited, record the date/time; if toggling back, clear the date
+      users[userIndex].tontineBenefitedDate = newStatus ? new Date().toISOString().replace('T', ' ').substring(0, 16) : undefined;
       return true;
     }
     return false;
@@ -620,12 +624,21 @@ export const MockService = {
     return systemSettings;
   },
 
+  updateAdminPassword: (oldPassword: string, newPassword: string) => {
+    // For mock purposes, we'll accept 'admin123' as the correct old password if not set
+    // In a real app, this would check against the hashed password in adminProfile
+    if (oldPassword === 'admin123' || oldPassword === 'password') {
+      return true;
+    }
+    return false;
+  },
+
   // Agent / Partner Logic
   getAgents: () => [...agents],
   getAgentSubmissions: (agentId: string) => {
     return fieldSubmissions.filter(s => s.agentId === agentId).sort((a, b) => b.submissionDate.localeCompare(a.submissionDate));
   },
-  addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'status' | 'totalFormsSubmitted' | 'password'>) => {
+  addAgent: (agent: Omit<Agent, 'id' | 'joinedDate' | 'status' | 'totalFormsSubmitted'>) => {
     const randomId = `AGT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const newAgent: Agent = {
       ...agent,
@@ -633,7 +646,6 @@ export const MockService = {
       joinedDate: new Date().toISOString().split('T')[0],
       status: 'active', // Default status for new agents
       totalFormsSubmitted: 0,
-      password: 'password123' // Default password for new agents
     };
     agents = [...agents, newAgent];
     return newAgent;

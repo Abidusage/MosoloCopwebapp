@@ -9,6 +9,15 @@ const Statistics: React.FC = () => {
         setStats(MockService.getGlobalStats());
     }, []);
 
+    // Loader si stats n'est pas encore disponible
+    if (!stats) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <p className="text-gray-500">Chargement des statistiques...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <h2 className="text-2xl font-bold text-gray-800">Statistiques Détaillées</h2>
@@ -19,7 +28,9 @@ const Statistics: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Total Entrées</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalDepositsAmount.toLocaleString()} FC</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                                {(stats?.totalDepositsAmount ?? 0).toLocaleString()} FC
+                            </h3>
                         </div>
                         <div className="p-2 bg-green-100 rounded-lg">
                             <ArrowUpRight className="h-6 w-6 text-green-600" />
@@ -34,7 +45,9 @@ const Statistics: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Total Sorties</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalWithdrawalsAmount.toLocaleString()} FC</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                                {(stats?.totalWithdrawalsAmount ?? 0).toLocaleString()} FC
+                            </h3>
                         </div>
                         <div className="p-2 bg-red-100 rounded-lg">
                             <ArrowDownLeft className="h-6 w-6 text-red-600" />
@@ -47,7 +60,9 @@ const Statistics: React.FC = () => {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Frais Collectés</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{(stats?.totalDepositsAmount * 0.02).toLocaleString()} FC</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                                {((stats?.totalDepositsAmount ?? 0) * 0.02).toLocaleString()} FC
+                            </h3>
                         </div>
                         <div className="p-2 bg-blue-100 rounded-lg">
                             <DollarSign className="h-6 w-6 text-blue-600" />
@@ -55,11 +70,14 @@ const Statistics: React.FC = () => {
                     </div>
                     <p className="text-xs text-gray-500">Estimations (2%)</p>
                 </div>
+
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium">Pénalités Non-Paiement</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats?.totalPenaltiesAmount.toLocaleString()} FC</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1">
+                                {(stats?.totalPenaltiesAmount ?? 0).toLocaleString()} FC
+                            </h3>
                         </div>
                         <div className="p-2 bg-red-100 rounded-lg">
                             <ArrowDownLeft className="h-6 w-6 text-red-600" />

@@ -23,13 +23,17 @@ import {
     BarChart3,
     History,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Target
 } from 'lucide-react';
+import { formatDate } from '../../../utils/formatDate';
 import { MockService } from '../../../services/mockStore';
 import { User, Group, Transaction, Message } from '../../../types';
 import ContributionsTable from '../../../components/ContributionsTable';
+import MemberSelector from '../../../components/MemberSelector';
 
 const Groups: React.FC = () => {
+    // formatDate provided by shared util
     const [groups, setGroups] = useState<Group[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
@@ -67,6 +71,9 @@ const Groups: React.FC = () => {
     const [groupMembersCurrentPage, setGroupMembersCurrentPage] = useState(1);
     const [groupMembersPerPage] = useState(5);
     const [groupMemberSearchTerm, setGroupMemberSearchTerm] = useState('');
+    const [groupSearchTerm, setGroupSearchTerm] = useState('');
+    const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+    // search terms are handled by the shared MemberSelector component now
 
     // Contribution History handled by shared component
 
@@ -208,26 +215,43 @@ const Groups: React.FC = () => {
     const openAddMemberModal = (group: Group) => {
         setSelectedGroupForMember(group);
         setSelectedMemberId('');
+
+        // Fetch users and filter out those already in the group
+        const allUsers = MockService.getUsers();
+        const currentMemberIds = group.memberIds || [];
+        const filteredAvailable = allUsers.filter(u => !currentMemberIds.includes(u.id));
+        setAvailableUsers(filteredAvailable);
+
         setIsAddMemberModalOpen(true);
     }
 
     const handleAddMemberToGroup = (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedGroupForMember && selectedMemberId) {
-            const success = MockService.addMemberToGroup(selectedGroupForMember.id, selectedMemberId);
-            if (success) {
-                if (viewingGroup && viewingGroup.id === selectedGroupForMember.id) {
-                    refreshGroupData(viewingGroup);
-                }
-                setIsAddMemberModalOpen(false);
-                setSelectedGroupForMember(null);
-                setSelectedMemberId('');
-                alert('Membre ajouté au groupe avec succès !');
-            } else {
-                alert("Ce client est déjà membre de ce groupe ou une erreur est survenue.");
-            }
+            submitAddition(selectedGroupForMember.id, selectedMemberId);
+            setIsAddMemberModalOpen(false);
+            setSelectedGroupForMember(null);
+            setSelectedMemberId('');
         } else {
             alert("Veuillez sélectionner un client.");
+        }
+    }
+
+    const handleAddMemberToGroupInline = (userId: string) => {
+        if (viewingGroup) {
+            submitAddition(viewingGroup.id, userId);
+        }
+    }
+
+    const submitAddition = (groupId: string, userId: string) => {
+        const success = MockService.addMemberToGroup(groupId, userId);
+        if (success) {
+            if (viewingGroup && viewingGroup.id === groupId) {
+                refreshGroupData(viewingGroup);
+            }
+            alert('Membre ajouté au groupe avec succès !');
+        } else {
+            alert("Ce client est déjà membre de ce groupe ou une erreur est survenue.");
         }
     }
 
@@ -270,10 +294,16 @@ const Groups: React.FC = () => {
         }
     };
 
-    // Helper for Sorting
-    const getSortedGroups = () => {
-        if (!groupListSortKey) return groups;
-        return [...groups].sort((a, b) => {
+    // Helper for Sorting and Filtering
+    const getFilteredAndSortedGroups = () => {
+        let result = groups.filter(group =>
+            group.name.toLowerCase().includes(groupSearchTerm.toLowerCase()) ||
+            (group.description && group.description.toLowerCase().includes(groupSearchTerm.toLowerCase()))
+        );
+
+        if (!groupListSortKey) return result;
+
+        return [...result].sort((a, b) => {
             const aValue = a[groupListSortKey];
             const bValue = b[groupListSortKey];
 
@@ -370,7 +400,32 @@ const Groups: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <Target className="h-5 w-5 text-indigo-600" /> Groupe Cible
+                            </h3>
+                            <p className="text-2xl font-black text-gray-900 uppercase tracking-tight">{viewingGroup.name}</p>
+                            <p className="text-sm text-indigo-600 font-bold bg-indigo-50 px-3 py-1 rounded-full inline-block">
+                                {viewingGroup.memberCount} membres actuels
+                            </p>
+                        </div>
+
+                        <div className="flex-1 w-full max-w-md">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Sélectionner un client à ajouter</label>
+                            <MemberSelector
+                                users={MockService.getUsers().filter(u => !viewingGroup.memberIds?.includes(u.id))}
+                                onSelect={handleAddMemberToGroupInline}
+                                allowImmediateSelect={true}
+                                placeholder="Chercher un utilisateur par nom ou ID..."
+                                className=""
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <div className="flex items-center gap-3 mb-2">
                             <Calendar className="h-5 w-5 text-gray-700" />
@@ -380,15 +435,8 @@ const Groups: React.FC = () => {
                     </div>
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <div className="flex items-center gap-3 mb-2">
-                            <Users className="h-5 w-5 text-gray-700" />
-                            <span className="text-gray-500 text-sm font-medium">Membres</span>
-                        </div>
-                        <p className="text-xl font-bold text-gray-900">{viewingGroup.memberCount} Participants</p>
-                    </div>
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <div className="flex items-center gap-3 mb-2">
                             <DollarSign className="h-5 w-5 text-gray-700" />
-                            <span className="text-gray-500 text-sm font-medium">Objectif Cible</span>
+                            <span className="text-gray-500 text-sm font-medium">Objectif Financier</span>
                         </div>
                         <p className="text-xl font-bold text-gray-900">{viewingGroup.targetAmount.toLocaleString()} FC</p>
                     </div>
@@ -517,6 +565,7 @@ const Groups: React.FC = () => {
                                                 )}
                                             </div>
                                         </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date payé</th>
                                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
@@ -547,6 +596,7 @@ const Groups: React.FC = () => {
                                                     </span>
                                                 )}
                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.tontineBenefitedDate)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <button
                                                     onClick={() => handleToggleTontineBeneficiary(user.id, user.fullName)}
@@ -584,49 +634,9 @@ const Groups: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Tontine Cycle Overview */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                        <History className="h-5 w-5 text-gray-700" /> Historique du Cycle de Tontine
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div className="bg-blue-50 p-4 rounded-lg">
-                            <p className="text-sm text-blue-600 font-medium mb-1">Prochain Bénéficiaire</p>
-                            {nextBeneficiary ? (
-                                <p className="text-xl font-bold text-blue-800">{nextBeneficiary.fullName}</p>
-                            ) : (
-                                <p className="text-lg text-gray-600">Tous les membres ont bénéficié.</p>
-                            )}
-                        </div>
-                        <div className="bg-purple-50 p-4 rounded-lg">
-                            <p className="text-sm text-purple-600 font-medium mb-1">Deuxième Bénéficiaire</p>
-                            {secondBeneficiary ? (
-                                <p className="text-xl font-bold text-purple-800">{secondBeneficiary.fullName}</p>
-                            ) : (
-                                <p className="text-lg text-gray-600">Pas de deuxième bénéficiaire en attente.</p>
-                            )}
-                        </div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-sm text-gray-500 font-medium mb-1">Ordre des Bénéficiaires (basé sur la date d'ajout)</p>
-                        {viewingGroupMembers.length > 0 ? (
-                            <ol className="list-decimal list-inside space-y-1 text-gray-700">
-                                {viewingGroupMembers
-                                    .sort((a, b) => a.joinedDate.localeCompare(b.joinedDate))
-                                    .map((member, index) => (
-                                        <li key={member.id} className="flex items-center gap-2">
-                                            <span className="font-medium">{index + 1}. {member.fullName}</span>
-                                            {member.hasBenefitedFromTontine && <CheckCircle className="h-3 w-3 text-green-500" />}
-                                        </li>
-                                    ))}
-                            </ol>
-                        ) : (
-                            <p className="text-gray-600">Aucun membre dans ce groupe pour définir l'ordre.</p>
-                        )}
-                    </div>
-                </div>
 
-                    <ContributionsTable transactions={groupMemberDepositTransactions} title="Historique des Contributions Journalières" showStats />
+
+                <ContributionsTable transactions={groupMemberDepositTransactions} title="Historique des Contributions Journalières" showStats />
 
 
                 {/* Edit Group Modal */}
@@ -659,18 +669,29 @@ const Groups: React.FC = () => {
                     isAddMemberModalOpen && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 p-6">
-                                <h3 className="text-lg font-bold mb-4">Ajouter un membre</h3>
+                                <h3 className="text-lg font-bold mb-4">Ajouter un membre au groupe</h3>
                                 <form onSubmit={handleAddMemberToGroup} className="space-y-4">
-                                    <input
-                                        className="w-full p-2 border rounded"
-                                        placeholder="ID ou Nom du client..."
-                                        value={selectedMemberId} // Note: simplified to just ID input for now, ideally a search select
-                                        onChange={e => setSelectedMemberId(e.target.value)}
+                                    <MemberSelector
+                                        users={availableUsers}
+                                        value={selectedMemberId}
+                                        onChange={setSelectedMemberId}
+                                        placeholder="Rechercher par nom ou ID..."
+                                        allowImmediateSelect={false}
                                     />
-                                    <p className="text-xs text-gray-500">Entrez l'ID du client à ajouter.</p>
-                                    <div className="flex justify-end gap-2">
-                                        <button type="button" onClick={() => setIsAddMemberModalOpen(false)} className="px-4 py-2 text-gray-600">Annuler</button>
-                                        <button type="submit" className="px-4 py-2 bg-gray-800 text-white rounded">Ajouter</button>
+
+                                    <p className="text-xs text-gray-500 italic">
+                                        {selectedMemberId ? `Sélectionné: ${availableUsers.find(u => u.id === selectedMemberId)?.fullName}` : 'Veuillez sélectionner un membre dans la liste.'}
+                                    </p>
+
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <button type="button" onClick={() => setIsAddMemberModalOpen(false)} className="px-4 py-2 text-gray-600 font-medium">Annuler</button>
+                                        <button
+                                            type="submit"
+                                            disabled={!selectedMemberId}
+                                            className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            Ajouter au groupe
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -684,7 +705,19 @@ const Groups: React.FC = () => {
     // List View
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <h2 className="text-2xl font-bold text-gray-800">Gestion des Groupes Tontine</h2>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h2 className="text-2xl font-bold text-gray-800">Gestion des Groupes Tontine</h2>
+                <div className="relative w-full md:w-64">
+                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Rechercher un groupe..."
+                        value={groupSearchTerm}
+                        onChange={(e) => setGroupSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border rounded-full text-sm focus:outline-none focus:border-gray-500"
+                    />
+                </div>
+            </div>
 
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -726,26 +759,39 @@ const Groups: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {getSortedGroups().map((group) => (
-                    <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group flex flex-col items-center text-center cursor-pointer" onClick={() => handleViewGroup(group)}>
-                        <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 mb-4 group-hover:bg-gray-200 transition-colors">
-                            <Layers className="h-8 w-8" />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{group.name}</h3>
-                        <p className="text-gray-500 text-sm mb-6 line-clamp-2">{group.description || "Aucune description"}</p>
+                {getFilteredAndSortedGroups().length > 0 ? (
+                    getFilteredAndSortedGroups().map((group) => (
+                        <div key={group.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all group flex flex-col items-center text-center cursor-pointer" onClick={() => handleViewGroup(group)}>
+                            <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 mb-4 group-hover:bg-gray-200 transition-colors">
+                                <Layers className="h-8 w-8" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">{group.name}</h3>
+                            <p className="text-gray-500 text-sm mb-6 line-clamp-2">{group.description || "Aucune description"}</p>
 
-                        <div className="w-full grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
-                            <div>
-                                <p className="text-2xl font-bold text-gray-800">{group.memberCount}</p>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">Membres</p>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-800">{group.targetAmount.toLocaleString()}</p>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">Cible</p>
+                            <div className="w-full grid grid-cols-2 gap-4 border-t border-gray-100 pt-4">
+                                <div>
+                                    <p className="text-2xl font-bold text-gray-800">{group.memberCount}</p>
+                                    <p className="text-xs text-gray-500 uppercase tracking-wide">Membres</p>
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-gray-800">{group.targetAmount.toLocaleString()}</p>
+                                    <p className="text-xs text-gray-500 uppercase tracking-wide">Cible</p>
+                                </div>
                             </div>
                         </div>
+                    ))
+                ) : (
+                    <div className="col-span-full py-12 text-center bg-white rounded-xl border border-dashed border-gray-300">
+                        <Layers className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500">Aucun groupe trouvé pour "{groupSearchTerm}"</p>
+                        <button
+                            onClick={() => setGroupSearchTerm('')}
+                            className="mt-4 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                            Effacer la recherche
+                        </button>
                     </div>
-                ))}
+                )}
             </div>
         </div>
     );

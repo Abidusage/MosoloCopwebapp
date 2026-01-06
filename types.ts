@@ -15,6 +15,7 @@ export interface User {
   kycVerifiedDate?: string; // Date de vérification KYC
   penalties?: Penalty[]; // Nouveau champ pour les pénalités
   hasBenefitedFromTontine?: boolean; // Nouveau champ pour le statut de la tontine
+  tontineBenefitedDate?: string; // Date à laquelle l'utilisateur a été payé/bénéficié (ex: '2024-03-25 14:00')
 }
 
 export interface Group {
@@ -82,6 +83,7 @@ export interface SystemSettings {
 export interface Agent {
   id: string;
   fullName: string;
+  username: string; // Nouveau champ
   email: string;
   phone: string;
   zone: string; // Zone géographique (ex: Marché Adjamé)

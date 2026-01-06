@@ -8,7 +8,7 @@ import {
     X
 } from 'lucide-react';
 import { MockService } from '../../../services/mockStore';
-import { Penalty } from '../../../types';
+import { Penalty, User } from '../../../types';
 
 const Penalties: React.FC = () => {
     const [penalties, setPenalties] = useState<Penalty[]>([]);
@@ -18,6 +18,8 @@ const Penalties: React.FC = () => {
     // Create Penalty Modal
     const [isCreatePenaltyModalOpen, setIsCreatePenaltyModalOpen] = useState(false);
     const [newPenalty, setNewPenalty] = useState({ userId: '', amount: 0, reason: '' });
+    const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+    const [modalSearchTerm, setModalSearchTerm] = useState('');
 
     const refreshPenalties = () => {
         setPenalties(MockService.getPenalties());
@@ -27,17 +29,20 @@ const Penalties: React.FC = () => {
         refreshPenalties();
     }, []);
 
+    const openCreatePenaltyModal = () => {
+        setAvailableUsers(MockService.getUsers());
+        setModalSearchTerm('');
+        setNewPenalty({ userId: '', amount: 0, reason: '' });
+        setIsCreatePenaltyModalOpen(true);
+    };
+
     const handleCreatePenalty = (e: React.FormEvent) => {
         e.preventDefault();
         if (newPenalty.userId && newPenalty.amount > 0 && newPenalty.reason) {
             MockService.addPenalty({
-                id: `PEN-${Date.now()}`,
                 userId: newPenalty.userId,
-                userFullName: `Client ${newPenalty.userId}`, // Mock name resolution
                 amount: newPenalty.amount,
                 reason: newPenalty.reason,
-                date: new Date().toISOString().split('T')[0],
-                status: 'pending'
             });
             refreshPenalties();
             setNewPenalty({ userId: '', amount: 0, reason: '' });
@@ -66,7 +71,7 @@ const Penalties: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h2 className="text-2xl font-bold text-gray-800">Gestion des Pénalités</h2>
                 <button
-                    onClick={() => setIsCreatePenaltyModalOpen(true)}
+                    onClick={openCreatePenaltyModal}
                     className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-sm"
                 >
                     <Plus className="h-4 w-4" /> Appliquer une pénalité
@@ -155,50 +160,89 @@ const Penalties: React.FC = () => {
                 </div>
             </div>
 
-            {/* Create Penalty Modal */}
             {isCreatePenaltyModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm animate-in fade-in zoom-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-gray-800">Nouvelle Pénalité</h3>
+                            <h3 className="text-lg font-bold text-gray-800">Appliquer une Pénalité</h3>
                             <button onClick={() => setIsCreatePenaltyModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
                         <form onSubmit={handleCreatePenalty} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">ID Utilisateur</label>
-                                <input
-                                    type="text"
-                                    value={newPenalty.userId}
-                                    onChange={(e) => setNewPenalty({ ...newPenalty, userId: e.target.value })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                                    required
-                                />
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Rechercher le client</label>
+                                <div className="relative mb-2">
+                                    <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Nom ou ID..."
+                                        value={modalSearchTerm}
+                                        onChange={(e) => setModalSearchTerm(e.target.value)}
+                                        className="w-full pl-9 p-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                                    />
+                                </div>
+                                <div className="max-h-40 overflow-y-auto border rounded-lg divide-y bg-gray-50">
+                                    {availableUsers
+                                        .filter(u =>
+                                            u.fullName.toLowerCase().includes(modalSearchTerm.toLowerCase()) ||
+                                            u.id.toLowerCase().includes(modalSearchTerm.toLowerCase())
+                                        )
+                                        .map(user => (
+                                            <div
+                                                key={user.id}
+                                                onClick={() => setNewPenalty({ ...newPenalty, userId: user.id })}
+                                                className={`p-2 flex items-center justify-between cursor-pointer transition-colors ${newPenalty.userId === user.id ? 'bg-red-50 border-red-200' : 'hover:bg-white'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-bold text-[10px]">
+                                                        {user.fullName.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-gray-900">{user.fullName}</p>
+                                                        <p className="text-[10px] text-gray-500">{user.id}</p>
+                                                    </div>
+                                                </div>
+                                                {newPenalty.userId === user.id && <CheckCircle className="h-4 w-4 text-red-600" />}
+                                            </div>
+                                        ))}
+                                </div>
                             </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Montant (FC)</label>
                                 <input
                                     type="number"
                                     value={newPenalty.amount || ''}
                                     onChange={(e) => setNewPenalty({ ...newPenalty, amount: Number(e.target.value) })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none font-bold"
                                     required
                                     min="1"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Motif</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Motif de l'infraction</label>
                                 <textarea
                                     value={newPenalty.reason}
                                     onChange={(e) => setNewPenalty({ ...newPenalty, reason: e.target.value })}
                                     className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
-                                    rows={3}
+                                    rows={2}
                                     required
+                                    placeholder="Ex: Retard de paiement cycle mars"
                                 />
                             </div>
-                            <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition-colors">
-                                Appliquer
+
+                            <p className="text-[10px] text-gray-500 italic">
+                                {newPenalty.userId ? `Appliquer à: ${availableUsers.find(u => u.id === newPenalty.userId)?.fullName}` : 'Veuillez sélectionner un membre.'}
+                            </p>
+
+                            <button
+                                type="submit"
+                                disabled={!newPenalty.userId || !newPenalty.amount}
+                                className="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Appliquer la pénalité
                             </button>
                         </form>
                     </div>

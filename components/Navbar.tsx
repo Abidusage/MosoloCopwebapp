@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn, Menu, X } from 'lucide-react';
-import logo from '../assets/logo.svg'; // Remplace le fichier PNG par le SVG
+import logo from '../assets/logo.svg';
 
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
