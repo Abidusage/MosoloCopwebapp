@@ -15,6 +15,9 @@ const Penalties: React.FC = () => {
     const [penaltySearchTerm, setPenaltySearchTerm] = useState('');
     const [penaltyFilterStatus, setPenaltyFilterStatus] = useState('all');
 
+    // History State
+    const [historyTimeFilter, setHistoryTimeFilter] = useState<'today' | 'yesterday' | 'week'>('today');
+
     // Create Penalty Modal
     const [isCreatePenaltyModalOpen, setIsCreatePenaltyModalOpen] = useState(false);
     const [newPenalty, setNewPenalty] = useState({ userId: '', amount: 0, reason: '' });
@@ -62,9 +65,35 @@ const Penalties: React.FC = () => {
     const filteredPenalties = penalties.filter(p => {
         const matchesSearch = p.userFullName.toLowerCase().includes(penaltySearchTerm.toLowerCase()) ||
             p.reason.toLowerCase().includes(penaltySearchTerm.toLowerCase());
-        const matchesStatus = penaltyFilterStatus === 'all' || p.status === penaltyFilterStatus;
+        const matchesStatus = penaltyFilterStatus === 'all' ||
+            (penaltyFilterStatus === 'paid' ? p.status === 'resolved' : p.status === 'active');
         return matchesSearch && matchesStatus;
     });
+
+    const getHistoryPenalties = () => {
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const yesterdayDate = new Date(now);
+        yesterdayDate.setDate(now.getDate() - 1);
+        const yesterday = yesterdayDate.toISOString().split('T')[0];
+
+        const weekAgo = new Date(now);
+        weekAgo.setDate(now.getDate() - 7);
+
+        return penalties.filter(p => {
+            if (p.status !== 'resolved' || !p.resolvedDate) return false;
+
+            if (historyTimeFilter === 'today') return p.resolvedDate === today;
+            if (historyTimeFilter === 'yesterday') return p.resolvedDate === yesterday;
+            if (historyTimeFilter === 'week') {
+                const resDate = new Date(p.resolvedDate);
+                return resDate >= weekAgo && resDate <= now;
+            }
+            return false;
+        }).sort((a, b) => (b.resolvedDate || '').localeCompare(a.resolvedDate || ''));
+    };
+
+    const historyPenalties = getHistoryPenalties();
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -128,7 +157,7 @@ const Penalties: React.FC = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{penalty.reason}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-red-600">{penalty.amount.toLocaleString()} FC</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            {penalty.status === 'paid' ? (
+                                            {penalty.status === 'resolved' ? (
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                     <CheckCircle className="h-3 w-3" /> Payé
                                                 </span>
@@ -139,10 +168,10 @@ const Penalties: React.FC = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            {penalty.status === 'pending' && (
+                                            {penalty.status === 'active' && (
                                                 <button
                                                     onClick={() => handlePayPenalty(penalty.id)}
-                                                    className="text-xs font-medium text-blue-600 hover:text-blue-800 underline"
+                                                    className="text-xs font-medium text-blue-600 hover:text-blue-800 underline transition-colors"
                                                 >
                                                     Marquer payé
                                                 </button>
@@ -154,7 +183,69 @@ const Penalties: React.FC = () => {
                         </table>
                     ) : (
                         <div className="p-10 text-center text-gray-500">
-                            Aucune pénalité trouvée.
+                            Aucune pénalité active trouvée.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Payment History Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-blue-50/30">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <h3 className="font-bold text-gray-800">Historique des Paiements</h3>
+                    </div>
+                    <div className="flex gap-1 bg-white p-1 rounded-lg border shadow-xs">
+                        {(['today', 'yesterday', 'week'] as const).map((filter) => (
+                            <button
+                                key={filter}
+                                onClick={() => setHistoryTimeFilter(filter)}
+                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${historyTimeFilter === filter ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'}`}
+                            >
+                                {filter === 'today' ? "Aujourd'hui" : filter === 'yesterday' ? "Hier" : "Cette Semaine"}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    {historyPenalties.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50/50">
+                                <tr className="text-left text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                    <th className="px-6 py-3">Client</th>
+                                    <th className="px-6 py-3">Motif</th>
+                                    <th className="px-6 py-3 text-right">Montant</th>
+                                    <th className="px-6 py-3 text-center">Date Paiement</th>
+                                    <th className="px-6 py-3 text-right">Par</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {historyPenalties.map((p) => (
+                                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-bold text-gray-900">{p.userFullName}</div>
+                                            <div className="text-[10px] text-gray-400 font-mono">{p.id}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.reason}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-black text-green-600">
+                                            {p.amount.toLocaleString()} FC
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                            <span className="bg-gray-100 px-2 py-1 rounded font-medium">{p.resolvedDate}</span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-[10px] text-gray-400">
+                                            {p.resolvedBy || 'Système'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="p-12 text-center text-gray-400 flex flex-col items-center gap-2">
+                            <CheckCircle className="h-10 w-10 opacity-20" />
+                            <p className="text-sm">Aucun paiement enregistré pour cette période.</p>
                         </div>
                     )}
                 </div>
