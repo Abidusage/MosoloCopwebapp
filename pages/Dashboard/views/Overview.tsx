@@ -22,6 +22,7 @@ import {
 import { MockService } from '../../../services/mockStore';
 import { User, Group, Transaction, AdminProfile } from '../../../types';
 import MemberSelector from '../../../components/MemberSelector';
+import DailyContributionsPanel from '../../../components/DailyContributionsPanel';
 
 const Overview: React.FC = () => {
     const navigate = useNavigate();
@@ -221,6 +222,11 @@ const Overview: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Daily Contributions Panel */}
+            <div>
+                <DailyContributionsPanel transactions={transactions} users={users} />
             </div>
 
             {/* Recent Activity Split */}

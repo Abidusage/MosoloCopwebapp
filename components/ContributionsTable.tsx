@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, History, Banknote, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Search, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, History, Banknote, CheckCircle, AlertCircle, XCircle, Calendar, TrendingUp } from 'lucide-react';
 import { Transaction } from '../types';
 
 type Props = {
@@ -24,6 +24,58 @@ const ContributionsTable: React.FC<Props> = ({ transactions, title = 'Historique
 
   const totalSuccessAmount = useMemo(() => {
     return transactions.filter(t => t.status === 'success').reduce((s, t) => s + t.amount, 0);
+  }, [transactions]);
+
+  // Calculate date-based statistics
+  const { todayTotal, yesterdayTotal, weekTotal, dailyBreakdown } = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+
+    let todaySum = 0;
+    let yesterdaySum = 0;
+    let weekSum = 0;
+    const dailyMap: Record<string, { date: Date; total: number; dayName: string }> = {};
+
+    const successTransactions = transactions.filter(t => t.status === 'success');
+
+    successTransactions.forEach(tx => {
+      const txDate = new Date(tx.date.split(' ')[0]);
+      const txDateOnly = new Date(txDate.getFullYear(), txDate.getMonth(), txDate.getDate());
+
+      // Today's total
+      if (txDateOnly.getTime() === today.getTime()) {
+        todaySum += tx.amount;
+      }
+
+      // Yesterday's total
+      if (txDateOnly.getTime() === yesterday.getTime()) {
+        yesterdaySum += tx.amount;
+      }
+
+      // This week's total
+      if (txDateOnly >= weekStart && txDateOnly <= today) {
+        weekSum += tx.amount;
+      }
+
+      // Daily breakdown for this week
+      if (txDateOnly >= weekStart && txDateOnly <= today) {
+        const dateKey = txDateOnly.toISOString().split('T')[0];
+        const dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        if (!dailyMap[dateKey]) {
+          dailyMap[dateKey] = { date: txDateOnly, total: 0, dayName: dayNames[txDateOnly.getDay()] };
+        }
+        dailyMap[dateKey].total += tx.amount;
+      }
+    });
+
+    // Sort daily breakdown by date
+    const dailyBreakdownArray = Object.values(dailyMap).sort((a, b) => b.date.getTime() - a.date.getTime());
+
+    return { todayTotal: todaySum, yesterdayTotal: yesterdaySum, weekTotal: weekSum, dailyBreakdown: dailyBreakdownArray };
   }, [transactions]);
 
   const sorted = useMemo(() => {
@@ -93,16 +145,88 @@ const ContributionsTable: React.FC<Props> = ({ transactions, title = 'Historique
       </div>
 
       {showStats && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl border border-blue-100 mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div>
-              <p className="text-sm text-blue-600 font-semibold mb-1 uppercase tracking-wider">Solde total de tout le Montant Contribué</p>
-              <p className="text-3xl font-bold text-blue-900">{totalSuccessAmount.toLocaleString()} FC</p>
+        <div className="space-y-4">
+          {/* Summary Statistics Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Today's Total */}
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-100 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-emerald-100 p-1.5 rounded-lg">
+                  <Calendar className="h-4 w-4 text-emerald-600" />
+                </div>
+                <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Aujourd'hui</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-900">{todayTotal.toLocaleString()} <span className="text-sm font-medium">FC</span></p>
             </div>
-            <div className="bg-white p-3 rounded-full shadow-sm text-blue-600">
-              <Banknote className="h-8 w-8" />
+
+            {/* Yesterday's Total */}
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 p-4 rounded-xl border border-amber-100 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-amber-100 p-1.5 rounded-lg">
+                  <Calendar className="h-4 w-4 text-amber-600" />
+                </div>
+                <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Hier</span>
+              </div>
+              <p className="text-2xl font-bold text-amber-900">{yesterdayTotal.toLocaleString()} <span className="text-sm font-medium">FC</span></p>
+            </div>
+
+            {/* This Week's Total */}
+            <div className="bg-gradient-to-br from-violet-50 to-purple-50 p-4 rounded-xl border border-violet-100 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-violet-100 p-1.5 rounded-lg">
+                  <TrendingUp className="h-4 w-4 text-violet-600" />
+                </div>
+                <span className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Cette Semaine</span>
+              </div>
+              <p className="text-2xl font-bold text-violet-900">{weekTotal.toLocaleString()} <span className="text-sm font-medium">FC</span></p>
+            </div>
+
+            {/* Grand Total */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-blue-100 p-1.5 rounded-lg">
+                  <Banknote className="h-4 w-4 text-blue-600" />
+                </div>
+                <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Total Général</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-900">{totalSuccessAmount.toLocaleString()} <span className="text-sm font-medium">FC</span></p>
             </div>
           </div>
+
+          {/* Daily Breakdown for this week */}
+          {dailyBreakdown.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  Détail des Contributions de la Semaine
+                </h4>
+              </div>
+              <div className="p-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                  {dailyBreakdown.map((day, index) => (
+                    <div
+                      key={index}
+                      className={`text-center p-3 rounded-lg border transition-all ${index === 0
+                        ? 'bg-emerald-50 border-emerald-200 ring-2 ring-emerald-100'
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        }`}
+                    >
+                      <p className={`text-xs font-bold uppercase tracking-wide mb-1 ${index === 0 ? 'text-emerald-600' : 'text-gray-500'}`}>
+                        {day.dayName}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mb-2">
+                        {day.date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                      </p>
+                      <p className={`text-sm font-bold ${index === 0 ? 'text-emerald-700' : 'text-gray-800'}`}>
+                        {day.total.toLocaleString()} FC
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -153,6 +277,18 @@ const ContributionsTable: React.FC<Props> = ({ transactions, title = 'Historique
                 </tr>
               )}
             </tbody>
+            {displayed.length > 0 && (
+              <tfoot className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <tr>
+                  <td colSpan={4} className="px-6 py-4 text-right text-sm font-semibold text-blue-800 uppercase tracking-wide">
+                    Montant Total des Contributions
+                  </td>
+                  <td className="px-6 py-4 text-right text-lg font-bold text-blue-900">
+                    {totalSuccessAmount.toLocaleString()} FC
+                  </td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
 
