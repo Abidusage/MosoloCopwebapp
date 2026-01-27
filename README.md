@@ -1,20 +1,49 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Mosolo Cop WebApp
 
-# Run and deploy your AI Studio app
+Une application web moderne développée avec **React + Django REST API** pour la gestion des utilisateurs, groupes et dépôts financiers.  
+Ce projet vise à offrir une plateforme transparente et configurable où l’administrateur peut définir les règles globales (pénalités, frais mensuels, éligibilité au crédit) et gérer les membres.
 
-This contains everything you need to run your app locally.
+ Démo en ligne : [Mosolo Cop WebApp](https://mosolo-copwebapp.vercel.app/#/)
 
-View your app in AI Studio: https://ai.studio/apps/drive/1YrOct4NdirbZELg_ADFRhJwq_uCP12TZ
+---
 
-## Run Locally
+##  Fonctionnalités principales
 
-**Prerequisites:**  Node.js
+- **Authentification sécurisée** avec JWT (login, refresh token).
+- **Gestion des utilisateurs** :
+  - Création, suspension, réactivation.
+  - Mise à jour du profil et des informations personnelles.
+  - Dépôts financiers avec historique.
+- **Gestion des groupes** :
+  - Création et recherche de groupes.
+  - Ajout et retrait de membres.
+  - Montant de dépôt configurable par groupe.
+- **Configuration globale (SystemConfig)** :
+  - Pourcentage de pénalité journalière.
+  - Nombre de mois requis pour l’éligibilité au crédit.
+  - Frais mensuels en pourcentage.
+- **Éligibilité au crédit** :
+  - Vérification automatique selon les règles définies par l’admin.
+- **Tableau de bord admin** :
+  - Liste des utilisateurs actifs/suspendus.
+  - Résumé des transactions récentes.
+  - Gestion centralisée des paramètres.
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+##  Technologies utilisées
+
+- **Frontend** : React, TypeScript, Axios, TailwindCSS
+- **Backend** : Django, Django REST Framework
+- **Auth** : djangorestframework-simplejwt
+- **Base de données** : PostgreSQL / SQLite (selon environnement)
+- **Déploiement** : Vercel (frontend), Django (backend API)
+
+---
+
+## Installation locale
+
+### 1. Cloner le projet
+```bash
+git clone https://github.com/ton-compte/mosolo-copwebapp.git
+cd mosolo-copwebapp
